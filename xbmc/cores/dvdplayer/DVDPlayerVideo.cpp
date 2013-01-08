@@ -194,7 +194,24 @@ bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
   formats  = g_renderManager.SupportedFormats();
 #endif
 
-
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  CDVDVideoCodec* codec = NULL;
+  if( m_messageQueue.IsInited() )
+  {
+	  //the second to create codec, need free the previous codec and then create new codec	
+	  codec = NULL;
+  }
+  else
+  {
+	  //the first time, create codec using old code 
+	  codec = CDVDFactoryCodec::CreateVideoCodec(hint, surfaces);
+	  if(!codec)
+	  {
+		  CLog::Log(LOGERROR, "Unsupported video codec");
+		  return false;
+	  }
+  }
+#else 
   CLog::Log(LOGNOTICE, "Creating video codec with codec id: %i", hint.codec);
   CDVDVideoCodec* codec = CDVDFactoryCodec::CreateVideoCodec(hint, surfaces, formats);
   if(!codec)
@@ -202,6 +219,7 @@ bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
     CLog::Log(LOGERROR, "Unsupported video codec");
     return false;
   }
+#endif
 
   if(g_guiSettings.GetBool("videoplayer.usedisplayasclock") && !g_VideoReferenceClock.IsRunning())
   {
@@ -255,6 +273,22 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
 
   if (m_pVideoCodec)
     delete m_pVideoCodec;
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  if( !codec )
+  {
+	  unsigned int surfaces = 0;
+
+	  //need create codec here. the box must create codec success.
+	  CLog::Log(LOGNOTICE, "Creating next video codec with codec id: %i", hint.codec);
+	  codec = CDVDFactoryCodec::CreateVideoCodec(hint, surfaces);
+
+	  if(!codec)
+	  {
+		  CLog::Log(LOGERROR, "Creating next video codec failed");
+		  return;
+	  }
+  }
+#endif
 
   m_pVideoCodec = codec;
   m_hints   = hint;
@@ -1124,6 +1158,11 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
       case RENDER_FMT_CVBREF:
         formatstr = "BGRA";
         break;
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+	  case RENDER_FMT_A10BUF:
+        formatstr = "A10BUF";
+        break;
+#endif 
       case RENDER_FMT_BYPASS:
         formatstr = "BYPASS";
         break;

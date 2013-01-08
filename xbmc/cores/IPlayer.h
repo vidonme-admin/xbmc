@@ -227,6 +227,9 @@ public:
    */
   virtual void GetSubtitleCapabilities(std::vector<int> &subCaps) { subCaps.assign(1,IPC_SUBS_ALL); };
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  virtual void OnA10Created(){return;}
+#endif 
 protected:
   IPlayerCallback& m_callback;
 };

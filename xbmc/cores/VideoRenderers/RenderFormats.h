@@ -33,6 +33,9 @@ enum ERenderFormat {
   RENDER_FMT_VAAPI,
   RENDER_FMT_OMXEGL,
   RENDER_FMT_CVBREF,
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  RENDER_FMT_A10BUF,
+#endif 
   RENDER_FMT_BYPASS,
 };
 

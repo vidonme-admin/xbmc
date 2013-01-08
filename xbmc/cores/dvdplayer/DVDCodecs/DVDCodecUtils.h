@@ -25,6 +25,10 @@
 
 struct YV12Image;
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+#include "cores/a10/libcedarv.h"
+#endif 
+
 class CDVDCodecUtils
 {
 public:
@@ -32,6 +36,9 @@ public:
   static void FreePicture(DVDVideoPicture* pPicture);
   static bool CopyPicture(DVDVideoPicture* pDst, DVDVideoPicture* pSrc);
   static bool CopyPicture(YV12Image* pDst, DVDVideoPicture *pSrc);
+ #if defined(__DVDFAB_FUNC_A10CODEC__)
+  static bool CopyPicture(YV12Image* pDst, const cedarv_picture_t *pSrc);
+#endif 
   
   static DVDVideoPicture* ConvertToNV12Picture(DVDVideoPicture *pSrc);
   static DVDVideoPicture* ConvertToYUV422PackedPicture(DVDVideoPicture *pSrc, ERenderFormat format);

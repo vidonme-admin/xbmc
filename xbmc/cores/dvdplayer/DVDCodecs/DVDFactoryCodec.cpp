@@ -30,6 +30,12 @@
 #if defined(HAVE_VIDEOTOOLBOXDECODER)
 #include "Video/DVDVideoCodecVideoToolBox.h"
 #endif
+
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+#include "Video/DVDVideoCodecA10.h"
+#include "Application.h"
+#endif 
+
 #include "Video/DVDVideoCodecFFmpeg.h"
 #include "Video/DVDVideoCodecOpenMax.h"
 #include "Video/DVDVideoCodecLibMpeg2.h"
@@ -170,6 +176,9 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
   hwSupport += "VAAPI:no ";
 #endif
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  hwSupport += "A10:yes";
+#endif 
   CLog::Log(LOGDEBUG, "CDVDFactoryCodec: compiled in hardware support: %s", hwSupport.c_str());
 
   // dvd's have weird still-frames in it, which is not fully supported in ffmpeg
@@ -177,6 +186,30 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
   {
     if( (pCodec = OpenCodec(new CDVDVideoCodecLibMpeg2(), hint, options)) ) return pCodec;
   }
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+
+  if(!hint.software)
+  {
+	  //all will using a10 codec 
+	  /*
+	  if (hint.codec == CODEC_ID_H264 || 
+		  hint.codec == CODEC_ID_MPEG2VIDEO || 
+		  hint.codec == CODEC_ID_VC1 || 
+		  hint.codec == CODEC_ID_MPEG4)
+	   */
+	  {
+		  if(pCodec = OpenCodec(new CDVDVideoCodecA10(), hint, options))
+		  {
+			  CLog::Log(LOGDEBUG, "CDVDFactoryCodec, create a10 codec. info application");
+
+			  //TODO, this function need check it
+			  g_application.OnA10Created();
+			  return pCodec;
+		  }
+	  }
+  }
+
+#endif 
 #if defined(HAVE_LIBVDADECODER)
   if (!hint.software && g_guiSettings.GetBool("videoplayer.usevda"))
   {

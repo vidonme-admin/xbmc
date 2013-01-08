@@ -370,6 +370,9 @@ public:
 
   bool SwitchToFullScreen();
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  void OnA10Created();
+#endif 
   CSplash* GetSplash() { return m_splash; }
 protected:
   bool LoadSkin(const CStdString& skinID);

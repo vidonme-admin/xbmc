@@ -30,6 +30,10 @@
 #include "settings/VideoSettings.h"
 #include "OverlayRenderer.h"
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+#include "cores/a10/libcedarv.h"
+#endif
+
 class CRenderCapture;
 
 namespace DXVA { class CProcessor; }
@@ -43,6 +47,7 @@ class CWinRenderer;
 class CLinuxRenderer;
 class CLinuxRendererGL;
 class CLinuxRendererGLES;
+class CLinuxRendererA10;
 
 class CXBMCRenderManager
 {
@@ -113,7 +118,11 @@ public:
 #ifdef HAS_GL
   CLinuxRendererGL    *m_pRenderer;
 #elif HAS_GLES == 2
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  CLinuxRendererA10   *m_pRenderer;
+#else 
   CLinuxRendererGLES  *m_pRenderer;
+#endif //__DVDFAB_FUNC_A10CODEC__
 #elif defined(HAS_DX)
   CWinRenderer        *m_pRenderer;
 #elif defined(HAS_SDL)

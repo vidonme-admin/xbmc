@@ -265,6 +265,9 @@ public:
   virtual int GetCacheLevel() const ;
 
   virtual int OnDVDNavResult(void* pData, int iMessage);
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+  virtual void OnA10Created();
+#endif 
 protected:
   friend class CSelectionStreams;
 

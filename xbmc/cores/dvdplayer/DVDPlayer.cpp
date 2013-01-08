@@ -2875,7 +2875,12 @@ bool CDVDPlayer::OpenVideoStream(int iStream, int source)
       hint.aspect = aspect;
       hint.forced_aspect = true;
     }
-    hint.software = true;
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+	//DVD always using a10 codec 
+	hint.software = false;
+#else
+	hint.software = true;
+#endif
   }
 
   CDVDInputStream::IMenus* pMenus = dynamic_cast<CDVDInputStream::IMenus*>(m_pInputStream);
@@ -4065,3 +4070,9 @@ bool CDVDPlayer::CachePVRStream(void) const
       !g_PVRManager.IsPlayingRecording() &&
       g_advancedSettings.m_bPVRCacheInDvdPlayer;
 }
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+void CDVDPlayer::OnA10Created()
+{
+	m_ready.Set();
+}
+#endif 

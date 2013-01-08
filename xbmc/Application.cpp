@@ -5251,7 +5251,9 @@ void CApplication::Process()
     m_pPlayer->DoAudioWork();
 
   // do any processing that isn't needed on each run
+
   if( m_slowTimer.GetElapsedMilliseconds() > 500 )
+
   {
     m_slowTimer.Reset();
     ProcessSlow();
@@ -5799,6 +5801,17 @@ bool CApplication::SwitchToFullScreen()
   return false;
 }
 
+#if defined(__DVDFAB_FUNC_A10CODEC__)
+void CApplication::OnA10Created()
+{
+	if( !m_pPlayer )
+		return;
+
+	//need switch to fullscreen 
+	SwitchToFullScreen();
+	m_pPlayer->OnA10Created();
+}
+#endif 
 void CApplication::Minimize()
 {
   g_Windowing.Minimize();

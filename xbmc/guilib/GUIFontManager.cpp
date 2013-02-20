@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -35,8 +35,6 @@
 #include "URL.h"
 
 using namespace std;
-
-GUIFontManager g_fontManager;
 
 GUIFontManager::GUIFontManager(void)
 {
@@ -237,6 +235,17 @@ void GUIFontManager::ReloadTTFFonts(void)
 
     font->SetFont(pFontFile);
   }
+}
+
+void GUIFontManager::UnloadTTFFonts()
+{
+  for (vector<CGUIFontTTFBase*>::iterator i = m_vecFontFiles.begin(); i != m_vecFontFiles.end(); i++)
+    delete (*i);
+
+  m_vecFontFiles.clear();
+
+  for (vector<CGUIFont*>::iterator i = m_vecFonts.begin(); i != m_vecFonts.end(); i++)
+    (*i)->SetFont(NULL);
 }
 
 void GUIFontManager::Unload(const CStdString& strFontName)

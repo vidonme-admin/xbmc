@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 #include <climits>
 
 CGUIWindowScreensaverDim::CGUIWindowScreensaverDim(void)
-    : CGUIDialog(97, "")
+    : CGUIDialog(WINDOW_SCREENSAVER_DIM, "")
 {
   m_needsScaling = false;
   m_dimLevel = 100.0f;

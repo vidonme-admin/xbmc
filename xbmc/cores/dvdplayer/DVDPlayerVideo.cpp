@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -499,11 +499,24 @@ void CDVDPlayerVideo::Process()
       m_speed = static_cast<CDVDMsgInt*>(pMsg)->m_value;
       if(m_speed == DVD_PLAYSPEED_PAUSE)
         m_iNrOfPicturesNotToSkip = 0;
+      if (m_pVideoCodec)
+        m_pVideoCodec->SetSpeed(m_speed);
     }
     else if (pMsg->IsType(CDVDMsg::PLAYER_STARTED))
     {
       if(m_started)
         m_messageParent.Put(new CDVDMsgInt(CDVDMsg::PLAYER_STARTED, DVDPLAYER_VIDEO));
+    }
+    else if (pMsg->IsType(CDVDMsg::PLAYER_DISPLAYTIME))
+    {
+      CDVDPlayer::SPlayerState& state = ((CDVDMsgType<CDVDPlayer::SPlayerState>*)pMsg)->m_value;
+
+      if(state.time_src == CDVDPlayer::ETIMESOURCE_CLOCK)
+        state.time      = DVD_TIME_TO_MSEC(m_pClock->GetClock(state.timestamp) + state.time_offset);
+      else
+        state.timestamp = CDVDClock::GetAbsoluteClock();
+      state.player    = DVDPLAYER_VIDEO;
+      m_messageParent.Put(pMsg->Acquire());
     }
     else if (pMsg->IsType(CDVDMsg::GENERAL_STREAMCHANGE))
     {

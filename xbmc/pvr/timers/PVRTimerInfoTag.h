@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@
  */
 
 #include "XBDateTime.h"
-#include "../addons/include/xbmc_pvr_types.h"
+#include "addons/include/xbmc_pvr_types.h"
 
 #include <boost/shared_ptr.hpp>
 

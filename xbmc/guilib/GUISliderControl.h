@@ -9,7 +9,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -72,14 +72,15 @@ public:
   virtual bool OnMessage(CGUIMessage& message);
   bool ProcessSelector(CGUITexture &nib, unsigned int currentTime, float fScaleY, RangeSelector selector);
   void SetRangeSelection(bool rangeSelection);
+  bool GetRangeSelection() { return m_rangeSelection; }
   void SetRangeSelector(RangeSelector selector);
   void SwitchRangeSelector();
   void SetInfo(int iInfo);
-  void SetPercentage(int iPercent, RangeSelector selector = RangeSelectorLower);
-  int GetPercentage(RangeSelector selector = RangeSelectorLower) const;
-  void SetIntValue(int iValue, RangeSelector selector = RangeSelectorLower);
+  void SetPercentage(float iPercent, RangeSelector selector = RangeSelectorLower, bool updateCurrent = false);
+  float GetPercentage(RangeSelector selector = RangeSelectorLower) const;
+  void SetIntValue(int iValue, RangeSelector selector = RangeSelectorLower, bool updateCurrent = false);
   int GetIntValue(RangeSelector selector = RangeSelectorLower) const;
-  void SetFloatValue(float fValue, RangeSelector selector = RangeSelectorLower);
+  void SetFloatValue(float fValue, RangeSelector selector = RangeSelectorLower, bool updateCurrent = false);
   float GetFloatValue(RangeSelector selector = RangeSelectorLower) const;
   void SetIntInterval(int iInterval);
   void SetFloatInterval(float fInterval);
@@ -92,7 +93,7 @@ protected:
   virtual EVENT_RESULT OnMouseEvent(const CPoint &point, const CMouseEvent &event);
   virtual bool UpdateColors();
   virtual void Move(int iNumSteps);
-  virtual void SetFromPosition(const CPoint &point);
+  virtual void SetFromPosition(const CPoint &point, bool guessSelector = false);
   /*! \brief Get the current position of the slider as a proportion
    \return slider position in the range [0,1]
    */
@@ -112,14 +113,14 @@ protected:
   bool m_rangeSelection;
   RangeSelector m_currentSelector;
 
-  int m_iPercent[2];
+  float m_percentValues[2];
 
-  int m_iValue[2];
+  int m_intValues[2];
   int m_iStart;
   int m_iInterval;
   int m_iEnd;
 
-  float m_fValue[2];
+  float m_floatValues[2];
   float m_fStart;
   float m_fInterval;
   float m_fEnd;

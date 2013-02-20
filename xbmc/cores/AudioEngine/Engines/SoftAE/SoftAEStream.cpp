@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -198,6 +198,8 @@ void CSoftAEStream::Initialize()
     m_ssrcData.end_of_input  = 0;
   }
 
+  m_limiter.SetSamplerate(AE.GetSampleRate());
+
   m_chLayoutCount = m_format.m_channelLayout.Count();
   m_valid = true;
 }
@@ -223,6 +225,9 @@ CSoftAEStream::~CSoftAEStream()
     src_delete(m_ssrc);
     m_ssrc = NULL;
   }
+
+  delete m_newPacket;
+  delete m_packet;
 
   CLog::Log(LOGDEBUG, "CSoftAEStream::~CSoftAEStream - Destructed");
 }
@@ -480,7 +485,6 @@ double CSoftAEStream::GetDelay()
   double delay = AE.GetDelay();
   delay += (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
   delay += (double)m_framesBuffered                              / (double)AE.GetSampleRate();
-
   return delay;
 }
 
@@ -489,10 +493,9 @@ double CSoftAEStream::GetCacheTime()
   if (m_delete)
     return 0.0;
 
-  double time;
-  time  = (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
-  time += (double)(m_waterLevel - m_framesBuffered)             / (double)AE.GetSampleRate();
-  time += AE.GetCacheTime();
+  double time = AE.GetCacheTime();
+  time += (double)(m_inputBuffer.Used() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  time += (double)m_framesBuffered                              / (double)AE.GetSampleRate();
   return time;
 }
 
@@ -501,10 +504,9 @@ double CSoftAEStream::GetCacheTotal()
   if (m_delete)
     return 0.0;
 
-  double total;
-  total  = (double)(m_inputBuffer.Size() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
+  double total = AE.GetCacheTotal();
+  total += (double)(m_inputBuffer.Size() / m_format.m_frameSize) / (double)m_format.m_sampleRate;
   total += (double)m_waterLevel                                  / (double)AE.GetSampleRate();
-  total += AE.GetCacheTotal();
   return total;
 }
 

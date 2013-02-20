@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -65,6 +65,7 @@ namespace PVR
     virtual void SetLabel(int iControl, const CStdString &strLabel);
     virtual void SetLabel(int iControl, int iLabel);
     virtual void UpdateButtons(void);
+    virtual bool Update(const CStdString &strDirectory, bool updateFilterPath = true);
 
   private:
     virtual bool OnMessageFocus(CGUIMessage &message);
@@ -81,6 +82,7 @@ namespace PVR
     CGUIWindowPVRRecordings *m_windowRecordings;
     CGUIWindowPVRSearch *    m_windowSearch;
     CGUIWindowPVRTimers *    m_windowTimers;
+    bool                     m_bWasReset;
 
     CCriticalSection         m_critSection;
   };

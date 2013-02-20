@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,8 +23,6 @@
 #include "utils/log.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "music/tags/TagLoaderTagLib.h"
-
-using namespace MUSIC_INFO;
 
 #define BYTES2INT(b1,b2,b3,b4) (((b1 & 0xFF) << (3*8)) | \
 ((b2 & 0xFF) << (2*8)) | \
@@ -80,7 +78,7 @@ MP3Codec::MP3Codec()
   m_BitsPerSample = 0;
   m_TotalTime = 0;
   m_Bitrate = 0;
-  m_CodecName = "MP3";
+  m_CodecName = "mp3";
 
   // mp3 related
   m_CallAgainWithSameBuffer = false;

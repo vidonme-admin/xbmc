@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -35,7 +35,8 @@ namespace XFILE
     static CStdString GetStackedTitlePath(const CStdString &strPath);
     static CStdString GetStackedTitlePath(const CStdString &strPath, VECCREGEXP& RegExps);
     static CStdString GetFirstStackedFile(const CStdString &strPath);
-    CStdString ConstructStackPath(const CFileItemList& items, const std::vector<int> &stack);
-    bool ConstructStackPath(const std::vector<CStdString> &paths, CStdString &stackedPath);
+    static bool GetPaths(const CStdString& strPath, std::vector<CStdString>& vecPaths);
+    static CStdString ConstructStackPath(const CFileItemList& items, const std::vector<int> &stack);
+    static bool ConstructStackPath(const std::vector<CStdString> &paths, CStdString &stackedPath);
   };
 }

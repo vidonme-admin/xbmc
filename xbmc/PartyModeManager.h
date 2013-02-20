@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -72,6 +72,7 @@ private:
   std::pair<CStdString,CStdString> GetWhereClauseWithHistory() const;
   void AddToHistory(int type, int songID);
   void GetRandomSelection(std::vector< std::pair<int,int> > &in, unsigned int number, std::vector< std::pair<int, int> > &out);
+  void Announce();
 
   // state
   bool m_bEnabled;

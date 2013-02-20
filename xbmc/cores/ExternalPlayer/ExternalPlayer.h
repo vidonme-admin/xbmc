@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -82,6 +82,8 @@ public:
 #if defined(_WIN32)
   virtual BOOL ExecuteAppW32(const char* strPath, const char* strSwitches);
   //static void CALLBACK AppFinished(void* closure, BOOLEAN TimerOrWaitFired);
+#elif defined(TARGET_ANDROID)
+  virtual BOOL ExecuteAppAndroid(const char* strSwitches,const char* strPath);
 #elif defined(_LINUX)
   virtual BOOL ExecuteAppLinux(const char* strSwitches);
 #endif

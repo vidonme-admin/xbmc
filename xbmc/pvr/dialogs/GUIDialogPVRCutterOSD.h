@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -28,9 +28,5 @@ namespace PVR
   public:
     CGUIDialogPVRCutterOSD(void);
     virtual ~CGUIDialogPVRCutterOSD(void);
-    virtual bool OnMessage(CGUIMessage& message);
-    virtual bool OnAction(const CAction& action);
-    virtual void OnInitWindow();
-    virtual void OnDeinitWindow(int nextWindowID);
   };
 }

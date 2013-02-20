@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -44,8 +44,8 @@ namespace XBMCAddon
        *  handling callbacks in the appropriate thread.
        */
       PythonCallbackHandler();
-      virtual bool isThreadStateOk();
-      virtual bool shouldRemoveCallback(void* threadState);
+      virtual bool isStateOk(AddonClass* obj);
+      virtual bool shouldRemoveCallback(AddonClass* obj, void* threadState);
     };
   }
 }

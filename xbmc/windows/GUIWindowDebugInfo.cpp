@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -37,7 +37,7 @@
 #include <climits>
 
 CGUIWindowDebugInfo::CGUIWindowDebugInfo(void)
-    : CGUIDialog(98, "")
+    : CGUIDialog(WINDOW_DEBUG_INFO, "")
 {
   m_needsScaling = false;
   m_layout = NULL;

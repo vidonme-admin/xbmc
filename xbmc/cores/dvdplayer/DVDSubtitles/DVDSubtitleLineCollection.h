@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -55,7 +55,6 @@ private:
   ListElement* m_pTail;
 
   int m_iSize;
-  double m_fLastPts;
   //CRITICAL_SECTION m_critSection;
 };
 

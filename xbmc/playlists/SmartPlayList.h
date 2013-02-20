@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -34,7 +34,7 @@ class ISmartPlaylistRule
 public:
   virtual ~ISmartPlaylistRule() { }
 
-  virtual bool Load(TiXmlElement *element, const CStdString &encoding = "UTF-8") = 0;
+  virtual bool Load(const TiXmlNode *node, const std::string &encoding = "UTF-8") = 0;
   virtual bool Load(const CVariant &obj) = 0;
   virtual bool Save(TiXmlNode *parent) const = 0;
   virtual bool Save(CVariant &obj) const = 0;
@@ -44,6 +44,7 @@ class CSmartPlaylistRule : public ISmartPlaylistRule
 {
 public:
   CSmartPlaylistRule();
+  virtual ~CSmartPlaylistRule() { }
 
   enum SEARCH_OPERATOR { OPERATOR_START = 0,
                          OPERATOR_CONTAINS,
@@ -65,7 +66,6 @@ public:
                        };
 
   enum FIELD_TYPE { TEXT_FIELD = 0,
-                    BROWSEABLE_FIELD,
                     NUMERIC_FIELD,
                     DATE_FIELD,
                     PLAYLIST_FIELD,
@@ -74,7 +74,7 @@ public:
                     TEXTIN_FIELD
                   };
 
-  virtual bool Load(TiXmlElement *element, const CStdString &encoding = "UTF-8");
+  virtual bool Load(const TiXmlNode *node, const std::string &encoding = "UTF-8");
   virtual bool Load(const CVariant &obj);
   virtual bool Save(TiXmlNode *parent) const;
   virtual bool Save(CVariant &obj) const;
@@ -88,14 +88,16 @@ public:
   static CStdString           TranslateOperator(SEARCH_OPERATOR oper);
 
   static CStdString           GetLocalizedField(Field field);
-  static CStdString           GetLocalizedOrder(SortBy order);
   static CStdString           GetLocalizedOperator(SEARCH_OPERATOR oper);
   static std::vector<Field>   GetFields(const CStdString &type);
   static std::vector<SortBy>  GetOrders(const CStdString &type);
   static FIELD_TYPE           GetFieldType(Field field);
+  static bool                 IsFieldBrowseable(Field field);
 
-  CStdString                  GetLocalizedRule(const CStdString &type) const;
-  CStdString                  GetLocalizedParameter(const CStdString &type) const;
+  CStdString                  GetLocalizedRule() const;
+  CStdString                  GetParameter() const;
+  void                        SetParameter(const CStdString &value);
+  void                        SetParameter(const std::vector<CStdString> &values);
 
   Field                       m_field;
   SEARCH_OPERATOR             m_operator;
@@ -115,13 +117,14 @@ class CSmartPlaylistRuleCombination : public ISmartPlaylistRule
 {
 public:
   CSmartPlaylistRuleCombination();
+  virtual ~CSmartPlaylistRuleCombination() { }
 
   typedef enum {
     CombinationOr = 0,
     CombinationAnd
   } Combination;
 
-  virtual bool Load(TiXmlElement *element, const CStdString &encoding = "UTF-8") { return false; }
+  virtual bool Load(const TiXmlNode *node, const std::string &encoding = "UTF-8") { return false; }
   virtual bool Load(const CVariant &obj);
   virtual bool Save(TiXmlNode *parent) const { return false; }
   virtual bool Save(CVariant &obj) const;
@@ -149,6 +152,7 @@ class CSmartPlaylist
 {
 public:
   CSmartPlaylist();
+  virtual ~CSmartPlaylist() { }
 
   bool Load(const CStdString &path);
   bool Load(const CVariant &obj);
@@ -158,8 +162,8 @@ public:
   bool Save(CVariant &obj, bool full = true) const;
   bool SaveAsJson(CStdString &json, bool full = true) const;
 
-  TiXmlElement *OpenAndReadName(const CStdString &path);
-  bool LoadFromXML(TiXmlElement *root, const CStdString &encoding = "UTF-8");
+  bool OpenAndReadName(const CStdString &path);
+  bool LoadFromXML(const TiXmlNode *root, const CStdString &encoding = "UTF-8");
 
   void Reset();
 
@@ -177,8 +181,9 @@ public:
   void SetOrder(SortBy order) { m_orderField = order; };
   SortBy GetOrder() const { return m_orderField; };
 
-  void SetOrderAscending(bool orderAscending) { m_orderAscending = orderAscending; };
-  bool GetOrderAscending() const { return m_orderAscending; };
+  void SetOrderAscending(bool orderAscending) { m_orderDirection = orderAscending ? SortOrderAscending : SortOrderDescending; };
+  bool GetOrderAscending() const { return m_orderDirection != SortOrderDescending; };
+  SortOrder GetOrderDirection() const { return m_orderDirection; }
 
   /*! \brief get the where clause for a playlist
    We handle playlists inside playlists separately in order to ensure we don't introduce infinite loops
@@ -195,14 +200,15 @@ public:
   static void GetAvailableFields(const std::string &type, std::vector<std::string> &fieldList);
   static void GetAvailableOperators(std::vector<std::string> &operatorList);
 
-  bool IsEmpty() const { return m_ruleCombination.m_rules.empty() && m_ruleCombination.m_combinations.empty(); }
+  bool IsEmpty(bool ignoreSortAndLimit = true) const;
 private:
   friend class CGUIDialogSmartPlaylistEditor;
   friend class CGUIDialogMediaFilter;
 
-  TiXmlElement* readName();
-  TiXmlElement *readNameFromXml(const CStdString &xml);
-  bool load(TiXmlElement *root);
+  const TiXmlNode* readName(const TiXmlNode *root);
+  const TiXmlNode* readNameFromPath(const CStdString &path);
+  const TiXmlNode* readNameFromXml(const CStdString &xml);
+  bool load(const TiXmlNode *root);
 
   CSmartPlaylistRuleCombination m_ruleCombination;
   CStdString m_playlistName;
@@ -211,7 +217,7 @@ private:
   // order information
   unsigned int m_limit;
   SortBy m_orderField;
-  bool m_orderAscending;
+  SortOrder m_orderDirection;
 
   CXBMCTinyXML m_xmlDoc;
 };

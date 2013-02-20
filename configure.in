@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([xbmc], [11.9.7], [http://trac.xbmc.org])
+AC_INIT([xbmc], [12.9.1], [http://trac.xbmc.org])
 AC_CONFIG_HEADERS([xbmc/config.h])
 AH_TOP([#pragma once])
 m4_include([m4/ax_python_devel.m4])
@@ -105,6 +105,8 @@ goom_disabled="== GOOM disabled. =="
 alsa_disabled="== ALSA support disabled. =="
 rsxs_enabled="== RSXS enabled. =="
 rsxs_disabled="== RSXS disabled. =="
+fishbmc_enabled="== FishBMC enabled. =="
+fishbmc_disabled="== FishBMC disabled. =="
 projectm_enabled="== ProjectM enabled. =="
 projectm_disabled="== ProjectM disabled. =="
 x11_enabled="== X11 enabled. =="
@@ -302,6 +304,12 @@ AC_ARG_ENABLE([rsxs],
   [use_rsxs=$enableval],
   [use_rsxs=yes])
 
+AC_ARG_ENABLE([fishbmc],
+  [AS_HELP_STRING([--enable-fishbmc],
+  [enable FishBMC visualisation (default is yes)])],
+  [use_fishbmc=$enableval],
+  [use_fishbmc=yes])
+
 AC_ARG_ENABLE([projectm],
   [AS_HELP_STRING([--enable-projectm],
   [enable ProjectM visualisation (default is yes)])],
@@ -483,7 +491,7 @@ AC_ARG_ENABLE([libmp3lame],
   [use_libmp3lame=$enableval],
   [use_libmp3lame=auto])
 
-AC_ARG_ENABLE([vorbisenc],
+AC_ARG_ENABLE([libvorbisenc],
   [AS_HELP_STRING([--enable-libvorbisenc],
   [enable vorbis encoder support (default is auto)])],
   [use_libvorbisenc=$enableval],
@@ -569,13 +577,11 @@ case $host in
   i386-*-freebsd*)
      ARCH="x86-freebsd"
      MAKE="gmake"
-     use_external_ffmpeg="yes"
      AC_SUBST(ARCH_DEFINES, "-DTARGET_POSIX -DTARGET_FREEBSD -D_LINUX")
      ;;
   amd64-*-freebsd*)
      ARCH="x86_64-freebsd"
      MAKE="gmake"
-     use_external_ffmpeg="yes"
      AC_SUBST(ARCH_DEFINES, "-DTARGET_POSIX -DTARGET_FREEBSD -D_LINUX")
      ;;
   arm-apple-darwin*)
@@ -681,6 +687,25 @@ case $use_platform in
      ;;
 esac
 
+# check for GIT_REV
+AC_CHECK_PROG(HAVE_GIT,git,"yes","no",)
+if test "$GIT_REV" = ""; then
+  if test -f VERSION ; then
+    GIT_REV=$(awk 'END{print substr($1,1,16)}' VERSION)
+  elif test "$HAVE_GIT" = "yes"; then
+    GIT_REV=$(git --no-pager log --abbrev=7 -n 1 --pretty=format:"%h %ci" HEAD | awk '{gsub("-", "");print $2"-"$1}')
+  else
+    GIT_REV="Unknown"
+  fi
+fi
+final_message="$final_message\n  git Rev.:\t${GIT_REV}"
+
+if test "$host_vendor" = "apple"; then
+  echo "#define GIT_REV \"$GIT_REV\"" > git_revision.h
+else
+  SDL_DEFINES="$SDL_DEFINES -D'GIT_REV=\"$GIT_REV\"'"
+fi
+
 if test "$build_shared_lib" = "yes"; then
   final_message="$final_message\n Shared lib\tYes"
   AC_SUBST(USE_LIBXBMC,1)
@@ -717,8 +742,8 @@ if test "$use_optimizations" = "yes"; then
     CXXFLAGS="$CXXFLAGS"
     CFLAGS="$CFLAGS"
   else
-    CXXFLAGS="$CXXFLAGS -O2"
-    CFLAGS="$CFLAGS -O2"
+    CXXFLAGS="-O2 $CXXFLAGS"
+    CFLAGS="-O2 $CFLAGS"
   fi
 else
   final_message="$final_message\n  Optimization:\tNo"
@@ -732,6 +757,7 @@ if echo "$ARCH" | grep -q "freebsd" ; then
   CXXFLAGS="$CXXFLAGS -I$LOCALBASE/include"
   CPPFLAGS="$CPPFLAGS -I$LOCALBASE/include"
   LDFLAGS="$LDFLAGS -L$LOCALBASE/lib"
+  FFMPEG_EXTRACFLAGS="-I$LOCALBASE/include"
 fi
 if test "$host_vendor" = "apple" ; then
   # standard xbmc paths
@@ -811,8 +837,39 @@ AC_CHECK_FUNCS([atexit dup2 fdatasync floor fs_stat_dev ftime ftruncate getcwd g
 AC_CHECK_SIZEOF([int])
 AC_CHECK_SIZEOF([size_t])
 
+# Check for intrinsics
+AC_MSG_CHECKING([for __sync_add_and_fetch(temp, 1)])
+AC_TRY_COMPILE([],[long* temp=0; __sync_add_and_fetch(temp, 1);],
+                [have_builtin_sync_add_and_fetch=yes],
+                [have_builtin_sync_add_and_fetch=no])
+AC_MSG_RESULT($have_builtin_sync_add_and_fetch)
+if test "x$have_builtin_sync_add_and_fetch" = "xyes"; then
+    AC_DEFINE(HAS_BUILTIN_SYNC_ADD_AND_FETCH, 1,
+        [Define to 1 if your compiler supports the __sync_add_and_fetch() intrinsic.])
+fi
+
+AC_MSG_CHECKING([for __sync_sub_and_fetch(temp, 1)])
+AC_TRY_COMPILE([],[long* temp=0; __sync_sub_and_fetch(temp, 1);],
+                [have_builtin_sync_sub_and_fetch=yes],
+                [have_builtin_sync_sub_and_fetch=no])
+AC_MSG_RESULT($have_builtin_sync_sub_and_fetch)
+if test "x$have_builtin_sync_sub_and_fetch" = "xyes"; then
+    AC_DEFINE(HAS_BUILTIN_SYNC_SUB_AND_FETCH, 1,
+        [Define to 1 if your compiler supports the __sync_sub_and_fetch() intrinsic.])
+fi
+
+AC_MSG_CHECKING([for __sync_val_compare_and_swap(temp, 1, 1)])
+AC_TRY_COMPILE([],[long *temp = 0; __sync_val_compare_and_swap(temp, 1, 1);],
+                [have_builtin_sync_val_compare_and_swap=yes],
+                [have_builtin_sync_val_compare_and_swap=no])
+AC_MSG_RESULT($have_builtin_sync_val_compare_and_swap)
+if test "x$have_builtin_sync_val_compare_and_swap" = "xyes"; then
+    AC_DEFINE(HAS_BUILTIN_SYNC_VAL_COMPARE_AND_SWAP, 1,
+        [Define to 1 if your compiler supports the __sync_val_compare_and_swap() intrinsic.])
+fi
+
 # Add top source directory for all builds so we can use config.h
-INCLUDES="$INCLUDES -I\$(abs_top_srcdir)"
+INCLUDES="-I\$(abs_top_srcdir) $INCLUDES" 
 
 # Check inotify availability
 AC_CHECK_HEADER([sys/inotify.h], AC_DEFINE([HAVE_INOTIFY],[1],[Define if we have inotify]),)
@@ -990,6 +1047,10 @@ AS_CASE([x$use_libbluray],
     XB_FIND_SONAME([BLURAY], [bluray], [use_libbluray])
     AC_DEFINE([HAVE_LIBBLURAY], 1, [System has libbluray library])
     AC_SUBST([HAVE_LIBBLURAY], 1)
+    AC_CHECK_LIB([bluray], [bd_register_argb_overlay_proc],
+      AC_CHECK_DECL([BD_EVENT_IDLE],
+        AC_DEFINE([HAVE_LIBBLURAY_BDJ], 1, [System has libbluray library with bdj support]),,
+        [[#include <libbluray/bluray.h>]]))
   ],[
     AC_SUBST([HAVE_LIBBLURAY], 0)
   ]
@@ -1110,15 +1171,18 @@ if test "x$use_pulse" != "xno"; then
     fi
     USE_PULSE=0
   else
-    AC_CHECK_LIB([pulse], [main],,
-      [if test "x$use_pulse" = "xyes"; then
-        AC_MSG_ERROR($pulse_not_found)
-      else
-        use_pulse=no
-        USE_PULSE=0
-        AC_MSG_RESULT($pulse_not_found)
-      fi])
+    AC_CHECK_LIB([pulse],[main],,pulse_found="no")
+    AC_CHECK_LIB([pulse-simple],[main],,pulse_found="no")
+
+    if test "x$pulse_found" != "xno"; then
       USE_PULSE=1
+    elif test "x$use_pulse" = "xyes"; then
+      AC_MSG_ERROR($pulse_not_found)
+    else
+      use_pulse=no
+      USE_PULSE=0
+      AC_MSG_RESULT($pulse_not_found)
+    fi
   fi
 else
   AC_MSG_RESULT($pulse_disabled)
@@ -1222,10 +1286,21 @@ else
   fi
 fi
 
+# FISHBMC
+if test "$use_fishbmc" = "no" || test "$use_gl" = "no"; then
+  AC_MSG_NOTICE($fishbmc_disabled)   
+  DISABLE_FISHBMC=1
+  use_fishbmc="no"
+else
+  AC_MSG_NOTICE($fishbmc_enabled)
+  DISABLE_FISHBMC=0
+fi
+
 # PROJECTM
 if test "$use_projectm" = "no" || test "$use_gl" = "no"; then
   AC_MSG_NOTICE($projectm_disabled)
   DISABLE_PROJECTM=1
+  use_projectm="no"
 else
   AC_MSG_NOTICE($projectm_enabled)
   DISABLE_PROJECTM=0
@@ -1351,7 +1426,7 @@ fi
 # libshairport for AirTunes
 USE_AIRTUNES=0
 if test "x$use_airtunes" != "xno"; then
-  AC_CHECK_HEADERS([shairport/shairport.h shairport/ao.h],,
+  AC_CHECK_HEADERS([shairport/shairport.h],,
    [if test "x$use_airtunes" = "xyes"; then
       AC_MSG_ERROR($libshairport_not_found)
     elif test "x$use_airtunes" != "xno"; then
@@ -1449,9 +1524,9 @@ if test "x$use_libcec" != "xno"; then
   # libcec is dyloaded, so we need to check for its headers and link any depends.
   if test "x$use_libcec" != "xno"; then
     if test "x$use_libcec" != "xauto"; then
-      PKG_CHECK_MODULES([CEC],[libcec >= 1.8.0],,[use_libcec="no";AC_MSG_ERROR($libcec_disabled)])
+      PKG_CHECK_MODULES([CEC],[libcec >= 2.0.0],,[use_libcec="no";AC_MSG_ERROR($libcec_disabled)])
     else
-      PKG_CHECK_MODULES([CEC],[libcec >= 1.8.0],,[use_libcec="no";AC_MSG_RESULT($libcec_disabled)])
+      PKG_CHECK_MODULES([CEC],[libcec >= 2.0.0],,[use_libcec="no";AC_MSG_RESULT($libcec_disabled)])
     fi
 
     if test "x$use_libcec" != "xno"; then
@@ -1834,8 +1909,6 @@ if test "$ARCH" = "i486-linux" || test "$ARCH" = "x86-freebsd"; then
   fi
 fi
 
-AC_CHECK_PROG(HAVE_GIT,git,"yes","no",)
-
 # Checks for header files.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
@@ -1891,7 +1964,7 @@ else
     USE_OPENGL=1
   else
     final_message="$final_message\n  OpenGL:\tNo (Very Slow)"
-    SDL_DEFINES="-DHAS_SDL_2D"
+    SDL_DEFINES="$SDL_DEFINES -DHAS_SDL_2D"
     USE_OPENGL=0
   fi
 fi
@@ -1972,6 +2045,12 @@ if test "$use_rsxs" = "yes"; then
   final_message="$final_message\n  RSXS:\t\tYes"
 else
   final_message="$final_message\n  RSXS:\t\tNo"
+fi
+
+if test "$use_fishbmc" = "yes"; then
+  final_message="$final_message\n  FishBMC:\tYes"
+else
+  final_message="$final_message\n  FishBMC:\tNo"
 fi
 
 if test "$use_projectm" = "yes"; then
@@ -2098,18 +2177,6 @@ else
   final_message="$final_message\n  Avahi:\tNo"
 fi
 
-if test "$HAVE_GIT" = "yes"; then
-  GIT_REV=$(git --no-pager log --abbrev=7 -n 1 --pretty=format:"%h %ci" HEAD | awk '{gsub("-", "");print $2"-"$1}')
-fi
-if test "$GIT_REV" = ""; then
-  GIT_REV="Unknown"
-fi
-if test "$host_vendor" = "apple"; then
-  echo "#define GIT_REV \"$GIT_REV\"" > git_revision.h
-else
-  SDL_DEFINES="$SDL_DEFINES -D'GIT_REV=\"$GIT_REV\"'"
-fi
-
 if test "$use_nonfree" = "yes"; then
   final_message="$final_message\n  Non-free:\tYes"
   HAVE_XBMC_NONFREE=1
@@ -2120,7 +2187,7 @@ else
 fi
 
 if test "$use_asap" = "yes"; then
-  AC_CHECK_PROG(HAVE_GDC,gdc,"yes","no")
+  AC_CHECK_PROGS(HAVE_GDC,gdc-4.4 gdc-4.3 gdc,"no")
   if test "$HAVE_GDC" = "no"; then
     AC_MSG_ERROR($missing_program);
   fi
@@ -2341,8 +2408,8 @@ OUTPUT_FILES="Makefile \
     xbmc/visualizations/XBMCProjectM/Makefile \
     xbmc/visualizations/Goom/Makefile \
     xbmc/visualizations/OpenGLSpectrum/Makefile \
+    xbmc/visualizations/fishBMC/Makefile \
     xbmc/visualizations/WaveForm/Makefile \
-    xbmc/visualizations/iTunes/Makefile \
     lib/addons/library.xbmc.addon/Makefile \
     lib/addons/library.xbmc.gui/Makefile \
     lib/addons/library.xbmc.pvr/Makefile \
@@ -2380,6 +2447,7 @@ AC_SUBST(SDL_DEFINES)
 AC_SUBST(BUILD_DVDCSS)
 AC_SUBST(DISABLE_GOOM)
 AC_SUBST(DISABLE_RSXS)
+AC_SUBST(DISABLE_FISHBMC)
 AC_SUBST(DISABLE_PROJECTM)
 AC_SUBST(USE_SKIN_TOUCHED)
 AC_SUBST(USE_EXTERNAL_FFMPEG)
@@ -2629,6 +2697,7 @@ XB_CONFIG_MODULE([lib/libdvd/libdvdread], [
   $MAKE dvdread-config &&
   mkdir -p `pwd`/../includes/dvdread
   cp `pwd`/../libdvdread/src/*.h `pwd`/../includes/dvdread
+  cp `pwd`/../libdvdread/src/dvdread/*.h `pwd`/../includes/dvdread
 ], [0])
 
 XB_CONFIG_MODULE([lib/libdvd/libdvdnav], [
@@ -2681,12 +2750,17 @@ XB_CONFIG_MODULE([xbmc/visualizations/Goom/goom2k4-0],[
 ], [$DISABLE_GOOM])
 
 XB_CONFIG_MODULE([xbmc/screensavers/rsxs-0.9/], [
+  if test "$host_vendor" = "apple"; then
+    TEMPCFLAGS="${CFLAGS} -fgnu89-inline";
+  else
+    TEMPCFLAGS="$CFLAGS";
+  fi
   ./configure \
     CC="$CC" \
     CXX="$CXX" \
-    CFLAGS="$CFLAGS" \ 
+    CFLAGS="$TEMPCFLAGS" \ 
     CXXFLAGS="$CXXFLAGS" \
-    `if test "$host_vendor" = "apple"; then echo --x-includes=/usr/X11/include --x-libraries=/usr/X11/lib; fi` \
+    `if test "$host_vendor" = "apple"; then echo --with-png=${prefix} --x-includes=/usr/X11/include --x-libraries=/usr/X11/lib; fi` \
     --prefix="${prefix}" --includedir="${includedir}" --libdir="${libdir}" --datadir="${datadir}" \
     --host=$host_alias \
     --build=$build_alias \
@@ -2730,11 +2804,15 @@ XB_CONFIG_MODULE([lib/gtest], [
 ], [$SKIP_CONFIG_GTEST])
 
 XB_CONFIG_MODULE([pvr-addons], [
+   if test "$USE_EXTERNAL_FFMPEG" = 1; then
+      PVR_EXT_FFMPEG="--enable-external-ffmpeg"
+   fi
   ./configure \
     --prefix="${prefix}" \
     --host=$host_alias \
     --build=$build_alias \
     --target=$target_alias \
+    $PVR_EXT_FFMPEG \
     CC="$CC" \
     CXX="$CXX" \
     CFLAGS="$CFLAGS" \

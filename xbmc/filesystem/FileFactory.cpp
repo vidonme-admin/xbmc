@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -22,10 +22,13 @@
 #if (defined HAVE_CONFIG_H) && (!defined WIN32)
   #include "config.h"
 #endif
+#include "network/Network.h"
 #include "system.h"
 #include "FileFactory.h"
 #include "HDFile.h"
 #include "CurlFile.h"
+#include "HTTPFile.h"
+#include "DAVFile.h"
 #include "ShoutcastFile.h"
 #include "LastFMFile.h"
 #include "FileReaderFile.h"
@@ -144,13 +147,11 @@ IFile* CFileFactory::CreateLoader(const CURL& url)
 
   if( g_application.getNetwork().IsAvailable() )
   {
-    if (strProtocol == "http"
-    ||  strProtocol == "https"
-    ||  strProtocol == "dav"
-    ||  strProtocol == "davs"
-    ||  strProtocol == "ftp"
+    if (strProtocol == "ftp"
     ||  strProtocol == "ftps"
     ||  strProtocol == "rss") return new CCurlFile();
+    else if (strProtocol == "http" ||  strProtocol == "https") return new CHTTPFile();
+    else if (strProtocol == "dav" || strProtocol == "davs") return new CDAVFile();
 #ifdef HAS_FILESYSTEM_SFTP
     else if (strProtocol == "sftp" || strProtocol == "ssh") return new CSFTPFile();
 #endif

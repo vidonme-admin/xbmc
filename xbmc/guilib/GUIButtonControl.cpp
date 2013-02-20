@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -299,11 +299,6 @@ void CGUIButtonControl::PythonSetLabel(const CStdString &strFont, const string &
 void CGUIButtonControl::PythonSetDisabledColor(color_t disabledColor)
 {
   m_label.GetLabelInfo().disabledColor = disabledColor;
-}
-
-void CGUIButtonControl::SettingsCategorySetTextAlign(uint32_t align)
-{
-  m_label.SetAlign(align);
 }
 
 void CGUIButtonControl::OnClick()

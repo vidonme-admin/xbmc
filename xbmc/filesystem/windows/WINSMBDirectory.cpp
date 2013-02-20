@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -199,7 +199,6 @@ bool CWINSMBDirectory::Exists(const char* strPath)
   CStdString strReplaced=GetLocal(strPath);
   CStdStringW strWReplaced;
   g_charsetConverter.utf8ToW(strReplaced, strWReplaced, false);
-  // this will fail on shares, needs a subdirectory inside a share
   DWORD attributes = GetFileAttributesW(strWReplaced);
   if(attributes == INVALID_FILE_ATTRIBUTES)
     return false;
@@ -308,7 +307,7 @@ bool CWINSMBDirectory::EnumerateFunc(LPNETRESOURCEW lpnr, CFileItemList &items)
 
         // If the NETRESOURCE structure represents a container resource,
         //  call the EnumerateFunc function recursively.
-        if (RESOURCEUSAGE_CONTAINER == (lpnrLocal[i].dwUsage & RESOURCEUSAGE_CONTAINER))
+        if(RESOURCEUSAGE_CONTAINER == (lpnrLocal[i].dwUsage & RESOURCEUSAGE_CONTAINER) && lpnrLocal[i].lpRemoteName != NULL)
           EnumerateFunc(&lpnrLocal[i], items);
       }
     }

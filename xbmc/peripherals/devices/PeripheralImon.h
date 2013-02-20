@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -29,14 +29,17 @@ namespace PERIPHERALS
     CPeripheralImon(const PeripheralType type, const PeripheralBusType busType, const CStdString &strLocation, const CStdString &strDeviceName, int iVendorId, int iProductId);
     virtual ~CPeripheralImon(void) {}
     virtual bool InitialiseFeature(const PeripheralFeature feature);
+    virtual void OnSettingChanged(const CStdString &strChangedSetting);
     virtual void OnDeviceRemoved();
+    virtual void AddSetting(const CStdString &strKey, const CSetting *setting);
     inline bool IsImonConflictsWithDInput() 
-    { return m_ImonConflictsWithDInput;}
+    { return m_bImonConflictsWithDInput;}
     static inline long GetCountOfImonsConflictWithDInput()
-    { return m_CountOfImonsConflictWithDInput; }
+    { return m_lCountOfImonsConflictWithDInput; }
     static void ActionOnImonConflict(bool deviceInserted = true);
+
   private:
-    bool m_ImonConflictsWithDInput;
-    static volatile long m_CountOfImonsConflictWithDInput;
+    bool m_bImonConflictsWithDInput;
+    static volatile long m_lCountOfImonsConflictWithDInput;
   };
 }

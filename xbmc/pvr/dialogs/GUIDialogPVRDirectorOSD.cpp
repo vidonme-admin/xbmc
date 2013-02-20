@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -38,30 +38,4 @@ CGUIDialogPVRDirectorOSD::CGUIDialogPVRDirectorOSD()
 
 CGUIDialogPVRDirectorOSD::~CGUIDialogPVRDirectorOSD()
 {
-}
-
-bool CGUIDialogPVRDirectorOSD::OnAction(const CAction& action)
-{
-  if (action.GetID() == ACTION_PREVIOUS_MENU || action.GetID() == ACTION_PARENT_DIR)
-  {
-    Close();
-    return true;
-  }
-
-  return CGUIDialog::OnAction(action);
-}
-
-bool CGUIDialogPVRDirectorOSD::OnMessage(CGUIMessage& message)
-{
-  return CGUIDialog::OnMessage(message);
-}
-
-void CGUIDialogPVRDirectorOSD::OnInitWindow()
-{
-  CGUIDialog::OnInitWindow();
-}
-
-void CGUIDialogPVRDirectorOSD::OnDeinitWindow(int nextWindowID)
-{
-  CGUIDialog::OnDeinitWindow(nextWindowID);
 }

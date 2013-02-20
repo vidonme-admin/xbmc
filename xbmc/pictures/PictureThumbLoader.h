@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@
  */
 
 #include "utils/StdString.h"
+#include "utils/JobManager.h"
 #include "ThumbLoader.h"
 
 class CPictureThumbLoader : public CThumbLoader, public CJobQueue

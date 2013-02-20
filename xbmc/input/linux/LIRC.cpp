@@ -1,5 +1,5 @@
 /*
-*      Copyright (C) 2007-2012 Team XBMC
+*      Copyright (C) 2007-2013 Team XBMC
 *      http://www.xbmc.org
 *
 *  This Program is free software; you can redistribute it and/or modify
@@ -129,7 +129,7 @@ void CRemoteControl::Initialize()
   struct sockaddr_un addr;
   unsigned int now = XbmcThreads::SystemClockMillis();
 
-  if (!m_used || (now - m_lastInitAttempt) < m_initRetryPeriod)
+  if (!m_used || (now - m_lastInitAttempt) < (unsigned int)m_initRetryPeriod)
     return;
   
   m_lastInitAttempt = now;

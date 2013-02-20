@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -261,7 +261,7 @@ void CPVRChannelGroupsContainer::SearchMissingChannelIcons(void)
   if (channelgroupradio)
     channelgroupradio->SearchAndSetChannelIcons(true);
 
-  CGUIDialogOK::ShowAndGetInput(19103,0,20177,0);
+  CGUIDialogOK::ShowAndGetInput(19167,0,20177,0);
 }
 
 CFileItemPtr CPVRChannelGroupsContainer::GetLastPlayedChannel(void) const

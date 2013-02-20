@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -57,7 +57,6 @@ extern "C"
 
   // Version.
   //
-  const char* Cocoa_GetAppVersion();
   bool Cocoa_HasVDADecoder();
   bool Cocoa_GPUForDisplayIsNvidiaPureVideo3();
   int Cocoa_GetOSVersion();

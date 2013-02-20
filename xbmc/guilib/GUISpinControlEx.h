@@ -9,7 +9,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -64,7 +64,7 @@ public:
 
   void SetItemInvalid(bool invalid);
 protected:
-  virtual void RenderText(float posX, float width);
+  virtual void RenderText(float posX, float posY, float width, float height);
   virtual bool UpdateColors();
   CGUIButtonControl m_buttonControl;
   float m_spinPosX;

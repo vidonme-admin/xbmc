@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ bool CScreenSaver::CreateScreenSaver()
   if (URIUtils::GetExtension(LibPath()).Equals(".py", false))
   {
     // Don't allow a previously-scheduled alarm to kill our new screensaver
-    g_alarmClock.Stop(PYTHON_ALARM);
+    g_alarmClock.Stop(PYTHON_ALARM, true);
 
     if (!g_pythonParser.StopScript(LibPath()))
       g_pythonParser.evalFile(LibPath(), AddonPtr(new CScreenSaver(Props())));

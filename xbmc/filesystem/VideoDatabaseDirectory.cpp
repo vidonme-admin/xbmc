@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ bool CVideoDatabaseDirectory::GetDirectory(const CStdString& strPath, CFileItemL
   for (int i=0;i<items.Size();++i)
   {
     CFileItemPtr item = items[i];
-    if (item->m_bIsFolder && !item->HasIcon() && !item->HasThumbnail())
+    if (item->m_bIsFolder && !item->HasIcon() && !item->HasArt("thumb"))
     {
       CStdString strImage = GetIcon(item->GetPath());
       if (!strImage.IsEmpty() && g_TextureManager.HasTexture(strImage))

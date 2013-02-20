@@ -1,6 +1,6 @@
 #pragma once
 /*
-*      Copyright (C) 2010-2012 Team XBMC
+*      Copyright (C) 2010-2013 Team XBMC
 *      http://www.xbmc.org
 *
 *  This Program is free software; you can redistribute it and/or modify
@@ -43,7 +43,9 @@ public:
     virtual double       GetCacheTime                ();
     virtual double       GetCacheTotal               ();
     virtual unsigned int AddPackets                  (uint8_t *data, unsigned int frames, bool hasAudio);
-    static  void         EnumerateDevicesEx          (AEDeviceInfoList &deviceInfoList);
+    virtual bool         SoftSuspend                 ();
+    virtual bool         SoftResume                  ();
+    static  void         EnumerateDevicesEx          (AEDeviceInfoList &deviceInfoList, bool force = false);
 private:
     bool         InitializeExclusive(AEAudioFormat &format);
     void         AEChannelsFromSpeakerMask(DWORD speakers);
@@ -70,6 +72,7 @@ private:
 
     bool                m_running;
     bool                m_initialized;
+    bool                m_isSuspended;    /* sink is in a suspended state - release audio device */
     bool                m_isDirty;        /* sink output failed - needs re-init or new device */
 
     unsigned int        m_uiBufferLen;    /* wasapi endpoint buffer size, in frames */

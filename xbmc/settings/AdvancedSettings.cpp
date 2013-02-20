@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -127,11 +127,6 @@ void CAdvancedSettings::Initialize()
   m_slideshowZoomAmount = 5.0f;
   m_slideshowBlackBarCompensation = 20.0f;
 
-  m_lcdHeartbeat = false;
-  m_lcdDimOnScreenSave = false;
-  m_lcdScrolldelay = 1;
-  m_lcdHostName = "localhost";
-
   m_songInfoDuration = 10;
 
   m_cddbAddress = "freedb.freedb.org";
@@ -195,7 +190,6 @@ void CAdvancedSettings::Initialize()
   m_bFTPThumbs = false;
 
   m_musicThumbs = "folder.jpg|Folder.jpg|folder.JPG|Folder.JPG|cover.jpg|Cover.jpg|cover.jpeg|thumb.jpg|Thumb.jpg|thumb.JPG|Thumb.JPG";
-  m_dvdThumbs = "folder.jpg|Folder.jpg|folder.JPG|Folder.JPG";
   m_fanartImages = "fanart.jpg|fanart.png";
 
   m_bMusicLibraryHideAllItems = false;
@@ -210,6 +204,7 @@ void CAdvancedSettings::Initialize()
 
   m_bVideoLibraryHideAllItems = false;
   m_bVideoLibraryAllItemsOnBottom = false;
+  m_iVideoLibraryRecentlyAddedItems = 25;
   m_bVideoLibraryHideEmptySeries = false;
   m_bVideoLibraryCleanOnUpdate = false;
   m_bVideoLibraryExportAutoThumbs = false;
@@ -237,6 +232,7 @@ void CAdvancedSettings::Initialize()
   m_iEpgCleanupInterval = 900;     /* remove old entries from the EPG every 15 minutes */
   m_iEpgActiveTagCheckInterval = 60; /* check for updated active tags every minute */
   m_iEpgRetryInterruptedUpdateInterval = 30; /* retry an interrupted epg update after 30 seconds */
+  m_iEpgUpdateEmptyTagsInterval = 60; /* override user selectable EPG update interval for empty EPG tags */
   m_bEpgDisplayUpdatePopup = true; /* display a progress popup while updating EPG data from clients */
   m_bEpgDisplayIncrementalUpdatePopup = false; /* also display a progress popup while doing incremental EPG updates */
 
@@ -294,11 +290,14 @@ void CAdvancedSettings::Initialize()
   m_iPVRMinVideoCacheLevel         = 5;
   m_iPVRMinAudioCacheLevel         = 10;
   m_bPVRCacheInDvdPlayer           = true;
+  m_bPVRChannelIconsAutoScan       = true;
+  m_bPVRAutoScanIconsUserSet       = false;
+  m_iPVRNumericChannelSwitchTimeout = 1000;
 
   m_measureRefreshrate = false;
 
   m_cacheMemBufferSize = 1024 * 1024 * 20;
-  m_addonPackageFolderSize = 200*1024*1024;
+  m_addonPackageFolderSize = 200;
 
   m_jsonOutputCompact = true;
   m_jsonTcpPort = 9090;
@@ -317,7 +316,7 @@ void CAdvancedSettings::Initialize()
   m_databaseMusic.Reset();
   m_databaseVideo.Reset();
 
-  m_logLevelHint = m_logLevel = LOG_LEVEL_NONE;
+  m_logLevelHint = m_logLevel = LOG_LEVEL_NORMAL;
 }
 
 bool CAdvancedSettings::Load()
@@ -642,6 +641,7 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
   {
     XMLUtils::GetBoolean(pElement, "hideallitems", m_bVideoLibraryHideAllItems);
     XMLUtils::GetBoolean(pElement, "allitemsonbottom", m_bVideoLibraryAllItemsOnBottom);
+    XMLUtils::GetInt(pElement, "recentlyaddeditems", m_iVideoLibraryRecentlyAddedItems, 1, INT_MAX);
     XMLUtils::GetBoolean(pElement, "hideemptyseries", m_bVideoLibraryHideEmptySeries);
     XMLUtils::GetBoolean(pElement, "cleanonupdate", m_bVideoLibraryCleanOnUpdate);
     XMLUtils::GetString(pElement, "itemseparator", m_videoItemSeparator);
@@ -671,14 +671,6 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetFloat(pElement, "blackbarcompensation", m_slideshowBlackBarCompensation, 0.0f, 50.0f);
   }
 
-  pElement = pRootElement->FirstChildElement("lcd");
-  if (pElement)
-  {
-    XMLUtils::GetBoolean(pElement, "heartbeat", m_lcdHeartbeat);
-    XMLUtils::GetBoolean(pElement, "dimonscreensave", m_lcdDimOnScreenSave);
-    XMLUtils::GetInt(pElement, "scrolldelay", m_lcdScrolldelay, -8, 8);
-    XMLUtils::GetString(pElement, "hostname", m_lcdHostName);
-  }
   pElement = pRootElement->FirstChildElement("network");
   if (pElement)
   {
@@ -795,6 +787,7 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetInt(pElement, "cleanupinterval", m_iEpgCleanupInterval);
     XMLUtils::GetInt(pElement, "activetagcheckinterval", m_iEpgActiveTagCheckInterval);
     XMLUtils::GetInt(pElement, "retryinterruptedupdateinterval", m_iEpgRetryInterruptedUpdateInterval);
+    XMLUtils::GetInt(pElement, "updateemptytagsinterval", m_iEpgUpdateEmptyTagsInterval);
     XMLUtils::GetBoolean(pElement, "displayupdatepopup", m_bEpgDisplayUpdatePopup);
     XMLUtils::GetBoolean(pElement, "displayincrementalupdatepopup", m_bEpgDisplayIncrementalUpdatePopup);
   }
@@ -915,8 +908,8 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
 
   XMLUtils::GetInt(pRootElement, "remotedelay", m_remoteDelay, 1, 20);
   XMLUtils::GetFloat(pRootElement, "controllerdeadzone", m_controllerDeadzone, 0.0f, 1.0f);
-  XMLUtils::GetInt(pRootElement, "fanartres", m_fanartRes, 0, 1080);
-  XMLUtils::GetInt(pRootElement, "imageres", m_imageRes, 0, 1080);
+  XMLUtils::GetUInt(pRootElement, "fanartres", m_fanartRes, 0, 1080);
+  XMLUtils::GetUInt(pRootElement, "imageres", m_imageRes, 0, 1080);
   XMLUtils::GetBoolean(pRootElement, "useddsfanart", m_useDDSFanart);
 
   XMLUtils::GetBoolean(pRootElement, "playlistasfolders", m_playlistAsFolders);
@@ -926,11 +919,6 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
   TiXmlElement* pThumbs = pRootElement->FirstChildElement("musicthumbs");
   if (pThumbs)
     GetCustomExtensions(pThumbs,m_musicThumbs);
-
-  // dvd thumbs
-  pThumbs = pRootElement->FirstChildElement("dvdthumbs");
-  if (pThumbs)
-    GetCustomExtensions(pThumbs,m_dvdThumbs);
 
   // movie fanarts
   TiXmlElement* pFanart = pRootElement->FirstChildElement("fanart");
@@ -984,6 +972,9 @@ void CAdvancedSettings::ParseSettingsFile(const CStdString &file)
     XMLUtils::GetInt(pPVR, "minvideocachelevel", m_iPVRMinVideoCacheLevel, 0, 100);
     XMLUtils::GetInt(pPVR, "minaudiocachelevel", m_iPVRMinAudioCacheLevel, 0, 100);
     XMLUtils::GetBoolean(pPVR, "cacheindvdplayer", m_bPVRCacheInDvdPlayer);
+    XMLUtils::GetBoolean(pPVR, "channeliconsautoscan", m_bPVRChannelIconsAutoScan);
+    XMLUtils::GetBoolean(pPVR, "autoscaniconsuserset", m_bPVRAutoScanIconsUserSet);
+    XMLUtils::GetInt(pPVR, "numericchannelswitchtimeout", m_iPVRNumericChannelSwitchTimeout, 50, 60000);
   }
 
   XMLUtils::GetBoolean(pRootElement, "measurerefreshrate", m_measureRefreshrate);
@@ -1066,52 +1057,58 @@ void CAdvancedSettings::Clear()
 
 void CAdvancedSettings::GetCustomTVRegexps(TiXmlElement *pRootElement, SETTINGS_TVSHOWLIST& settings)
 {
-  int iAction = 0; // overwrite
-  // for backward compatibility
-  const char* szAppend = pRootElement->Attribute("append");
-  if ((szAppend && stricmp(szAppend, "yes") == 0))
-    iAction = 1;
-  // action takes precedence if both attributes exist
-  const char* szAction = pRootElement->Attribute("action");
-  if (szAction)
+  TiXmlElement *pElement = pRootElement;
+  while (pElement)
   {
-    iAction = 0; // overwrite
-    if (stricmp(szAction, "append") == 0)
-      iAction = 1; // append
-    else if (stricmp(szAction, "prepend") == 0)
-      iAction = 2; // prepend
-  }
-  if (iAction == 0)
-    settings.clear();
-  TiXmlNode* pRegExp = pRootElement->FirstChild("regexp");
-  int i = 0;
-  while (pRegExp)
-  {
-    if (pRegExp->FirstChild())
+    int iAction = 0; // overwrite
+    // for backward compatibility
+    const char* szAppend = pElement->Attribute("append");
+    if ((szAppend && stricmp(szAppend, "yes") == 0))
+      iAction = 1;
+    // action takes precedence if both attributes exist
+    const char* szAction = pElement->Attribute("action");
+    if (szAction)
     {
-      bool bByDate = false;
-      int iDefaultSeason = 1;
-      if (pRegExp->ToElement())
-      {
-        CStdString byDate = pRegExp->ToElement()->Attribute("bydate");
-        if(byDate && stricmp(byDate, "true") == 0)
-        {
-          bByDate = true;
-        }
-        CStdString defaultSeason = pRegExp->ToElement()->Attribute("defaultseason");
-        if(!defaultSeason.empty())
-        {
-          iDefaultSeason = atoi(defaultSeason.c_str());
-        }
-      }
-      CStdString regExp = pRegExp->FirstChild()->Value();
-      regExp.MakeLower();
-      if (iAction == 2)
-        settings.insert(settings.begin() + i++, 1, TVShowRegexp(bByDate,regExp,iDefaultSeason));
-      else
-        settings.push_back(TVShowRegexp(bByDate,regExp,iDefaultSeason));
+      iAction = 0; // overwrite
+      if (stricmp(szAction, "append") == 0)
+        iAction = 1; // append
+      else if (stricmp(szAction, "prepend") == 0)
+        iAction = 2; // prepend
     }
-    pRegExp = pRegExp->NextSibling("regexp");
+    if (iAction == 0)
+      settings.clear();
+    TiXmlNode* pRegExp = pElement->FirstChild("regexp");
+    int i = 0;
+    while (pRegExp)
+    {
+      if (pRegExp->FirstChild())
+      {
+        bool bByDate = false;
+        int iDefaultSeason = 1;
+        if (pRegExp->ToElement())
+        {
+          CStdString byDate = pRegExp->ToElement()->Attribute("bydate");
+          if(byDate && stricmp(byDate, "true") == 0)
+          {
+            bByDate = true;
+          }
+          CStdString defaultSeason = pRegExp->ToElement()->Attribute("defaultseason");
+          if(!defaultSeason.empty())
+          {
+            iDefaultSeason = atoi(defaultSeason.c_str());
+          }
+        }
+        CStdString regExp = pRegExp->FirstChild()->Value();
+        regExp.MakeLower();
+        if (iAction == 2)
+          settings.insert(settings.begin() + i++, 1, TVShowRegexp(bByDate,regExp,iDefaultSeason));
+        else
+          settings.push_back(TVShowRegexp(bByDate,regExp,iDefaultSeason));
+      }
+      pRegExp = pRegExp->NextSibling("regexp");
+    }
+
+    pElement = pElement->NextSiblingElement(pRootElement->Value());
   }
 }
 

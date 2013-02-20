@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,8 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
+
+#include <vector>
 
 #include "FileItem.h"
 #include "PVRChannelGroup.h"
@@ -105,6 +107,13 @@ namespace PVR
      * @return The last group in this container.
      */
     CPVRChannelGroupPtr GetLastGroup(void) const;
+    
+    /*!
+     * @brief Get the list of groups.
+     * @param groups The list to store the results in.
+     * @return The amount of items that were added.
+     */
+    std::vector<CPVRChannelGroupPtr> GetMembers() const;
 
     /*!
      * @brief Get the list of groups.

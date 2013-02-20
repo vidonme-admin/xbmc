@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -37,6 +37,8 @@
 #include "guilib/LocalizeStrings.h"
 #include "TextureCache.h"
 #include "music/Album.h"
+#include "storage/MediaManager.h"
+#include "GUIDialogMusicInfo.h"
 
 using namespace XFILE;
 
@@ -103,7 +105,7 @@ bool CGUIDialogSongInfo::OnMessage(CGUIMessage& message)
       }
       else if (iControl == CONTROL_ALBUMINFO)
       {
-        CGUIWindowMusicBase *window = (CGUIWindowMusicBase *)g_windowManager.GetWindow(g_windowManager.GetActiveWindow());
+        CGUIWindowMusicBase *window = (CGUIWindowMusicBase *)g_windowManager.GetWindow(WINDOW_MUSIC_NAV);
         if (window)
         {
           CFileItem item(*m_song);
@@ -140,6 +142,11 @@ bool CGUIDialogSongInfo::OnAction(const CAction &action)
   {
     if (rating > '0')
       SetRating(rating - 1);
+    return true;
+  }
+  else if (action.GetID() == ACTION_SHOW_INFO)
+  {
+    Close();
     return true;
   }
   return CGUIDialog::OnAction(action);
@@ -241,16 +248,16 @@ void CGUIDialogSongInfo::OnGetThumb()
   if (DownloadThumbnail(thumbFromWeb))
   {
     CFileItemPtr item(new CFileItem("thumb://allmusic.com", false));
-    item->SetThumbnailImage(thumbFromWeb);
+    item->SetArt("thumb", thumbFromWeb);
     item->SetLabel(g_localizeStrings.Get(20055));
     items.Add(item);
   }*/
 
   // Current thumb
-  if (CFile::Exists(m_song->GetThumbnailImage()))
+  if (CFile::Exists(m_song->GetArt("thumb")))
   {
     CFileItemPtr item(new CFileItem("thumb://Current", false));
-    item->SetThumbnailImage(m_song->GetThumbnailImage());
+    item->SetArt("thumb", m_song->GetArt("thumb"));
     item->SetLabel(g_localizeStrings.Get(20016));
     items.Add(item);
   }
@@ -266,7 +273,7 @@ void CGUIDialogSongInfo::OnGetThumb()
   if (CFile::Exists(localThumb))
   {
     CFileItemPtr item(new CFileItem("thumb://Local", false));
-    item->SetThumbnailImage(localThumb);
+    item->SetArt("thumb", localThumb);
     item->SetLabel(g_localizeStrings.Get(20017));
     items.Add(item);
   }
@@ -275,13 +282,16 @@ void CGUIDialogSongInfo::OnGetThumb()
     // which is probably the allmusic.com thumb.  These could be wrong, so allow the user
     // to delete the incorrect thumb
     CFileItemPtr item(new CFileItem("thumb://None", false));
-    item->SetThumbnailImage("DefaultAlbumCover.png");
+    item->SetArt("thumb", "DefaultAlbumCover.png");
     item->SetLabel(g_localizeStrings.Get(20018));
     items.Add(item);
   }
 
   CStdString result;
-  if (!CGUIDialogFileBrowser::ShowAndGetImage(items, g_settings.m_musicSources, g_localizeStrings.Get(1030), result))
+  VECSOURCES sources(g_settings.m_musicSources);
+  CGUIDialogMusicInfo::AddItemPathToFileBrowserSources(sources, *m_song);
+  g_mediaManager.GetLocalDrives(sources);
+  if (!CGUIDialogFileBrowser::ShowAndGetImage(items, sources, g_localizeStrings.Get(1030), result))
     return;   // user cancelled
 
   if (result == "thumb://Current")
@@ -308,7 +318,7 @@ void CGUIDialogSongInfo::OnGetThumb()
     db.Close();
   }
 
-  m_song->SetThumbnailImage(newThumb);
+  m_song->SetArt("thumb", newThumb);
 
   // tell our GUI to completely reload all controls (as some of them
   // are likely to have had this image in use so will need refreshing)

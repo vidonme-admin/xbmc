@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -269,7 +269,7 @@ int StringUtils::SplitString(const CStdString& input, const CStdString& delimite
     newPos = input.Find (delimiter, iPos + sizeS2);
   }
 
-  // numFound is the number of delimeters which is one less
+  // numFound is the number of delimiters which is one less
   // than the number of substrings
   unsigned int numFound = positions.size();
   if (iMaxStrings > 0 && numFound >= iMaxStrings)
@@ -322,7 +322,7 @@ vector<string> StringUtils::Split(const CStdString& input, const CStdString& del
   return strArray;
 }
 
-// returns the number of occurences of strFind in strInput.
+// returns the number of occurrences of strFind in strInput.
 int StringUtils::FindNumber(const CStdString& strInput, const CStdString &strFind)
 {
   int pos = strInput.Find(strFind, 0);
@@ -417,17 +417,20 @@ int StringUtils::DateStringToYYYYMMDD(const CStdString &dateString)
 
 long StringUtils::TimeStringToSeconds(const CStdString &timeString)
 {
-  if(timeString.Right(4).Equals(" min"))
+  CStdString strCopy(timeString);
+  strCopy.TrimLeft(" \n\r\t");
+  strCopy.TrimRight(" \n\r\t");
+  if(strCopy.Right(4).Equals(" min"))
   {
     // this is imdb format of "XXX min"
-    return 60 * atoi(timeString.c_str());
+    return 60 * atoi(strCopy.c_str());
   }
   else
   {
     CStdStringArray secs;
-    StringUtils::SplitString(timeString, ":", secs);
+    StringUtils::SplitString(strCopy, ":", secs);
     int timeInSecs = 0;
-    for (unsigned int i = 0; i < secs.size(); i++)
+    for (unsigned int i = 0; i < 3 && i < secs.size(); i++)
     {
       timeInSecs *= 60;
       timeInSecs += atoi(secs[i]);
@@ -487,39 +490,6 @@ bool StringUtils::IsInteger(const CStdString& str)
   while (i < str.size() && isspace((unsigned char) str[i]))
     i++;
   return i == str.size() && n > 0;
-}
-
-bool StringUtils::Test()
-{
-  bool ret = true;
-
-  ret |= IsNaturalNumber("10");
-  ret |= IsNaturalNumber(" 10");
-  ret |= IsNaturalNumber("0");
-  ret |= !IsNaturalNumber(" 1 0");
-  ret |= !IsNaturalNumber("1.0");
-  ret |= !IsNaturalNumber("1.1");
-  ret |= !IsNaturalNumber("0x1");
-  ret |= !IsNaturalNumber("blah");
-  ret |= !IsNaturalNumber("120 h");
-  ret |= !IsNaturalNumber(" ");
-  ret |= !IsNaturalNumber("");
-  ret |= !IsNaturalNumber("ייטט");
-
-  ret |= IsInteger("10");
-  ret |= IsInteger(" -10");
-  ret |= IsInteger("0");
-  ret |= !IsInteger(" 1 0");
-  ret |= !IsInteger("1.0");
-  ret |= !IsInteger("1.1");
-  ret |= !IsInteger("0x1");
-  ret |= !IsInteger("blah");
-  ret |= !IsInteger("120 h");
-  ret |= !IsInteger(" ");
-  ret |= !IsInteger("");
-  ret |= !IsInteger("ייטט");
-
-  return ret;
 }
 
 void StringUtils::RemoveCRLF(CStdString& strLine)
@@ -704,8 +674,8 @@ size_t StringUtils::utf8_strlen(const char *s)
   size_t length = 0;
   while (*s)
   {
-		if ((*s++ & 0xC0) != 0x80)
-			length++;
-	}
-	return length;
+    if ((*s++ & 0xC0) != 0x80)
+      length++;
+  }
+  return length;
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2006-2012 Team XBMC
+ *      Copyright (C) 2006-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -91,6 +91,14 @@ public:
     long count = AtomicDecrement(&m_references);
     if (count == 0) delete this;
     return count;
+  }
+
+  /**
+   * static release function for use with boost shared ptr for example
+   */
+  static void Release(CDVDOverlay* ov)
+  {
+    ov->Release();
   }
 
   bool IsOverlayType(DVDOverlayType type) { return (m_type == type); }

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -112,7 +112,10 @@ bool CEdl::ReadEditDecisionLists(const CStdString& strMovie, const float fFrameR
    * Only check for edit decision lists if the movie is on the local hard drive, or accessed over a
    * network share.
    */
-  if ((URIUtils::IsHD(strMovie) ||  URIUtils::IsSmb(strMovie)) &&
+  if ((URIUtils::IsHD(strMovie)  || 
+       URIUtils::IsSmb(strMovie) || 
+       URIUtils::IsNfs(strMovie) || 
+       URIUtils::IsAfp(strMovie))         &&
       !URIUtils::IsPVRRecording(strMovie) &&
       !URIUtils::IsInternetStream(strMovie))
   {

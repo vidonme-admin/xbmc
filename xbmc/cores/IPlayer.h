@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 #include "system.h" // until we get sane int types used here
 #include "IAudioCallback.h"
 #include "utils/StdString.h"
+#include "guilib/Geometry.h"
 
 struct TextCacheStruct_t;
 class TiXmlElement;
@@ -69,7 +70,6 @@ public:
 };
 
 class CFileItem;
-class CRect;
 
 enum IPlayerAudioCapabilities
 {
@@ -114,7 +114,9 @@ public:
   virtual void SeekPercentage(float fPercent = 0){}
   virtual float GetPercentage(){ return 0;}
   virtual float GetCachePercentage(){ return 0;}
+  virtual void SetMute(bool bOnOff){}
   virtual void SetVolume(float volume){}
+  virtual bool ControlsVolume(){ return false;}
   virtual void SetDynamicRangeCompression(long drc){}
   virtual void GetAudioInfo( CStdString& strAudioInfo) = 0;
   virtual void GetVideoInfo( CStdString& strVideoInfo) = 0;

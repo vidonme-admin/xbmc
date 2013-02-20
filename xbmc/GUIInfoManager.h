@@ -7,7 +7,7 @@
 #define GUIINFOMANAGER_H_
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -103,9 +103,11 @@ namespace INFO
 #define PLAYER_FILEPATH              46
 #define PLAYER_SEEKOFFSET            47
 #define PLAYER_PROGRESS_CACHE        48
-#define PLAYER_ITEM_PROPERTY         49
+#define PLAYER_ITEM_ART              49
 #define PLAYER_CAN_PAUSE             50
 #define PLAYER_CAN_SEEK              51
+#define PLAYER_START_TIME            52
+#define PLAYER_TITLE                 53
 
 #define WEATHER_CONDITIONS          100
 #define WEATHER_TEMPERATURE         101
@@ -160,21 +162,6 @@ namespace INFO
 #define SYSTEM_HDD_LOCKSTATE        157
 #define SYSTEM_HDD_LOCKKEY          158
 #define SYSTEM_INTERNET_STATE       159
-#define LCD_PLAY_ICON               160
-#define LCD_PROGRESS_BAR            161
-#define LCD_CPU_TEMPERATURE         162
-#define LCD_GPU_TEMPERATURE         163
-#define LCD_HDD_TEMPERATURE         164
-#define LCD_FAN_SPEED               165
-#define LCD_DATE                    166
-#define LCD_TIME_21                 172 // Small bigfont
-#define LCD_TIME_22                 173
-#define LCD_TIME_W21                174 // Medum bigfont
-#define LCD_TIME_W22                175
-#define LCD_TIME_41                 176 // Big bigfont
-#define LCD_TIME_42                 177
-#define LCD_TIME_43                 178
-#define LCD_TIME_44                 179
 #define SYSTEM_ALARM_LESS_OR_EQUAL  180
 #define SYSTEM_PROFILECOUNT         181
 #define SYSTEM_ISFULLSCREEN         182
@@ -500,9 +487,9 @@ namespace INFO
 #define CONTROL_GROUP_HAS_FOCUS     29999
 #define CONTROL_HAS_FOCUS           30000
 
-#define VERSION_MAJOR 12
+#define VERSION_MAJOR 13
 #define VERSION_MINOR 0
-#define VERSION_TAG "-ALPHA7"
+#define VERSION_TAG "-ALPHA1"
 
 #define LISTITEM_START              35000
 #define LISTITEM_THUMB              (LISTITEM_START)
@@ -618,7 +605,8 @@ namespace INFO
 #define LISTITEM_PROPERTY_END       (LISTITEM_PROPERTY_START + 1000)
 #define LISTITEM_END                (LISTITEM_PROPERTY_END)
 
-#define MUSICPLAYER_PROPERTY_OFFSET 900 // last 100 id's reserved for musicplayer props.
+#define MUSICPLAYER_PROPERTY_OFFSET 800 // 100 id's reserved for musicplayer props.
+#define LISTITEM_ART_OFFSET         900 // 100 id's reserved for listitem art.
 
 #define CONDITIONAL_LABEL_START       LISTITEM_END + 1 // 36001
 #define CONDITIONAL_LABEL_END         37000
@@ -631,6 +619,7 @@ namespace INFO
 // forward
 class CInfoLabel;
 class CGUIWindow;
+namespace EPG { class CEpgInfoTag; }
 
 // Info Flags
 // Stored in the top 8 bits of GUIInfo::m_data1
@@ -722,7 +711,6 @@ public:
   CStdString GetImage(int info, int contextWindow, CStdString *fallback = NULL);
 
   CStdString GetTime(TIME_FORMAT format = TIME_FORMAT_GUESS) const;
-  CStdString GetLcdTime( int _eInfo ) const;
   CStdString GetDate(bool bNumbersOnly = false);
   CStdString GetDuration(TIME_FORMAT format = TIME_FORMAT_GUESS) const;
 
@@ -860,6 +848,13 @@ protected:
   int AddListItemProp(const CStdString &str, int offset=0);
 
   CStdString GetAudioScrobblerLabel(int item);
+
+  /*!
+   * @brief Get the EPG tag that is currently active
+   * @param tag The active tag
+   * @return True if an EPG tag is active and 'tag' was updated, false otherwise
+   */
+  bool GetEpgInfoTag(EPG::CEpgInfoTag& tag) const;
 
   // Conditional string parameters are stored here
   CStdStringArray m_stringParameters;

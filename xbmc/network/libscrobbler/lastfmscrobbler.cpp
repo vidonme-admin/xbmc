@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -101,7 +101,6 @@ bool CLastfmScrobbler::CanScrobble()
 {
   return (!g_guiSettings.GetString("scrobbler.lastfmusername").IsEmpty()  &&
           !g_guiSettings.GetString("scrobbler.lastfmpass").IsEmpty()  &&
-         (g_guiSettings.GetBool("scrobbler.lastfmsubmit") ||
-          g_guiSettings.GetBool("scrobbler.lastfmsubmitradio")));
+          g_guiSettings.GetBool("scrobbler.lastfmsubmit"));
 }
 

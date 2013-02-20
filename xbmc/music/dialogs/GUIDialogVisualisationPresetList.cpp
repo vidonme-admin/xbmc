@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -67,16 +67,6 @@ bool CGUIDialogVisualisationPresetList::OnMessage(CGUIMessage &message)
       }
     }
     break;
-  case GUI_MSG_WINDOW_INIT:
-    {
-      CGUIDialog::OnMessage(message);
-
-      CGUIMessage msg(GUI_MSG_GET_VISUALISATION, 0, 0);
-      g_windowManager.SendMessage(msg);
-      SetVisualisation((CVisualisation*)msg.GetPointer());
-      return true;
-    }
-    break;
   case GUI_MSG_WINDOW_DEINIT:
   case GUI_MSG_VISUALISATION_UNLOADING:
     {
@@ -120,6 +110,14 @@ void CGUIDialogVisualisationPresetList::FrameMove()
     }
   }
   CGUIDialog::FrameMove();
+}
+
+void CGUIDialogVisualisationPresetList::OnInitWindow()
+{
+  CGUIMessage msg(GUI_MSG_GET_VISUALISATION, 0, 0);
+  g_windowManager.SendMessage(msg);
+  SetVisualisation((CVisualisation*)msg.GetPointer());
+  CGUIDialog::OnInitWindow();
 }
 
 void CGUIDialogVisualisationPresetList::Update()

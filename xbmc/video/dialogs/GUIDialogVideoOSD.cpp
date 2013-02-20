@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -60,7 +60,7 @@ void CGUIDialogVideoOSD::FrameMove()
 
 bool CGUIDialogVideoOSD::OnAction(const CAction &action)
 {
-  if (action.GetID() == ACTION_NEXT_ITEM || action.GetID() == ACTION_PREV_ITEM)
+  if (action.GetID() == ACTION_NEXT_ITEM || action.GetID() == ACTION_PREV_ITEM || action.GetID() == ACTION_CHANNEL_UP || action.GetID() == ACTION_CHANNEL_DOWN)
   {
     // these could indicate next chapter if video supports it
     if (g_application.m_pPlayer != NULL && g_application.m_pPlayer->OnAction(action))

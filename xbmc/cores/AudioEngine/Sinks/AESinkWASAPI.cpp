@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -270,7 +270,7 @@ bool CAESinkWASAPI::Initialize(AEAudioFormat &format, std::string &device)
 
     hr = pProperty->GetValue(PKEY_AudioEndpoint_GUID, &varName);
 
-    std::string strDevName = localWideToUtf(varName.pwszVal);
+    device = localWideToUtf(varName.pwszVal);
     PropVariantClear(&varName);
     SAFE_RELEASE(pProperty);
   }
@@ -331,7 +331,8 @@ void CAESinkWASAPI::Deinitialize()
   {
     try
     {
-    m_pAudioClient->Stop();
+    m_pAudioClient->Stop();  //stop the audio output
+    m_pAudioClient->Reset(); //flush buffer and reset audio clock stream position
     }
     catch (...)
     {
@@ -537,7 +538,28 @@ unsigned int CAESinkWASAPI::AddPackets(uint8_t *data, unsigned int frames, bool 
   return NumFramesRequested;
 }
 
-void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList)
+bool CAESinkWASAPI::SoftSuspend()
+{
+  /* Sink has been asked to suspend output - we release audio   */
+  /* device as we are in exclusive mode and thus allow external */
+  /* audio sources to play. This requires us to reinitialize    */
+  /* on resume.                                                 */
+
+  Deinitialize();
+
+  return true;
+}
+
+bool CAESinkWASAPI::SoftResume()
+{
+  /* Sink asked to resume output. To release audio device in    */
+  /* exclusive mode we release the device context and therefore */
+  /* must reinitialize. Return false to force re-init by engine */
+
+  return false;
+}
+
+void CAESinkWASAPI::EnumerateDevicesEx(AEDeviceInfoList &deviceInfoList, bool force)
 {
   IMMDeviceEnumerator* pEnumerator = NULL;
   IMMDeviceCollection* pEnumDevices = NULL;

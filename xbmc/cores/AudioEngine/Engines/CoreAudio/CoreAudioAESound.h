@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,9 +19,9 @@
  *
  */
 
-#include "Interfaces/AESound.h"
+#include "cores/AudioEngine/Interfaces/AESound.h"
+#include "cores/AudioEngine/Utils/AEWAVLoader.h"
 #include "threads/CriticalSection.h"
-#include "Utils/AEWAVLoader.h"
 
 class CCoreAudioAESound : public IAESound
 {

@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,8 +24,9 @@
 #include "JSONRPC.h"
 #include "JSONUtils.h"
 #include "FileItem.h"
-#include "ThumbLoader.h"
 #include "utils/StdString.h"
+
+class CThumbLoader;
 
 namespace JSONRPC
 {

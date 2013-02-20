@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@
  */
 
 #include "IDirectory.h"
+#include <set>
 
 namespace XFILE
 {
@@ -34,10 +35,11 @@ public:
   virtual bool Remove(const char* strPath);
 
   static CStdString GetFirstPath(const CStdString &strPath);
-  static bool SupportsFileOperations(const CStdString &strPath);
+  static bool SupportsWriteFileOperations(const CStdString &strPath);
   static bool GetPaths(const CStdString& strPath, std::vector<CStdString>& vecPaths);
   static bool HasPath(const CStdString& strPath, const CStdString& strPathToFind);
   static CStdString ConstructMultiPath(const std::vector<CStdString> &vecPaths);
+  static CStdString ConstructMultiPath(const std::set<CStdString> &setPaths);
 
 private:
   void MergeItems(CFileItemList &items);

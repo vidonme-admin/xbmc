@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  * This Program is free software; you can redistribute it and/or modify
@@ -42,6 +42,15 @@ CPVRDirectory::CPVRDirectory()
 
 CPVRDirectory::~CPVRDirectory()
 {
+}
+
+bool CPVRDirectory::Exists(const char* strPath)
+{
+  CStdString directory(strPath);
+  if (directory.substr(0,17) == "pvr://recordings/")
+    return true;
+  else
+    return false;
 }
 
 bool CPVRDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items)
@@ -103,7 +112,7 @@ bool CPVRDirectory::GetDirectory(const CStdString& strPath, CFileItemList &items
   return false;
 }
 
-bool CPVRDirectory::SupportsFileOperations(const CStdString& strPath)
+bool CPVRDirectory::SupportsWriteFileOperations(const CStdString& strPath)
 {
   CURL url(strPath);
   CStdString filename = url.GetFileName();

@@ -9,7 +9,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -92,9 +92,11 @@ protected:
   virtual bool UpdateColors();
   /*! \brief Render the spinner text
    \param posX position of the left edge of the text
+   \param posY positing of the top edge of the text
    \param width width of the text
+   \param height height of the text
    */
-  virtual void RenderText(float posX, float width);
+  virtual void RenderText(float posX, float posY, float width, float height);
   CGUILabel::COLOR GetTextColor() const;
   void PageUp();
   void PageDown();

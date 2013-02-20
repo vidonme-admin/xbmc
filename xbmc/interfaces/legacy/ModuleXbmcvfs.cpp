@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -84,7 +84,7 @@ namespace XBMCAddon
       CFileItemList items;
       CStdString strSource;
       strSource = path;
-      XFILE::CDirectory::GetDirectory(strSource, items);
+      XFILE::CDirectory::GetDirectory(strSource, items, "", XFILE::DIR_FLAG_NO_FILE_DIRS);
 
       Tuple<std::vector<String>, std::vector<String> > ret;
       // initialize the Tuple to two values

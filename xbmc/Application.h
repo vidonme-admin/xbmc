@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include "guilib/IMsgTargetCallback.h"
 #include "guilib/Key.h"
 #include "threads/Condition.h"
+#include "utils/GlobalsHandling.h"
 
 #include <map>
 
@@ -53,7 +54,6 @@ namespace MEDIA_DETECT
 #include "win32/WIN32Util.h"
 #endif
 #include "utils/Stopwatch.h"
-#include "network/Network.h"
 #include "utils/CharsetConverter.h"
 #ifdef HAS_PERFORMANCE_SAMPLE
 #include "utils/PerformanceStats.h"
@@ -75,14 +75,14 @@ class CHTTPVfsHandler;
 #ifdef HAS_JSONRPC
 class CHTTPJsonRpcHandler;
 #endif
-#ifdef HAS_HTTPAPI
-class CHTTPApiHandler;
-#endif
 #ifdef HAS_WEB_INTERFACE
 class CHTTPWebinterfaceHandler;
 class CHTTPWebinterfaceAddonsHandler;
 #endif
 #endif
+
+class CNetwork;
+
 namespace VIDEO
 {
   class CVideoInfoScanner;
@@ -145,18 +145,19 @@ public:
   void StopJSONRPCServer(bool bWait);
   void StartUPnP();
   void StopUPnP(bool bWait);
+  void StartUPnPClient();
+  void StopUPnPClient();
   void StartUPnPRenderer();
   void StopUPnPRenderer();
   void StartUPnPServer();
   void StopUPnPServer();
-  void StartPVRManager();
+  void StartPVRManager(bool bOpenPVRWindow = false);
   void StopPVRManager();
   bool StartEventServer();
   bool StopEventServer(bool bWait, bool promptuser);
   void RefreshEventServer();
   void StartZeroconf();
   void StopZeroconf();
-  void DimLCDOnPlayback(bool dim);
   bool IsCurrentThread() const;
   void Stop(int exitCode);
   void RestartApp();
@@ -203,7 +204,6 @@ public:
   void CheckScreenSaverAndDPMS();
   void CheckPlayingProgress();
   void CheckAudioScrobblerStatus();
-  void CheckForTitleChange();
   void ActivateScreenSaver(bool forceType = false);
 
   virtual void Process();
@@ -266,13 +266,7 @@ public:
 
   static bool OnEvent(XBMC_Event& newEvent);
 
-#if defined(HAS_LINUX_NETWORK)
-  CNetworkLinux& getNetwork();
-#elif defined(HAS_WIN32_NETWORK)
-  CNetworkWin32& getNetwork();
-#else
   CNetwork& getNetwork();
-#endif
 #ifdef HAS_PERFORMANCE_SAMPLE
   CPerformanceStats &GetPerformanceStats();
 #endif
@@ -294,9 +288,6 @@ public:
 #ifdef HAS_JSONRPC
   CHTTPJsonRpcHandler& m_httpJsonRpcHandler;
 #endif
-#ifdef HAS_HTTPAPI
-  CHTTPApiHandler& m_httpApiHandler;
-#endif
 #ifdef HAS_WEB_INTERFACE
   CHTTPWebinterfaceHandler& m_httpWebinterfaceHandler;
   CHTTPWebinterfaceAddonsHandler& m_httpWebinterfaceAddonsHandler;
@@ -306,7 +297,6 @@ public:
   inline bool IsInScreenSaver() { return m_bScreenSave; };
   int m_iScreenSaveLock; // spiff: are we checking for a lock? if so, ignore the screensaver state, if -1 we have failed to input locks
 
-  bool m_bIsPaused;
   bool m_bPlaybackStarting;
 
   CKaraokeLyricsManager* m_pKaraokeMgr;
@@ -374,6 +364,7 @@ public:
   void OnA10Created();
 #endif 
   CSplash* GetSplash() { return m_splash; }
+  void SetRenderGUI(bool renderGUI);
 protected:
   bool LoadSkin(const CStdString& skinID);
   void LoadSkin(const boost::shared_ptr<ADDON::CSkinInfo>& skin);
@@ -390,14 +381,15 @@ protected:
   // timer information
 #ifdef _WIN32
   CWinIdleTimer m_idleTimer;
+  CWinIdleTimer m_screenSaverTimer;
 #else
   CStopWatch m_idleTimer;
+  CStopWatch m_screenSaverTimer;
 #endif
   CStopWatch m_restartPlayerTimer;
   CStopWatch m_frameTime;
   CStopWatch m_navigationTimer;
   CStopWatch m_slowTimer;
-  CStopWatch m_screenSaverTimer;
   CStopWatch m_shutdownTimer;
 
   bool m_bInhibitIdleShutdown;
@@ -445,7 +437,6 @@ protected:
   void UnMute();
 
   void SetHardwareVolume(float hardwareVolume);
-  void UpdateLCD();
 
   void VolumeChanged() const;
 
@@ -455,9 +446,8 @@ protected:
   bool ProcessGamepad(float frameTime);
   bool ProcessEventServer(float frameTime);
   bool ProcessPeripherals(float frameTime);
-  bool ProcessHTTPApiButtons();
-  bool ProcessJsonRpcButtons();
   bool ProcessJoystickEvent(const std::string& joystickName, int button, bool isAxis, float fAmount, unsigned int holdTime = 0);
+  bool ExecuteInputAction(CAction action);
   int  GetActiveWindowID(void);
 
   float NavigationIdleTime();
@@ -472,13 +462,7 @@ protected:
 
   CSeekHandler *m_seekHandler;
   CInertialScrollingHandler *m_pInertialScrollingHandler;
-#if defined(HAS_LINUX_NETWORK)
-  CNetworkLinux m_network;
-#elif defined(HAS_WIN32_NETWORK)
-  CNetworkWin32 m_network;
-#else
-  CNetwork    m_network;
-#endif
+  CNetwork    *m_network;
 #ifdef HAS_PERFORMANCE_SAMPLE
   CPerformanceStats m_perfStats;
 #endif
@@ -489,4 +473,5 @@ protected:
 
 };
 
-extern CApplication g_application;
+XBMC_GLOBAL_REF(CApplication,g_application);
+#define g_application XBMC_GLOBAL_USE(CApplication)

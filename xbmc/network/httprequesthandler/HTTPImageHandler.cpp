@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -37,9 +37,7 @@ int CHTTPImageHandler::HandleHTTPRequest(const HTTPRequest &request)
     m_path = request.url.substr(7);
 
     XFILE::CImageFile imageFile;
-    if (imageFile.Exists(m_path) ||
-       // temporary workaround for music images until they are integrated into CTextureCache and therefore CImageFile
-       (m_path.Left(10) == "special://" && m_path.Right(4) == ".tbn" && XFILE::CFile::Exists(m_path)))
+    if (imageFile.Exists(m_path))
     {
       m_responseCode = MHD_HTTP_OK;
       m_responseType = HTTPFileDownload;

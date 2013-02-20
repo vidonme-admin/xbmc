@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -357,4 +357,13 @@ void CXBMCTestUtils::ParseArgs(int argc, char **argv)
       exit(EXIT_FAILURE);
     }
   }
+}
+
+std::string CXBMCTestUtils::getNewLineCharacters() const
+{
+#ifdef TARGET_WINDOWS
+  return "\r\n";
+#else
+  return "\n";
+#endif
 }

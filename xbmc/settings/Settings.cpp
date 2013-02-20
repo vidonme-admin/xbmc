@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -124,8 +124,6 @@ void CSettings::Initialize()
   m_watchMode["musicvideos"] = VIDEO_SHOW_ALL;
 
   m_iSystemTimeTotalUp = 0;
-  m_HttpApiBroadcastLevel = 0;
-  m_HttpApiBroadcastPort = 8278;
 
   m_userAgent = g_sysinfo.GetUserAgent();
 
@@ -140,7 +138,7 @@ void CSettings::Initialize()
 
 CSettings::~CSettings(void)
 {
-  m_ResInfo.clear();
+  Clear();
 }
 
 
@@ -723,8 +721,6 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
   if (pElement)
   {
     GetInteger(pElement, "systemtotaluptime", m_iSystemTimeTotalUp, 0, 0, INT_MAX);
-    GetInteger(pElement, "httpapibroadcastlevel", m_HttpApiBroadcastLevel, 0, 0, 255);
-    GetInteger(pElement, "httpapibroadcastport", m_HttpApiBroadcastPort, 8278, 1, 65535);
     XMLUtils::GetBoolean(pElement, "addonautoupdate", m_bAddonAutoUpdate);
     XMLUtils::GetBoolean(pElement, "addonnotifications", m_bAddonNotifications);
     XMLUtils::GetBoolean(pElement, "addonforeignfilter", m_bAddonForeignFilter);
@@ -920,8 +916,6 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   pNode = pRoot->InsertEndChild(generalNode);
   if (!pNode) return false;
   XMLUtils::SetInt(pNode, "systemtotaluptime", m_iSystemTimeTotalUp);
-  XMLUtils::SetInt(pNode, "httpapibroadcastport", m_HttpApiBroadcastPort);
-  XMLUtils::SetInt(pNode, "httpapibroadcastlevel", m_HttpApiBroadcastLevel);
   XMLUtils::SetBoolean(pNode, "addonautoupdate", m_bAddonAutoUpdate);
   XMLUtils::SetBoolean(pNode, "addonnotifications", m_bAddonNotifications);
   XMLUtils::SetBoolean(pNode, "addonforeignfilter", m_bAddonForeignFilter);
@@ -1479,16 +1473,37 @@ void CSettings::SaveSkinSettings(TiXmlNode *pRootElement) const
 
 void CSettings::Clear()
 {
+  m_vecProfiles.clear();
+
+  m_pictureExtensions.clear();
+  m_musicExtensions.clear();
+  m_videoExtensions.clear();
+  m_discStubExtensions.clear();
+
+  m_logFolder.clear();
+  m_userAgent.clear();
+
+  m_mapRssUrls.clear();
+  m_skinStrings.clear();
+  m_skinBools.clear();
+
   m_programSources.clear();
   m_pictureSources.clear();
   m_fileSources.clear();
   m_musicSources.clear();
   m_videoSources.clear();
-//  m_vecIcons.clear();
-  m_vecProfiles.clear();
-  m_mapRssUrls.clear();
-  m_skinBools.clear();
-  m_skinStrings.clear();
+
+  m_defaultProgramSource.clear();
+  m_defaultMusicSource.clear();
+  m_defaultPictureSource.clear();
+  m_defaultFileSource.clear();
+  m_defaultMusicLibSource.clear();
+
+  m_UPnPUUIDServer.clear();
+  m_UPnPUUIDRenderer.clear();
+
+  m_ResInfo.clear();
+  m_Calibrations.clear();
 }
 
 int CSettings::TranslateSkinString(const CStdString &setting)
@@ -1752,6 +1767,17 @@ CStdString CSettings::GetBookmarksThumbFolder() const
   return folder;
 }
 
+CStdString CSettings::GetLibraryFolder() const
+{
+  CStdString folder;
+  if (GetCurrentProfile().hasDatabases())
+    URIUtils::AddFileToFolder(GetProfileUserDataFolder(), "library", folder);
+  else
+    URIUtils::AddFileToFolder(GetUserDataFolder(), "library", folder);
+
+  return folder;
+}
+
 CStdString CSettings::GetSourcesFile() const
 {
   CStdString folder;
@@ -1850,6 +1876,7 @@ void CSettings::CreateProfileFolders()
   }
   CDirectory::Create("special://profile/addon_data");
   CDirectory::Create("special://profile/keymaps");
+  CDirectory::Create(GetLibraryFolder());
 }
 
 static CProfile emptyProfile;

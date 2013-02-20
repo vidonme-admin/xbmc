@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  */
 
 #include "DVDInputStream.h"
+#include "URL.h"
 
 CDVDInputStream::CDVDInputStream(DVDStreamType streamType)
 {
@@ -31,7 +32,13 @@ CDVDInputStream::~CDVDInputStream()
 
 bool CDVDInputStream::Open(const char* strFile, const std::string &content)
 {
-  m_strFileName = strFile;
+  CURL url = CURL(strFile);
+
+  // get rid of any |option parameters which might have sneaked in here
+  // those are only handled by our curl impl.
+  url.SetProtocolOptions("");
+  m_strFileName = url.Get();
+
   m_content = content;
   return true;
 }

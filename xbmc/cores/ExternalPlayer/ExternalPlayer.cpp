@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -32,6 +32,7 @@
 #include "FileItem.h"
 #include "utils/RegExp.h"
 #include "utils/StringUtils.h"
+#include "utils/URIUtils.h"
 #include "URL.h"
 #include "utils/XMLUtils.h"
 #include "utils/TimeUtils.h"
@@ -45,6 +46,9 @@
 #endif
 #if defined(HAS_LIRC)
   #include "input/linux/LIRC.h"
+#endif
+#if defined(TARGET_ANDROID)
+  #include "android/activity/XBMCApp.h"
 #endif
 
 // If the process ends in less than this time (ms), we assume it's a launcher
@@ -142,13 +146,24 @@ void CExternalPlayer::Process()
     // Unwind archive names
     CURL url(m_launchFilename);
     CStdString protocol = url.GetProtocol();
-    if (protocol == "zip" || protocol == "rar"/* || protocol == "iso9660" ??*/)
+    if (protocol == "zip" || protocol == "rar"/* || protocol == "iso9660" ??*/ || protocol == "udf")
     {
       mainFile = url.GetHostName();
       archiveContent = url.GetFileName();
     }
     if (protocol == "musicdb")
       mainFile = CMusicDatabaseFile::TranslateUrl(url);
+    if (protocol == "bluray")
+    {
+      CURL base(url.GetHostName());
+      if(base.GetProtocol() == "udf")
+      {
+        mainFile = base.GetHostName(); /* image file */
+        archiveContent = base.GetFileName();
+      }
+      else
+        mainFile = URIUtils::AddFileToFolder(base.Get(), url.GetFileName());
+    }
   }
 
   if (m_filenameReplacers.size() > 0)
@@ -192,7 +207,7 @@ void CExternalPlayer::Process()
         while ((iStart = regExp.RegFind(mainFile, iStart)) > -1)
         {
           int iLength = regExp.GetFindLen();
-          mainFile = mainFile.Left(iStart) + regExp.GetReplaceString(strRep.c_str()) + mainFile.Mid(iStart+iLength);
+          mainFile = mainFile.Left(iStart) + regExp.GetReplaceString(strRep.c_str()).c_str() + mainFile.Mid(iStart+iLength);
           if (!bGlobal)
             break;
         }
@@ -292,13 +307,15 @@ void CExternalPlayer::Process()
   /* don't block external player's access to audio device  */
   if (!CAEFactory::Suspend())
   {
-    CLog::Log(LOGNOTICE, __FUNCTION__, "Failed to suspend AudioEngine before launching external player");
+    CLog::Log(LOGNOTICE,"%s: Failed to suspend AudioEngine before launching external player", __FUNCTION__);
   }
 
 
   BOOL ret = TRUE;
 #if defined(_WIN32)
   ret = ExecuteAppW32(strFName.c_str(),strFArgs.c_str());
+#elif defined(TARGET_ANDROID)
+  ret = ExecuteAppAndroid(m_filename.c_str(), mainFile.c_str());
 #elif defined(_LINUX) || defined(TARGET_DARWIN_OSX)
   ret = ExecuteAppLinux(strFArgs.c_str());
 #endif
@@ -361,7 +378,7 @@ void CExternalPlayer::Process()
   /* Resume AE processing of XBMC native audio */
   if (!CAEFactory::Resume())
   {
-    CLog::Log(LOGFATAL, __FUNCTION__, "Failed to restart AudioEngine after return from external player");
+    CLog::Log(LOGFATAL, "%s: Failed to restart AudioEngine after return from external player",__FUNCTION__);
   }
 
   // We don't want to come back to an active screensaver
@@ -431,7 +448,7 @@ BOOL CExternalPlayer::ExecuteAppW32(const char* strPath, const char* strSwitches
 }
 #endif
 
-#if defined(_LINUX) || defined(TARGET_DARWIN_OSX)
+#if !defined(TARGET_ANDROID) && (defined(_LINUX) || defined(TARGET_DARWIN_OSX))
 BOOL CExternalPlayer::ExecuteAppLinux(const char* strSwitches)
 {
   CLog::Log(LOGNOTICE, "%s: %s", __FUNCTION__, strSwitches);
@@ -447,6 +464,22 @@ BOOL CExternalPlayer::ExecuteAppLinux(const char* strSwitches)
   g_RemoteControl.setUsed(remoteused);
   g_RemoteControl.Initialize();
 #endif
+
+  if (ret != 0)
+  {
+    CLog::Log(LOGNOTICE, "%s: Failure: %d", __FUNCTION__, ret);
+  }
+
+  return ret == 0;
+}
+#endif
+
+#if defined(TARGET_ANDROID)
+BOOL CExternalPlayer::ExecuteAppAndroid(const char* strSwitches,const char* strPath)
+{
+  CLog::Log(LOGNOTICE, "%s: %s", __FUNCTION__, strSwitches);
+
+  int ret = CXBMCApp::StartActivity(strSwitches, "android.intent.action.VIEW", "video/*", strPath);
 
   if (ret != 0)
   {

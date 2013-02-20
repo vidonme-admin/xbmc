@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -63,21 +63,6 @@ typedef struct stDVDAudioFrame
   bool              passthrough;
 } DVDAudioFrame;
 
-class CPTSOutputQueue
-{
-private:
-  typedef struct {double pts; double timestamp; double duration;} TPTSItem;
-  TPTSItem m_current;
-  std::queue<TPTSItem> m_queue;
-  CCriticalSection m_sync;
-
-public:
-  CPTSOutputQueue();
-  void Add(double pts, double delay, double duration);
-  void Flush();
-  double Current();
-};
-
 class CPTSInputQueue
 {
 private:
@@ -131,7 +116,7 @@ public:
   CPTSOutputQueue m_ptsOutput;
   CPTSInputQueue  m_ptsInput;
 
-  double GetCurrentPts()                            { return m_ptsOutput.Current(); }
+  double GetCurrentPts()                            { return m_dvdAudio.GetPlayingPts(); }
 
   bool IsStalled()                                  { return m_stalled;  }
   bool IsPassthrough() const;

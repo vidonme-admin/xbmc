@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -49,7 +49,9 @@ void CGUILabelControl::ShowCursor(bool bShow)
 
 void CGUILabelControl::SetCursorPos(int iPos)
 {
-  CStdString label = m_infoLabel.GetLabel(m_parentID);
+  CStdString labelUTF8 = m_infoLabel.GetLabel(m_parentID);
+  CStdStringW label;
+  g_charsetConverter.utf8ToW(labelUTF8, label);
   if (iPos > (int)label.length()) iPos = label.length();
   if (iPos < 0) iPos = 0;
 

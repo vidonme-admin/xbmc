@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,7 +18,9 @@
  *
  */
 
+#include <map>
 #include <string.h>
+
 #include "FileItemHandler.h"
 #include "PlaylistOperations.h"
 #include "AudioLibrary.h"
@@ -34,8 +36,10 @@
 #include "filesystem/Directory.h"
 #include "filesystem/File.h"
 #include "TextureCache.h"
-#include "ThumbLoader.h"
+#include "video/VideoThumbLoader.h"
+#include "music/MusicThumbLoader.h"
 #include "Util.h"
+#include "pvr/channels/PVRChannel.h"
 
 using namespace MUSIC_INFO;
 using namespace JSONRPC;
@@ -83,20 +87,41 @@ bool CFileItemHandler::GetField(const std::string &field, const CVariant &info, 
       result[field] = item->GetProperty("artist_" + field);
       return true;
     }
-    
-    if (field == "thumbnail")
+
+    if (field == "art")
     {
-      if (thumbLoader != NULL && !item->HasThumbnail() && !fetchedArt &&
+      if (thumbLoader != NULL && item->GetArt().size() <= 0 && !fetchedArt &&
         ((item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_iDbId > -1) || (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetDatabaseId() > -1)))
       {
         thumbLoader->FillLibraryArt(*item);
         fetchedArt = true;
       }
-      else if (item->HasPictureInfoTag() && !item->HasThumbnail())
-        item->SetThumbnailImage(CTextureCache::GetWrappedThumbURL(item->GetPath()));
+
+      CGUIListItem::ArtMap artMap = item->GetArt();
+      CVariant artObj(CVariant::VariantTypeObject);
+      for (CGUIListItem::ArtMap::const_iterator artIt = artMap.begin(); artIt != artMap.end(); artIt++)
+      {
+        if (!artIt->second.empty())
+          artObj[artIt->first] = CTextureCache::GetWrappedImageURL(artIt->second);
+      }
+
+      result["art"] = artObj;
+      return true;
+    }
+    
+    if (field == "thumbnail")
+    {
+      if (thumbLoader != NULL && !item->HasArt("thumb") && !fetchedArt &&
+        ((item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_iDbId > -1) || (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetDatabaseId() > -1)))
+      {
+        thumbLoader->FillLibraryArt(*item);
+        fetchedArt = true;
+      }
+      else if (item->HasPictureInfoTag() && !item->HasArt("thumb"))
+        item->SetArt("thumb", CTextureCache::GetWrappedThumbURL(item->GetPath()));
       
-      if (item->HasThumbnail())
-        result["thumbnail"] = CTextureCache::GetWrappedImageURL(item->GetThumbnailImage());
+      if (item->HasArt("thumb"))
+        result["thumbnail"] = CTextureCache::GetWrappedImageURL(item->GetArt("thumb"));
       else
         result["thumbnail"] = "";
       
@@ -105,15 +130,15 @@ bool CFileItemHandler::GetField(const std::string &field, const CVariant &info, 
     
     if (field == "fanart")
     {
-      if (thumbLoader != NULL && !item->HasProperty("fanart_image") && !fetchedArt &&
+      if (thumbLoader != NULL && !item->HasArt("fanart") && !fetchedArt &&
         ((item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_iDbId > -1) || (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetDatabaseId() > -1)))
       {
         thumbLoader->FillLibraryArt(*item);
         fetchedArt = true;
       }
       
-      if (item->HasProperty("fanart_image"))
-        result["fanart"] = CTextureCache::GetWrappedImageURL(item->GetProperty("fanart_image").asString());
+      if (item->HasArt("fanart"))
+        result["fanart"] = CTextureCache::GetWrappedImageURL(item->GetArt("fanart"));
       else
         result["fanart"] = "";
       
@@ -139,6 +164,12 @@ bool CFileItemHandler::GetField(const std::string &field, const CVariant &info, 
       result[field] = item->m_dateTime.GetAsLocalizedDateTime();
       return true;
     }
+
+    if (item->HasProperty(field))
+    {
+      result[field] = item->GetProperty(field);
+      return true;
+    }
   }
 
   return false;
@@ -158,7 +189,7 @@ void CFileItemHandler::FillDetails(const ISerializable *info, const CFileItemPtr
 
   for (std::set<std::string>::const_iterator fieldIt = originalFields.begin(); fieldIt != originalFields.end(); fieldIt++)
   {
-    if (GetField(*fieldIt, serialization, item, result, fetchedArt, thumbLoader))
+    if (GetField(*fieldIt, serialization, item, result, fetchedArt, thumbLoader) && result.isMember(*fieldIt) && !result[*fieldIt].empty())
       fields.erase(*fieldIt);
   }
 }
@@ -247,19 +278,22 @@ void CFileItemHandler::HandleFileItem(const char *ID, bool allowFile, const char
 
     if (ID)
     {
-      if (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetDatabaseId() > 0)
+      if (item->HasPVRChannelInfoTag() && item->GetPVRChannelInfoTag()->ChannelID() > 0)
+         object[ID] = item->GetPVRChannelInfoTag()->ChannelID();
+      else if (item->HasMusicInfoTag() && item->GetMusicInfoTag()->GetDatabaseId() > 0)
         object[ID] = (int)item->GetMusicInfoTag()->GetDatabaseId();
       else if (item->HasVideoInfoTag() && item->GetVideoInfoTag()->m_iDbId > 0)
         object[ID] = item->GetVideoInfoTag()->m_iDbId;
 
       if (stricmp(ID, "id") == 0)
       {
-        if (item->HasMusicInfoTag())
+        if (item->HasPVRChannelInfoTag())
+          object["type"] = "channel";
+        else if (item->HasMusicInfoTag() && !item->GetMusicInfoTag()->GetType().empty())
         {
-          if (item->m_bIsFolder && item->IsAlbum())
-            object["type"] = "album";
-          else
-            object["type"] = "song";
+          std::string type = item->GetMusicInfoTag()->GetType();
+          if (type == "album" || type == "song")
+            object["type"] = type;
         }
         else if (item->HasVideoInfoTag() && !item->GetVideoInfoTag()->m_type.empty())
         {
@@ -290,6 +324,8 @@ void CFileItemHandler::HandleFileItem(const char *ID, bool allowFile, const char
       }
     }
 
+    if (item->HasPVRChannelInfoTag())
+      FillDetails(item->GetPVRChannelInfoTag(), item, fields, object, thumbLoader);
     if (item->HasVideoInfoTag())
       FillDetails(item->GetVideoInfoTag(), item, fields, object, thumbLoader);
     if (item->HasMusicInfoTag())

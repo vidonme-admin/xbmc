@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -195,6 +195,12 @@ public:
    * codec can then skip actually decoding the data, just consume the data set picture headers
    */
   virtual void SetDropState(bool bDrop) = 0;
+
+  /*
+   * will be called by video player indicating the playback speed. see DVD_PLAYSPEED_NORMAL,
+   * DVD_PLAYSPEED_PAUSE and friends.
+   */
+  virtual void SetSpeed(int iSpeed) {};
 
   /*
    * returns the number of demuxer bytes in any internal buffers

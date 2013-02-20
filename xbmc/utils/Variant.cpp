@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -231,6 +231,20 @@ CVariant::CVariant(const std::vector<std::string> &strArray)
   m_data.array->reserve(strArray.size());
   for (unsigned int index = 0; index < strArray.size(); index++)
     m_data.array->push_back(strArray.at(index));
+}
+
+CVariant::CVariant(const std::map<std::string, std::string> &strMap)
+{
+  m_type = VariantTypeObject;
+  m_data.map = new VariantMap;
+  for (std::map<std::string, std::string>::const_iterator it = strMap.begin(); it != strMap.end(); it++)
+    m_data.map->insert(make_pair(it->first, CVariant(it->second)));
+}
+
+CVariant::CVariant(const std::map<std::string, CVariant> &variantMap)
+{
+  m_type = VariantTypeObject;
+  m_data.map = new VariantMap(variantMap.begin(), variantMap.end());
 }
 
 CVariant::CVariant(const CVariant &variant)
@@ -711,8 +725,10 @@ bool CVariant::empty() const
     return m_data.string->empty();
   else if (m_type == VariantTypeWideString)
     return m_data.wstring->empty();
-  else
+  else if (m_type == VariantTypeNull)
     return true;
+
+  return false;
 }
 
 void CVariant::clear()

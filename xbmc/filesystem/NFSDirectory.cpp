@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@
 #include "threads/SingleLock.h"
 using namespace XFILE;
 using namespace std;
+#include <limits.h>
 #include <nfsc/libnfs-raw-mount.h>
 #include <nfsc/libnfs-raw-nfs.h>
 

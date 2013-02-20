@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "network/Network.h"
 #if !defined(TARGET_WINDOWS)
 #pragma GCC diagnostic ignored "-Wwrite-strings"
 #endif
@@ -189,8 +190,8 @@ void* CAirTunesServer::AudioOutputFunctions::audio_init(void *cls, int bits, int
 
 void  CAirTunesServer::AudioOutputFunctions::audio_set_volume(void *cls, void *session, float volume)
 {
-  //volume from -144 - 0
-  float volPercent = 1 - volume/-144;
+  //volume from -30 - 0 - -144 means mute
+  float volPercent = volume < -30.0f ? 0 : 1 - volume/-30;
   g_application.SetVolume(volPercent, false);//non-percent volume 0.0-1.0
 }
 
@@ -338,8 +339,12 @@ ao_device* CAirTunesServer::AudioOutputFunctions::ao_open_live(int driver_id, ao
   header.durationMs = 0;
 
   if (device->pipe->Write(&header, sizeof(header)) == 0)
+  {
+    delete device->pipe;
+    delete device;
     return 0;
-
+  }
+  
   ThreadMessage tMsg = { TMSG_MEDIA_STOP };
   CApplicationMessenger::Get().SendMessage(tMsg, true);
 
@@ -355,9 +360,6 @@ ao_device* CAirTunesServer::AudioOutputFunctions::ao_open_live(int driver_id, ao
 
   if (ao_get_option(option, "name"))
     item.GetMusicInfoTag()->SetTitle(ao_get_option(option, "name"));
-
-  ThreadMessage tMsg2 = { TMSG_GUI_ACTIVATE_WINDOW, WINDOW_VISUALISATION, 0 };
-  CApplicationMessenger::Get().SendMessage(tMsg2, true);
 
   CApplicationMessenger::Get().PlayFile(item);
 
@@ -506,22 +508,22 @@ bool CAirTunesServer::StartServer(int port, bool nonlocal, bool usePassword, con
     CStdString appName;
     appName.Format("%s@%s", m_macAddress.c_str(), g_infoManager.GetLabel(SYSTEM_FRIENDLY_NAME).c_str());
 
-    std::map<std::string, std::string> txt;
-    txt["cn"] = "0,1";
-    txt["ch"] = "2";
-    txt["ek"] = "1";
-    txt["et"] = "0,1";
-    txt["sv"] = "false";
-    txt["tp"] = "UDP";
-    txt["sm"] = "false";
-    txt["ss"] = "16";
-    txt["sr"] = "44100";
-    txt["pw"] = "false";
-    txt["vn"] = "3";
-    txt["da"] = "true";
-    txt["vs"] = "130.14";
-    txt["md"] = "0,1,2";
-    txt["txtvers"] = "1";
+    std::vector<std::pair<std::string, std::string> > txt;
+    txt.push_back(std::make_pair("txtvers",  "1"));
+    txt.push_back(std::make_pair("cn", "0,1"));
+    txt.push_back(std::make_pair("ch", "2"));
+    txt.push_back(std::make_pair("ek", "1"));
+    txt.push_back(std::make_pair("et", "0,1"));
+    txt.push_back(std::make_pair("sv", "false"));
+    txt.push_back(std::make_pair("tp",  "UDP"));
+    txt.push_back(std::make_pair("sm",  "false"));
+    txt.push_back(std::make_pair("ss",  "16"));
+    txt.push_back(std::make_pair("sr",  "44100"));
+    txt.push_back(std::make_pair("pw",  "false"));
+    txt.push_back(std::make_pair("vn",  "3"));
+    txt.push_back(std::make_pair("da",  "true"));
+    txt.push_back(std::make_pair("vs",  "130.14"));
+    txt.push_back(std::make_pair("md",  "0,1,2"));
 
     CZeroconf::GetInstance()->PublishService("servers.airtunes", "_raop._tcp", appName, port, txt);
   }

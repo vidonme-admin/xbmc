@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@ typedef unsigned char BYTE;
 
 #include "osx/DarwinUtils.h"
 
-#include "CocoaInterface.h"
+#include "osx/CocoaInterface.h"
 
 #if defined(TARGET_DARWIN_OSX)
 OSStatus SendAppleEventToSystemProcess(AEEventID eventToSendID)
@@ -239,10 +239,6 @@ bool CCocoaPowerSyscall::PumpPowerEvents(IPowerEventsCallback *callback)
   else if (m_OnResume)
   {
     callback->OnWake();
-#if !defined(TARGET_DARWIN_IOS)
-    if (g_Windowing.IsFullScreen())
-      Cocoa_HideDock();
-#endif
     m_OnResume = false;
   } 
   

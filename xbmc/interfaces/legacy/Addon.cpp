@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -33,9 +33,9 @@ namespace XBMCAddon
 {
   namespace xbmcaddon
   {
-    String Addon::getDefaultId() { return languageHook == NULL ? emptyString : languageHook->getAddonId(); }
+    String Addon::getDefaultId() { return languageHook == NULL ? emptyString : languageHook->GetAddonId(); }
 
-    String Addon::getAddonVersion() { return languageHook == NULL ? emptyString : languageHook->getAddonVersion(); }
+    String Addon::getAddonVersion() { return languageHook == NULL ? emptyString : languageHook->GetAddonVersion(); }
 
     Addon::Addon(const char* cid) throw (AddonException) : AddonClass("Addon") 
     {

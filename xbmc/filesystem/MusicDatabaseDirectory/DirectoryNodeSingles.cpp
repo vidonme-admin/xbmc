@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -36,9 +36,7 @@ bool CDirectoryNodeSingles::GetContent(CFileItemList& items) const
   if (!musicdatabase.Open())
     return false;
 
-  CDatabase::Filter filter;
-  filter.where = "idAlbum IN (SELECT idAlbum FROM album WHERE strAlbum = '')";
-  bool bSuccess=musicdatabase.GetSongsByWhere(BuildPath(), filter, items);
+  bool bSuccess=musicdatabase.GetSongsByWhere(BuildPath(), CDatabase::Filter(), items);
 
   musicdatabase.Close();
 

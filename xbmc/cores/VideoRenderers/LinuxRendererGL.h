@@ -2,7 +2,7 @@
 #define LINUXRENDERERGL_RENDERER
 
 /*
- *      Copyright (C) 2007-2012 Team XBMC
+ *      Copyright (C) 2007-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -213,12 +213,18 @@ protected:
 
   // renderers
   void RenderMultiPass(int renderBuffer, int field);  // multi pass glsl renderer
+  void RenderToFBO(int renderBuffer, int field);
+  void RenderFromFBO();
   void RenderSinglePass(int renderBuffer, int field); // single pass glsl renderer
   void RenderSoftware(int renderBuffer, int field);   // single pass s/w yuv2rgb renderer
   void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
   void RenderVAAPI(int renderBuffer, int field);      // render using vdpau hardware
 
-  CFrameBufferObject m_fbo;
+  struct
+  {
+    CFrameBufferObject fbo;
+    float width, height;
+  } m_fbo;
 
   int m_iYV12RenderBuffer;
   int m_NumYV12Buffers;

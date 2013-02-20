@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -463,11 +463,17 @@ CStdString CSysInfo::GetKernelVersion()
       else
         strKernel.append(" Server 2008 R2");
       break;
+    case WindowsVersionWin8:
+      if (osvi.wProductType == VER_NT_WORKSTATION)
+        strKernel.append(" 8");
+      else
+        strKernel.append(" Server 2012");
+      break;
     case WindowsVersionFuture:
       strKernel.append(" Unknown Future Version");
       break;
     default:
-      strKernel.append(" unknown version");
+      strKernel.append(" Unknown version");
       break;
     }
 

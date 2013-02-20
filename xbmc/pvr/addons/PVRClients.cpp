@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -60,6 +60,16 @@ CPVRClients::CPVRClients(void) :
 CPVRClients::~CPVRClients(void)
 {
   Unload();
+}
+
+bool CPVRClients::IsInUse(const std::string& strAddonId) const
+{
+  CSingleLock lock(m_critSection);
+
+  for (PVR_CLIENTMAP_CITR itr = m_clientMap.begin(); itr != m_clientMap.end(); itr++)
+    if (itr->second->Enabled() && itr->second->ID().Equals(strAddonId.c_str()))
+      return true;
+  return false;
 }
 
 void CPVRClients::Start(void)
@@ -541,7 +551,7 @@ bool CPVRClients::CanPauseStream(void) const
 
   if (GetPlayingClient(client))
   {
-    return client->CanPauseStream();
+    return m_bIsPlayingRecording || client->CanPauseStream();
   }
 
   return false;
@@ -553,7 +563,7 @@ bool CPVRClients::CanSeekStream(void) const
 
   if (GetPlayingClient(client))
   {
-    return client->CanSeekStream();
+    return m_bIsPlayingRecording || client->CanSeekStream();
   }
 
   return false;
@@ -634,17 +644,17 @@ PVR_ERROR CPVRClients::GetChannelGroupMembers(CPVRChannelGroup *group)
   return error;
 }
 
-bool CPVRClients::HasMenuHooks(int iClientID)
+bool CPVRClients::HasMenuHooks(int iClientID, PVR_MENUHOOK_CAT cat)
 {
   if (iClientID < 0)
     iClientID = GetPlayingClientID();
 
   PVR_CLIENT client;
   return (GetConnectedClient(iClientID, client) &&
-      client->HaveMenuHooks());
+      client->HaveMenuHooks(cat));
 }
 
-bool CPVRClients::GetMenuHooks(int iClientID, PVR_MENUHOOKS *hooks)
+bool CPVRClients::GetMenuHooks(int iClientID, PVR_MENUHOOK_CAT cat, PVR_MENUHOOKS *hooks)
 {
   bool bReturn(false);
 
@@ -652,7 +662,7 @@ bool CPVRClients::GetMenuHooks(int iClientID, PVR_MENUHOOKS *hooks)
     iClientID = GetPlayingClientID();
 
   PVR_CLIENT client;
-  if (GetConnectedClient(iClientID, client) && client->HaveMenuHooks())
+  if (GetConnectedClient(iClientID, client) && client->HaveMenuHooks(cat))
   {
     *hooks = *(client->GetMenuHooks());
     bReturn = true;
@@ -661,15 +671,50 @@ bool CPVRClients::GetMenuHooks(int iClientID, PVR_MENUHOOKS *hooks)
   return bReturn;
 }
 
-void CPVRClients::ProcessMenuHooks(int iClientID)
+void CPVRClients::ProcessMenuHooks(int iClientID, PVR_MENUHOOK_CAT cat)
 {
   PVR_MENUHOOKS *hooks = NULL;
+
+  // get client id
+  if (iClientID < 0 && cat == PVR_MENUHOOK_SETTING)
+  {
+    PVR_CLIENTMAP clients;
+    GetConnectedClients(clients);
+
+    if (clients.size() == 1)
+    {
+      iClientID = clients.begin()->first;
+    }
+    else if (clients.size() > 1)
+    {
+      // have user select client
+      CGUIDialogSelect* pDialog = (CGUIDialogSelect*)g_windowManager.GetWindow(WINDOW_DIALOG_SELECT);
+      pDialog->Reset();
+      pDialog->SetHeading(19196);
+
+      PVR_CLIENTMAP_ITR itrClients;
+      for (itrClients = clients.begin(); itrClients != clients.end(); itrClients++)
+      {
+        pDialog->Add(itrClients->second->GetBackendName());
+      }
+      pDialog->DoModal();
+
+      int selection = pDialog->GetSelectedLabel();
+      if (selection >= 0)
+      {
+        itrClients = clients.begin();
+        for (int i = 0; i < selection; i++)
+          itrClients++;
+        iClientID = itrClients->first;
+      }
+    }
+  }
 
   if (iClientID < 0)
     iClientID = GetPlayingClientID();
 
   PVR_CLIENT client;
-  if (GetConnectedClient(iClientID, client) && client->HaveMenuHooks())
+  if (GetConnectedClient(iClientID, client) && client->HaveMenuHooks(cat))
   {
     hooks = client->GetMenuHooks();
     std::vector<int> hookIDs;
@@ -862,17 +907,30 @@ bool CPVRClients::UpdateAndInitialiseClients(bool bInitialiseAllClients /* = fal
       else
       {
         ADDON_STATUS status(ADDON_STATUS_UNKNOWN);
-        CSingleLock lock(m_critSection);
-        
         PVR_CLIENT addon;
-        if (!GetClient(iClientId, addon))
         {
-          CLog::Log(LOGWARNING, "%s - failed to find add-on %s, disabling it", __FUNCTION__, clientAddon->Name().c_str());
-          disableAddons.push_back(clientAddon);
-          bDisabled = true;
+          CSingleLock lock(m_critSection);
+          if (!GetClient(iClientId, addon))
+          {
+            CLog::Log(LOGWARNING, "%s - failed to find add-on %s, disabling it", __FUNCTION__, clientAddon->Name().c_str());
+            disableAddons.push_back(clientAddon);
+            bDisabled = true;
+          }
         }
+
+        // throttle connection attempts, no more than 1 attempt per 5 seconds
+        if (!bDisabled && addon->Enabled())
+        {
+          time_t now;
+          CDateTime::GetCurrentDateTime().GetAsTime(now);
+          std::map<int, time_t>::iterator it = m_connectionAttempts.find(iClientId);
+          if (it != m_connectionAttempts.end() && now < it->second)
+            continue;
+          m_connectionAttempts[iClientId] = now + 5;
+        }
+
         // re-check the enabled status. newly installed clients get disabled when they're added to the db
-        else if (addon->Enabled() && (status = addon->Create(iClientId)) != ADDON_STATUS_OK)
+        if (!bDisabled && addon->Enabled() && (status = addon->Create(iClientId)) != ADDON_STATUS_OK)
         {
           CLog::Log(LOGWARNING, "%s - failed to create add-on %s, status = %d", __FUNCTION__, clientAddon->Name().c_str(), status);
           if (!addon.get() || !addon->DllLoaded() || status == ADDON_STATUS_PERMANENT_FAILURE)
@@ -1041,7 +1099,8 @@ void CPVRClients::LoadCurrentChannelSettings(void)
     }
 
     /* only change the audio stream if it's different */
-    if (g_application.m_pPlayer->GetAudioStream() != g_settings.m_currentVideoSettings.m_AudioStream)
+    if (g_application.m_pPlayer->GetAudioStream() != g_settings.m_currentVideoSettings.m_AudioStream &&
+        g_settings.m_currentVideoSettings.m_AudioStream >= 0)
       g_application.m_pPlayer->SetAudioStream(g_settings.m_currentVideoSettings.m_AudioStream);
 
     g_application.m_pPlayer->SetAVDelay(g_settings.m_currentVideoSettings.m_AudioDelay);
@@ -1096,10 +1155,7 @@ bool CPVRClients::UpdateAddons(void)
 void CPVRClients::Notify(const Observable &obs, const ObservableMessage msg)
 {
   if (msg == ObservableMessageAddons)
-  {
     UpdateAddons();
-    UpdateAndInitialiseClients();
-  }
 }
 
 bool CPVRClients::GetClient(const CStdString &strId, ADDON::AddonPtr &addon) const

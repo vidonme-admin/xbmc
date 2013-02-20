@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -49,11 +49,11 @@ protected:
   bool                      m_open;
   CDVDStreamInfo            m_hints;
   double                    m_iCurrentPts;
+  double                    m_iSleepEndTime;
   OMXClock                  *m_av_clock;
   COMXVideo                 m_omxVideo;
   float                     m_fFrameRate;
   bool                      m_Deinterlace;
-  bool                      m_flush;
   bool                      m_hdmi_clock_sync;
   double                    m_iVideoDelay;
   int                       m_speed;
@@ -81,6 +81,7 @@ protected:
   int                       m_view_mode;
 
   DllBcmHost                m_DllBcmHost;
+  bool                      m_send_eos;
 
   CDVDOverlayContainer  *m_pOverlayContainer;
   CDVDMessageQueue      &m_messageParent;
@@ -107,6 +108,7 @@ public:
   void WaitForBuffers()                             { m_messageQueue.WaitUntilEmpty(); }
   int  GetLevel() const                             { return m_messageQueue.GetLevel(); }
   bool IsStalled()                                  { return m_stalled;  }
+  bool IsEOS()                                      { return m_send_eos; };
   bool CloseStream(bool bWaitForBuffers);
   void Output(int iGroupId, double pts, bool bDropPacket);
   void Flush();

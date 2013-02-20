@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -40,7 +40,7 @@ protected:
   virtual void GoParentFolder() {};
   virtual void UpdateButtons();
   virtual void OnItemLoaded(CFileItem* pItem);
-  virtual bool Update(const CStdString& strDirectory);
+  virtual bool Update(const CStdString& strDirectory, bool updateFilterPath = true);
   virtual void GetContextButtons(int itemNumber, CContextButtons &buttons);
   virtual bool OnContextButton(int itemNumber, CONTEXT_BUTTON button);
   void OnMove(int iItem, int iAction);

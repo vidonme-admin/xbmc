@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,12 +25,13 @@
 
 PCMCodec::PCMCodec()
 {
-  m_CodecName = "PCM";
+  m_CodecName = "pcm";
   m_TotalTime = 0;
   m_SampleRate = 44100;
   m_Channels = 2;
   m_BitsPerSample = 16;
   m_Bitrate = m_SampleRate * m_Channels * m_BitsPerSample;
+  m_DataFormat = AE_FMT_S16LE;
 }
 
 PCMCodec::~PCMCodec()

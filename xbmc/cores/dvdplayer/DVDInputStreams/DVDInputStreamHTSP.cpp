@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -245,7 +245,7 @@ bool CDVDInputStreamHTSP::UpdateItem(CFileItem& item)
   }
   CFileItem current(item);
   CHTSPSession::ParseItem(channel, m_tag, m_event, item);
-  item.SetThumbnailImage(channel.icon);
+  item.SetArt("thumb", channel.icon);
   return current.GetPath()  != item.GetPath()
       || current.m_strTitle != item.m_strTitle;
 }

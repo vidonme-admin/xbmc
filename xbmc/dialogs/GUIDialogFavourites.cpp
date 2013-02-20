@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -199,10 +199,10 @@ void CGUIDialogFavourites::OnSetThumb(int item)
   CFileItemList items;
 
   // Current
-  if (pItem->HasThumbnail())
+  if (pItem->HasArt("thumb"))
   {
     CFileItemPtr current(new CFileItem("thumb://Current", false));
-    current->SetThumbnailImage(pItem->GetThumbnailImage());
+    current->SetArt("thumb", pItem->GetArt("thumb"));
     current->SetLabel(g_localizeStrings.Get(20016));
     items.Add(current);
   }
@@ -219,7 +219,7 @@ void CGUIDialogFavourites::OnSetThumb(int item)
   if (!CGUIDialogFileBrowser::ShowAndGetImage(items, sources, g_localizeStrings.Get(1030), thumb))
     return;
 
-  (*m_favourites)[item]->SetThumbnailImage(thumb);
+  (*m_favourites)[item]->SetArt("thumb", thumb);
   CFavourites::Save(*m_favourites);
   UpdateList();
 }

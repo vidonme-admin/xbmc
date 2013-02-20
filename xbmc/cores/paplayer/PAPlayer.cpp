@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -66,12 +66,7 @@ PAPlayer::PAPlayer(IPlayerCallback& callback) :
 
 PAPlayer::~PAPlayer()
 {
-  if (!m_isPaused)
-    SoftStop(true, true);
-  CloseAllStreams(false);
-
-  /* wait for the thread to terminate */
-  StopThread(true);//true - wait for end of thread
+  CloseFile();
   delete m_FileItem;
 }
 
@@ -234,6 +229,7 @@ bool PAPlayer::OpenFile(const CFileItem& file, const CPlayerOptions &options)
   if (m_streams.size() > 1 || !m_defaultCrossfadeMS || m_isPaused)
   {
     CloseAllStreams(!m_isPaused);
+    StopThread();
     m_isPaused = false; // Make sure to reset the pause state
   }
 
@@ -354,7 +350,15 @@ bool PAPlayer::QueueNextFileEx(const CFileItem &file, bool fadeIn/* = true */)
   si->m_playNextAtFrame = 0;
   si->m_playNextTriggered = false;
 
-  PrepareStream(si);
+  if (!PrepareStream(si))
+  {
+    CLog::Log(LOGINFO, "PAPlayer::QueueNextFileEx - Error preparing stream");
+    
+    si->m_decoder.Destroy();
+    delete si;
+    m_callback.OnQueueNextItem();
+    return false;
+  }
 
   /* add the stream to the list */
   CExclusiveLock lock(m_streamsLock);
@@ -439,7 +443,12 @@ inline bool PAPlayer::PrepareStream(StreamInfo *si)
 
 bool PAPlayer::CloseFile()
 {
-  m_callback.OnPlayBackStopped();
+  if (!m_isPaused)
+    SoftStop(true, true);
+  CloseAllStreams(false);
+
+  /* wait for the thread to terminate */
+  StopThread(true);//true - wait for end of thread
   return true;
 }
 
@@ -466,11 +475,27 @@ void PAPlayer::Process()
     ProcessStreams(delay, buffer);
 
     double watermark = buffer * 0.5;
-    if (delay < buffer && delay > watermark)
+#if defined(TARGET_DARWIN)
+    // In CoreAudio the delay can be bigger then the buffer
+    // because of delay from the HAL/Hardware
+    // This is the case when the buffer is full (e.x. 1 sec)
+    // and there is a HAL-Delay. In that case we would never sleep
+    // but load one cpu core up to 100% (happens on osx/ios whenever
+    // the first stream is finished and a prebuffered second stream
+    // starts to play. A BIG FIXME HERE.
+    if ((delay < buffer || buffer == 1) && delay > watermark)
+#else
+    if ((delay < buffer) && delay > watermark)
+#endif
       CThread::Sleep(MathUtils::round_int((delay - watermark) * 1000.0));
 
     GetTimeInternal(); //update for GUI
   }
+
+  if(m_isFinished && !m_bStop)
+    m_callback.OnPlayBackEnded();
+  else
+    m_callback.OnPlayBackStopped();
 }
 
 inline void PAPlayer::ProcessStreams(double &delay, double &buffer)
@@ -480,7 +505,6 @@ inline void PAPlayer::ProcessStreams(double &delay, double &buffer)
   {
     m_isPlaying = false;
     delay       = 0;
-    m_callback.OnPlayBackEnded();
     return;
   }
 
@@ -832,6 +856,29 @@ bool PAPlayer::CanSeek()
 
 void PAPlayer::Seek(bool bPlus, bool bLargeStep)
 {
+  if (!CanSeek()) return;
+
+  __int64 seek;
+  if (g_advancedSettings.m_musicUseTimeSeeking && GetTotalTime() > 2 * g_advancedSettings.m_musicTimeSeekForwardBig)
+  {
+    if (bLargeStep)
+      seek = bPlus ? g_advancedSettings.m_musicTimeSeekForwardBig : g_advancedSettings.m_musicTimeSeekBackwardBig;
+    else
+      seek = bPlus ? g_advancedSettings.m_musicTimeSeekForward : g_advancedSettings.m_musicTimeSeekBackward;
+    seek *= 1000;
+    seek += GetTime();
+  }
+  else
+  {
+    float percent;
+    if (bLargeStep)
+      percent = bPlus ? (float)g_advancedSettings.m_musicPercentSeekForwardBig : (float)g_advancedSettings.m_musicPercentSeekBackwardBig;
+    else
+      percent = bPlus ? (float)g_advancedSettings.m_musicPercentSeekForward : (float)g_advancedSettings.m_musicPercentSeekBackward;
+    seek = (__int64)(GetTotalTime64() * (GetPercentage() + percent) / 100);
+  }
+
+  SeekTime(seek);
 }
 
 void PAPlayer::SeekTime(int64_t iTime /*=0*/)

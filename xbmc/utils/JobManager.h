@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -303,6 +303,14 @@ private:
   void StartWorkers(CJob::PRIORITY priority);
   void RemoveWorker(const CJobWorker *worker);
   unsigned int GetMaxWorkers(CJob::PRIORITY priority) const;
+
+  /*! \brief skips over any paused jobs of given priority.
+   Moves any paused jobs at the front of the queue to the back of the
+   queue, allowing unpaused jobs to continue processing.
+   \param priority the priority queue to consider.
+   \return true if an unpaused job is available, false if no unpaused jobs are available.
+   */
+  bool SkipPausedJobs(CJob::PRIORITY priority);
 
   unsigned int m_jobCounter;
 

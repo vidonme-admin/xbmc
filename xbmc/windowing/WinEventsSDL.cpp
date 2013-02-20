@@ -1,5 +1,5 @@
 /*
-*      Copyright (C) 2005-2012 Team XBMC
+*      Copyright (C) 2005-2013 Team XBMC
 *      http://www.xbmc.org
 *
 *  This Program is free software; you can redistribute it and/or modify
@@ -69,7 +69,7 @@ static uint16_t SymMappingsEvdev[][2] =
 , { 138, 0x69 /* 'i' */}             // Info
 , { 147, 0x6d /* 'm' */}             // Menu
 , { 148, XBMCK_LAUNCH_APP2 }         // Launch app 2
-, { 150, 0x9f }                      // Sleep
+, { 150, XBMCK_SLEEP }               // Sleep
 , { 152, XBMCK_LAUNCH_APP1 }         // Launch app 1
 , { 163, XBMCK_LAUNCH_MAIL }         // Launch Mail
 , { 164, XBMCK_BROWSER_FAVORITES }   // Browser favorites

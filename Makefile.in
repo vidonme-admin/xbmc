@@ -48,7 +48,6 @@ DIRECTORY_ARCHIVES=$(DVDPLAYER_ARCHIVES) \
                    xbmc/filesystem/filesystem.a \
                    xbmc/guilib/guilib.a \
                    xbmc/input/input.a \
-                   xbmc/interfaces/http-api/http-api.a \
                    xbmc/interfaces/info/info.a \
                    xbmc/interfaces/interfaces.a \
                    xbmc/interfaces/json-rpc/json-rpc.a \
@@ -84,6 +83,7 @@ DIRECTORY_ARCHIVES=$(DVDPLAYER_ARCHIVES) \
                    xbmc/video/dialogs/videodialogs.a \
                    xbmc/video/video.a \
                    xbmc/video/windows/videowindows.a \
+                   xbmc/view/view.a \
                    xbmc/windowing/windowing.a \
                    xbmc/windows/windows.a \
                    xbmc/xbmc.a \
@@ -197,12 +197,12 @@ endif
 VIS_DIRS=xbmc/visualizations/OpenGLSpectrum \
          xbmc/visualizations/WaveForm
 
-ifneq (@DISABLE_PROJECTM@,1)
-  VIS_DIRS+= xbmc/visualizations/XBMCProjectM
+ifneq (@DISABLE_FISHBMC@,1)
+  VIS_DIRS+= xbmc/visualizations/fishBMC
 endif
 
-ifeq (($(findstring osx,@ARCH@), osx),(@USE_OPENGL@,1))
-  VIS_DIRS+=xbmc/visualizations/iTunes
+ifneq (@DISABLE_PROJECTM@,1)
+  VIS_DIRS+= xbmc/visualizations/XBMCProjectM
 endif
 
 ifneq (@DISABLE_GOOM@,1)

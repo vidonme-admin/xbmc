@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -122,7 +122,7 @@ public:
   int GetConvertSize();
   uint8_t *GetExtraData(void);
   int GetExtraSize();
-  void parseh264_sps(uint8_t *sps, uint32_t sps_size, bool *interlaced, int32_t *max_ref_frames);
+  void parseh264_sps(const uint8_t *sps, const uint32_t sps_size, bool *interlaced, int32_t *max_ref_frames);
 protected:
   // bytestream (Annex B) to bistream conversion support.
   void nal_bs_init(nal_bitstream *bs, const uint8_t *data, size_t size);

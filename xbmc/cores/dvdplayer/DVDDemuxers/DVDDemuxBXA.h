@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -67,7 +67,7 @@ public:
   DemuxPacket* Read();
   bool SeekTime(int time, bool backwords = false, double* startpts = NULL) { return false; }
   void SetSpeed(int iSpeed) {};
-  int GetStreamLength() { return m_header.durationMs; }
+  int GetStreamLength() { return (int)m_header.durationMs; }
   CDemuxStream* GetStream(int iStreamId);
   int GetNrOfStreams();
   std::string GetFileName();

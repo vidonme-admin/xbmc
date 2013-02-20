@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -23,8 +23,6 @@
 #include "cores/AudioEngine/Utils/AEUtil.h"
 #include "music/tags/TagLoaderTagLib.h"
 
-using namespace MUSIC_INFO;
-
 FLACCodec::FLACCodec()
 {
   m_SampleRate = 0;
@@ -33,7 +31,7 @@ FLACCodec::FLACCodec()
   m_DataFormat = AE_FMT_INVALID;
   m_TotalTime=0;
   m_Bitrate = 0;
-  m_CodecName = "FLAC";
+  m_CodecName = "flac";
 
   m_pFlacDecoder=NULL;
 

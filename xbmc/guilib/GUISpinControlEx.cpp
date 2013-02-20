@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -148,11 +148,11 @@ void CGUISpinControlEx::SetSpinPosition(float spinPosX)
   SetPosition(m_buttonControl.GetXPosition(), m_buttonControl.GetYPosition());
 }
 
-void CGUISpinControlEx::RenderText(float posX, float width)
+void CGUISpinControlEx::RenderText(float posX, float posY, float width, float height)
 {
   const float spaceWidth = 10;
   // check our limits from the button control
   float x = std::max(m_buttonControl.m_label.GetRenderRect().x2 + spaceWidth, posX);
   m_label.SetScrolling(HasFocus());
-  CGUISpinControl::RenderText(x, width + posX - x);
+  CGUISpinControl::RenderText(x, m_buttonControl.GetYPosition(), width + posX - x, m_buttonControl.GetHeight());
 }

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -215,12 +215,12 @@ void CGUIWindowMusicPlaylistEditor::OnQueueItem(int iItem)
   AppendToPlaylist(newItems);
 }
 
-bool CGUIWindowMusicPlaylistEditor::Update(const CStdString &strDirectory)
+bool CGUIWindowMusicPlaylistEditor::Update(const CStdString &strDirectory, bool updateFilterPath /* = true */)
 {
   if (m_thumbLoader.IsLoading())
     m_thumbLoader.StopThread();
 
-  if (!CGUIMediaWindow::Update(strDirectory))
+  if (!CGUIMediaWindow::Update(strDirectory, updateFilterPath))
     return false;
 
   m_vecItems->SetContent("files");

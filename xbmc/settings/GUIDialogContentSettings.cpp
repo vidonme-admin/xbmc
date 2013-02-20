@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -61,10 +61,6 @@ bool CGUIDialogContentSettings::OnMessage(CGUIMessage &message)
   case GUI_MSG_WINDOW_DEINIT:
     {
       m_scrapers.clear();
-      m_lastSelected.clear();
-      // save our current scraper (if any)
-      if (m_scraper)
-        m_lastSelected[m_content] = m_scraper;
       m_vecItems->Clear();
       CGUIDialogSettings::OnMessage(message);
     }
@@ -82,6 +78,11 @@ bool CGUIDialogContentSettings::OnMessage(CGUIMessage &message)
     }
     if (iControl == CONTROL_SCRAPER_LIST)
     {
+      // we handle only select actions
+      int action = message.GetParam1();
+      if (!(action == ACTION_SELECT_ITEM || action == ACTION_MOUSE_LEFT_CLICK))
+        break;
+
       CGUIMessage msg(GUI_MSG_ITEM_SELECTED,GetID(), CONTROL_SCRAPER_LIST);
       g_windowManager.SendMessage(msg);
       int iSelected = msg.GetParam1();
@@ -171,11 +172,10 @@ void CGUIDialogContentSettings::CreateSettings()
     break;
   case CONTENT_MUSICVIDEOS:
     {
-      AddBool(1,20346,&m_bScanRecursive, m_bShowScanSettings);
-      AddBool(2,20330,&m_bUseDirNames, m_bShowScanSettings);
-      AddBool(3,20346,&m_bScanRecursive, m_bShowScanSettings && ((m_bUseDirNames && !m_bSingleItem) || !m_bUseDirNames));
-      AddBool(4,20383,&m_bSingleItem, m_bShowScanSettings && (m_bUseDirNames && !m_bScanRecursive));
-      AddBool(5,20432,&m_bNoUpdate, m_bShowScanSettings);
+      AddBool(1,20330,&m_bUseDirNames, m_bShowScanSettings);
+      AddBool(2,20346,&m_bScanRecursive, m_bShowScanSettings && ((m_bUseDirNames && !m_bSingleItem) || !m_bUseDirNames));
+      AddBool(3,20383,&m_bSingleItem, m_bShowScanSettings && (m_bUseDirNames && !m_bScanRecursive));
+      AddBool(4,20432,&m_bNoUpdate, m_bShowScanSettings);
     }
     break;
   case CONTENT_ALBUMS:
@@ -229,6 +229,10 @@ void CGUIDialogContentSettings::OnCancel()
 
 void CGUIDialogContentSettings::OnInitWindow()
 {
+  m_lastSelected.clear();
+  // save our current scraper (if any)
+  if (m_scraper)
+    m_lastSelected[m_content] = m_scraper;
   FillContentTypes();
   m_bNeedSave = false;
   CGUIDialogSettings::OnInitWindow();
@@ -320,7 +324,7 @@ void CGUIDialogContentSettings::FillListControl()
   {
     CFileItemPtr item(new CFileItem((*iter)->Name()));
     item->SetPath((*iter)->ID());
-    item->SetThumbnailImage((*iter)->Icon());
+    item->SetArt("thumb", (*iter)->Icon());
     if (m_scraper && (*iter)->ID() == m_scraper->ID())
     {
       item->Select(true);

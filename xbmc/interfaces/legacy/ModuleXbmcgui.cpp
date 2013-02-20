@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,7 +20,7 @@
  */
 
 #include "ModuleXbmcgui.h"
-
+#include "LanguageHook.h"
 #include "guilib/GraphicContext.h"
 #include "guilib/GUIWindowManager.h"
 #include "utils/log.h"
@@ -41,18 +41,16 @@ namespace XBMCAddon
 
     long getCurrentWindowId()
     {
-      lock();
-      int id = g_windowManager.GetActiveWindow();
-      unlock();
-      return id;
+      DelayedCallGuard dg;
+      CSingleLock gl(g_graphicsContext);
+      return g_windowManager.GetActiveWindow();
     }
 
     long getCurrentWindowDialogId()
     {
-      lock();
-      int id = g_windowManager.GetTopMostModalDialogID();
-      unlock();
-      return id;
+      DelayedCallGuard dg;
+      CSingleLock gl(g_graphicsContext);
+      return g_windowManager.GetTopMostModalDialogID();
     }
   }
 }

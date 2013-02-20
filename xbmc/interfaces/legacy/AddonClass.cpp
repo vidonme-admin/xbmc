@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -61,7 +61,7 @@ namespace XBMCAddon
 #endif
 
     // check to see if we have a language hook that was prepared for this instantiation
-    languageHook = LanguageHook::getLanguageHook();
+    languageHook = LanguageHook::GetLanguageHook();
     if (languageHook != NULL)
     {
       languageHook->Acquire();
@@ -70,7 +70,7 @@ namespace XBMCAddon
       //  this AddonClass (actually - its subclass - but whatever). So we
       //  will now reset the Tls. This avoids issues if the constructor of the
       //  subclass throws an exception.
-      LanguageHook::clearLanguageHook();
+      LanguageHook::ClearLanguageHook();
     }
   }
 

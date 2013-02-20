@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@ namespace XBMCAddon
     {
       // if there is a LanguageHook, it should be set already.
       if (languageHook != NULL)
-        setHandler(languageHook->getCallbackHandler());
+        setHandler(languageHook->GetCallbackHandler());
     }
     virtual ~AddonCallback();
 

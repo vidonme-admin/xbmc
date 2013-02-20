@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -63,6 +63,8 @@ public:
   CVariant(const wchar_t *str, unsigned int length);
   CVariant(const std::wstring &str);
   CVariant(const std::vector<std::string> &strArray);
+  CVariant(const std::map<std::string, std::string> &strMap);
+  CVariant(const std::map<std::string, CVariant> &variantMap);
   CVariant(const CVariant &variant);
   ~CVariant();
 

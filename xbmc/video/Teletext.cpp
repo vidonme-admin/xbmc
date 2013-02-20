@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -36,10 +36,22 @@
 #ifdef HAS_SDL
 #include <SDL/SDL_stdinc.h>
 #else
-#define SDL_memset4(dst, val, len) memset(dst, val, (len)*4)
-#define SDL_memcpy4(dst, src, len) memcpy(dst, src, (len)*4)
-#define SDL_memcpy4(dst, src, len) memcpy(dst, src, (len)*4)
-#define SDL_memset4(dst, val, len) memset(dst, val, (len)*4)
+#define SDL_memset4(dst, val, len)		\
+do {						\
+	uint32_t _count = (len);		\
+	uint32_t _n = (_count + 3) / 4;		\
+	uint32_t *_p = static_cast<uint32_t *>(dst);	\
+	uint32_t _val = (val);			\
+	if (len == 0) break;			\
+        switch (_count % 4) {			\
+        case 0: do {    *_p++ = _val;		\
+        case 3:         *_p++ = _val;		\
+        case 2:         *_p++ = _val;		\
+        case 1:         *_p++ = _val;		\
+		} while ( --_n );		\
+	}					\
+} while(0)
+#define SDL_memcpy4(dst, src, len) memcpy(dst, src, (len) << 2)
 #endif
 
 using namespace std;

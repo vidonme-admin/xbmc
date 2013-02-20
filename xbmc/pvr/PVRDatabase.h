@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -176,6 +176,12 @@ namespace PVR
      * @return True if the group was persisted successfully, false otherwise.
      */
     bool Persist(CPVRChannelGroup &group);
+
+    /*!
+     * @brief Reset all epg ids to 0
+     * @return True when reset, false otherwise.
+     */
+    bool ResetEPG(void);
 
     //@}
 

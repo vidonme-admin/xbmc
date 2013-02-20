@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,7 +19,6 @@
  *
  */
 
-#include "ThumbLoader.h"
 #include "Job.h"
 
 enum ERecentlyAddedFlag
@@ -37,8 +36,6 @@ public:
   bool UpdateMusic();
   bool UpdateTotal();
   virtual bool DoWork();
-protected:
-  CVideoThumbLoader m_thumbLoader;
 private:
   int m_flag;
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,16 +21,13 @@
  */
 
 #include "DynamicDll.h"
-#ifdef _WIN32
-#include <lame.h>
-#else
 #include "lame/lame.h"
-#endif
 
 class DllLameEncInterface
 {
 public:
   virtual void id3tag_init(lame_global_flags* gfp)=0;
+  virtual void id3tag_add_v2(lame_global_flags* gfp)=0;
   virtual int id3tag_set_genre(lame_global_flags* gfp, const char* genre)=0;
   virtual void id3tag_set_title(lame_global_flags* gfp, const char* title)=0;
   virtual void id3tag_set_artist(lame_global_flags* gfp, const char* artist)=0;
@@ -58,6 +55,7 @@ class DllLameEnc : public DllDynamic, DllLameEncInterface
 {
   DECLARE_DLL_WRAPPER(DllLameEnc, DLL_PATH_LAME_ENC)
   DEFINE_METHOD1(void, id3tag_init, (lame_global_flags* p1));
+  DEFINE_METHOD1(void, id3tag_add_v2, (lame_global_flags* p1));
   DEFINE_METHOD2(int, id3tag_set_genre, (lame_global_flags* p1, const char* p2))
   DEFINE_METHOD2(void, id3tag_set_title, (lame_global_flags* p1, const char* p2))
   DEFINE_METHOD2(void, id3tag_set_artist, (lame_global_flags* p1, const char* p2))
@@ -80,6 +78,7 @@ class DllLameEnc : public DllDynamic, DllLameEncInterface
   DEFINE_METHOD3(int, lame_encode_flush, (lame_global_flags* p1, unsigned char* p2, int p3))
   BEGIN_METHOD_RESOLVE()
     RESOLVE_METHOD(id3tag_init)
+    RESOLVE_METHOD(id3tag_add_v2)
     RESOLVE_METHOD(id3tag_set_genre)
     RESOLVE_METHOD(id3tag_set_title)
     RESOLVE_METHOD(id3tag_set_artist)

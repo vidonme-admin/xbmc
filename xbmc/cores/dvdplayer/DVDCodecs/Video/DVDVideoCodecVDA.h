@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -56,6 +56,8 @@ public:
   
 protected:
   void DisplayQueuePop(void);
+  void UYVY422_to_YUV420P(uint8_t *yuv422_ptr, int yuv422_stride, DVDVideoPicture *picture);
+  void BGRA_to_YUV420P(uint8_t *bgra_ptr, int bgra_stride, DVDVideoPicture *picture);
 
   static void VDADecoderCallback(
     void *decompressionOutputRefCon, CFDictionaryRef frameInfo,
@@ -66,17 +68,22 @@ protected:
   int32_t           m_format;
   const char        *m_pFormatName;
   bool              m_DropPictures;
+  bool              m_decode_async;
 
   double            m_sort_time_offset;
   pthread_mutex_t   m_queue_mutex;    // mutex protecting queue manipulation
   frame_queue       *m_display_queue; // display-order queue - next display frame is always at the queue head
   int32_t           m_queue_depth;    // we will try to keep the queue depth around 16+1 frames
   int32_t           m_max_ref_frames;
+  bool              m_use_cvBufferRef;
   
   bool              m_convert_bytestream;
   bool              m_convert_3byteTo4byteNALSize;
   DllAvUtil         *m_dllAvUtil;
   DllAvFormat       *m_dllAvFormat;
+
+  DllSwScale        *m_dllSwScale;
+  DVDVideoPicture   m_videobuffer;
 };
 
 #endif

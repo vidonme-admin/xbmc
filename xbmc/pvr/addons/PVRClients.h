@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -54,6 +54,13 @@ namespace PVR
   public:
     CPVRClients(void);
     virtual ~CPVRClients(void);
+
+    /*!
+     * @brief Checks whether an add-on is loaded by the pvr manager
+     * @param strAddonId The add-on id to check
+     * @return True when in use, false otherwise
+     */
+    bool IsInUse(const std::string& strAddonId) const;
 
     /*!
      * @brief Start the backend info updater thread.
@@ -500,13 +507,13 @@ namespace PVR
      * @param iClientId The ID of the client to get the menu entries for. Get the menu for the active channel if iClientId < 0.
      * @return True if the client has any menu hooks, false otherwise.
      */
-    bool HasMenuHooks(int iClientId);
+    bool HasMenuHooks(int iClientId, PVR_MENUHOOK_CAT cat);
 
     /*!
      * @brief Open selection and progress PVR actions.
      * @param iClientId The ID of the client to process the menu entries for. Process the menu entries for the active channel if iClientId < 0.
      */
-    void ProcessMenuHooks(int iClientID);
+    void ProcessMenuHooks(int iClientID, PVR_MENUHOOK_CAT cat);
 
     //@}
 
@@ -559,7 +566,7 @@ namespace PVR
      * @param hooks The container to add the hooks to.
      * @return True if the hooks were added successfully (if any), false otherwise.
      */
-    bool GetMenuHooks(int iClientID, PVR_MENUHOOKS *hooks);
+    bool GetMenuHooks(int iClientID, PVR_MENUHOOK_CAT cat, PVR_MENUHOOKS *hooks);
 
     /*!
      * @brief Updates the backend information
@@ -624,5 +631,6 @@ namespace PVR
     bool                  m_bNoAddonWarningDisplayed; /*!< true when a warning was displayed that no add-ons were found, false otherwise */
     CCriticalSection      m_critSection;
     CAddonDatabase        m_addonDb;
+    std::map<int, time_t> m_connectionAttempts;       /*!< last connection attempt per add-on */
   };
 }

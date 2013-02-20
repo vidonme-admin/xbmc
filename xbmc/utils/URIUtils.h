@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -34,6 +34,8 @@ public:
 
   static void GetDirectory(const CStdString& strFilePath,
                            CStdString& strDirectoryPath);
+  static CStdString GetDirectory(const CStdString &filePath);
+
   static const CStdString GetExtension(const CStdString& strFileName);
   static void GetExtension(const CStdString& strFile, CStdString& strExtension);
   static const CStdString GetFileName(const CStdString& strFileNameAndPath);
@@ -53,6 +55,7 @@ public:
   static bool IsSourcesPath(const CStdString& strFile);
   static bool IsCDDA(const CStdString& strFile);
   static bool IsDAAP(const CStdString& strFile);
+  static bool IsDAV(const CStdString& strFile);
   static bool IsDOSPath(const CStdString &path);
   static bool IsDVD(const CStdString& strFile);
   static bool IsFTP(const CStdString& strFile);
@@ -90,6 +93,7 @@ public:
   static bool IsVTP(const CStdString& strFile);
   static bool IsAPK(const CStdString& strFile);
   static bool IsZIP(const CStdString& strFile);
+  static bool IsArchive(const CStdString& strFile);
   static bool IsBluray(const CStdString& strFile);
   static bool IsAndroidApp(const CStdString& strFile);
 
@@ -131,6 +135,18 @@ public:
    \return Actual path without any "." or ".."
    */
   static std::string GetRealPath(const std::string &path);
+
+  /*!
+   \brief Updates the URL encoded hostname of the given path
+
+   This method must only be used to update paths encoded with
+   the old (Eden) URL encoding implementation to the new (Frodo)
+   URL encoding implementation (which does not URL encode -_.!().
+
+   \param strFilename Path to update
+   \return True if the path has been updated/changed otherwise false
+   */
+  static bool UpdateUrlEncoding(std::string &strFilename);
 
 private:
   static std::string resolvePath(const std::string &path);

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -62,6 +62,10 @@ bool CGUIWindowVisualisation::OnAction(const CAction &action)
       return true;
     }
     break;
+
+  case ACTION_SHOW_OSD:
+    g_windowManager.ActivateWindow(WINDOW_DIALOG_MUSIC_OSD);
+    return true;
 
   case ACTION_SHOW_GUI:
     // save the settings

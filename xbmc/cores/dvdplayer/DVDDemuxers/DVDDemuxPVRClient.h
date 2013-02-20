@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -56,6 +56,7 @@ public:
   CDVDDemuxPVRClient  * m_parent;
   AVCodecParserContext* m_parser;
   AVCodecContext      * m_context;
+  bool                  m_parser_split;
 };
 
 class CDemuxStreamVideoPVRClient
@@ -107,8 +108,8 @@ public:
   void Abort();
   void Flush();
   DemuxPacket* Read();
-  bool SeekTime(int time, bool backwords = false, double* startpts = NULL) { return false; }
-  void SetSpeed(int iSpeed) {};
+  bool SeekTime(int time, bool backwords = false, double* startpts = NULL);
+  void SetSpeed(int iSpeed);
   int GetStreamLength() { return 0; }
   CDemuxStream* GetStream(int iStreamId);
   int GetNrOfStreams();
@@ -127,7 +128,7 @@ protected:
 
 private:
   void RequestStreams();
-  void UpdateStreams(PVR_STREAM_PROPERTIES *props);
   void ParsePacket(DemuxPacket* pPacket);
+  void DisposeStream(int iStreamId);
 };
 

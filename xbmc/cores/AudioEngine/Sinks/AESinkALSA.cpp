@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -426,7 +426,6 @@ void CAESinkALSA::Deinitialize()
 
   if (m_pcm)
   {
-    snd_pcm_drop (m_pcm);
     snd_pcm_close(m_pcm);
     m_pcm = NULL;
   }
@@ -487,10 +486,13 @@ double CAESinkALSA::GetCacheTotal()
 unsigned int CAESinkALSA::AddPackets(uint8_t *data, unsigned int frames, bool hasAudio)
 {
   if (!m_pcm)
-    return 0;
+  {
+    SoftResume();
+    if(!m_pcm)
+      return 0;
 
-  if (snd_pcm_state(m_pcm) == SND_PCM_STATE_PREPARED)
-    snd_pcm_start(m_pcm);
+    CLog::Log(LOGDEBUG, "CAESinkALSA - the grAEken is hunger, feed it (I am the downmost fallback - fix your code)");
+  }
 
   int ret;
 
@@ -519,6 +521,9 @@ unsigned int CAESinkALSA::AddPackets(uint8_t *data, unsigned int frames, bool ha
       ret = 0;
     }
   }
+
+  if ( ret > 0 && snd_pcm_state(m_pcm) == SND_PCM_STATE_PREPARED)
+    snd_pcm_start(m_pcm);
 
   return ret;
 }
@@ -676,12 +681,17 @@ bool CAESinkALSA::OpenPCMDevice(const std::string &name, const std::string &para
   return false;
 }
 
-void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list)
+void CAESinkALSA::EnumerateDevicesEx(AEDeviceInfoList &list, bool force)
 {
   /* ensure that ALSA has been initialized */
   snd_lib_error_set_handler(sndLibErrorHandler);
-  if(!snd_config)
+  if(!snd_config || force)
+  {
+    if(force)
+      snd_config_update_free_global();
+
     snd_config_update();
+  }
 
   snd_config_t *config;
   snd_config_copy(&config, snd_config);
@@ -952,20 +962,13 @@ void CAESinkALSA::EnumerateDevice(AEDeviceInfoList &list, const std::string &dev
 
             if (badHDMI)
             {
-              /* only trust badHDMI (= unconnected or non-existent port) on Intel
-               * and NVIDIA where it has been confirmed to work, show the empty
-               * port on other systems */
-              if (info.m_displayName.compare(0, 9, "HDA Intel") == 0 || info.m_displayName.compare(0, 10, "HDA NVidia") == 0)
-              {
-                /* unconnected HDMI port */
-                CLog::Log(LOGDEBUG, "CAESinkALSA - Skipping HDMI device \"%s\" as it has no ELD data", device.c_str());
-                snd_pcm_close(pcmhandle);
-                return;
-              }
-              else
-              {
-                CLog::Log(LOGDEBUG, "CAESinkALSA - HDMI device \"%s\" may be unconnected (no ELD data)", device.c_str());
-              }
+              /* 
+               * Warn about disconnected devices, but keep them enabled 
+               * Detection can go wrong on Intel, Nvidia and on all 
+               * AMD (fglrx) hardware, so it is not safe to close those
+               * handles
+               */
+              CLog::Log(LOGDEBUG, "CAESinkALSA - HDMI device \"%s\" may be unconnected (no ELD data)", device.c_str());
             }
           }
           else
@@ -1130,6 +1133,28 @@ bool CAESinkALSA::GetELD(snd_hctl_t *hctl, int device, CAEDeviceInfo& info, bool
 
   info.m_deviceType = AE_DEVTYPE_HDMI;
   return true;
+}
+
+bool CAESinkALSA::SoftSuspend()
+{
+  if(m_pcm) // it is still there
+   Deinitialize();
+
+  return true;
+}
+bool CAESinkALSA::SoftResume()
+{
+    // reinit all the clibber
+    bool ret = true; // all fine
+    if(!m_pcm)
+    {
+      if (!snd_config)
+        snd_config_update();
+
+      ret = Initialize(m_initFormat, m_initDevice);
+    }
+   //we want that AE loves us again - reinit when initialize failed
+   return ret; // force reinit if false
 }
 
 void CAESinkALSA::sndLibErrorHandler(const char *file, int line, const char *function, int err, const char *fmt, ...)

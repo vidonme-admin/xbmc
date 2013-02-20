@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -49,11 +49,11 @@ using namespace XFILE;
 #define LOCALIZED_TOKEN_FIRSTID    370
 #define LOCALIZED_TOKEN_LASTID     395
 #define LOCALIZED_TOKEN_FIRSTID2  1396
-#define LOCALIZED_TOKEN_LASTID2   1450
+#define LOCALIZED_TOKEN_LASTID2   1449
 #define LOCALIZED_TOKEN_FIRSTID3    11
 #define LOCALIZED_TOKEN_LASTID3     17
 #define LOCALIZED_TOKEN_FIRSTID4    71
-#define LOCALIZED_TOKEN_LASTID4     89
+#define LOCALIZED_TOKEN_LASTID4     97
 
 /*
 FIXME'S

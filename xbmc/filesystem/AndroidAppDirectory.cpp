@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -66,7 +66,7 @@ bool CAndroidAppDirectory::GetDirectory(const CStdString& strPath, CFileItemList
       path.Format("androidapp://%s/%s/%s", url.GetHostName(), dirname,  applications[i].packageName);
       pItem->SetPath(path);
       pItem->SetLabel(applications[i].packageLabel);
-      pItem->SetThumbnailImage(path+".png");
+      pItem->SetArt("thumb", path+".png");
       items.Add(pItem);
     }
     return true;

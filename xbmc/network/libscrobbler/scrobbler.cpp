@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -110,7 +110,7 @@ void CScrobbler::AddSong(const MUSIC_INFO::CMusicInfoTag &tag, bool lastfmradio)
   CURL::Encode(m_CurrentTrack.strMusicBrainzID);
 
   m_bNotified = false;
-  m_bSubmitted = !((lastfmradio && g_guiSettings.GetBool("scrobbler.lastfmsubmitradio")) ||
+  m_bSubmitted = !(lastfmradio ||
       (!lastfmradio && g_guiSettings.GetBool("scrobbler.lastfmsubmit") && (m_CurrentTrack.length > SCROBBLER_MIN_DURATION || !m_CurrentTrack.strMusicBrainzID.IsEmpty())));
 }
 

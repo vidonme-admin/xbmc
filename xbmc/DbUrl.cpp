@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -68,6 +68,80 @@ void CDbUrl::AppendPath(const std::string &subPath)
     return;
 
   m_url.SetFileName(URIUtils::AddFileToFolder(m_url.GetFileName(), subPath));
+}
+
+void CDbUrl::AddOption(const std::string &key, const char *value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOption(const std::string &key, const std::string &value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOption(const std::string &key, int value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOption(const std::string &key, float value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOption(const std::string &key, double value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOption(const std::string &key, bool value)
+{
+  if (!validateOption(key, value))
+    return;
+  
+  CUrlOptions::AddOption(key, value);
+  updateOptions();
+}
+
+void CDbUrl::AddOptions(const std::string &options)
+{
+  CUrlOptions::AddOptions(options);
+  updateOptions();  
+}
+
+void CDbUrl::RemoveOption(const std::string &key)
+{
+  CUrlOptions::RemoveOption(key);
+  updateOptions(); 
+}
+
+bool CDbUrl::validateOption(const std::string &key, const CVariant &value)
+{
+  if (key.empty())
+    return false;
+
+  return true;
 }
 
 void CDbUrl::updateOptions()

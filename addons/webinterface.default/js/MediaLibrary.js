@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2011 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -653,7 +653,7 @@ MediaLibrary.prototype = {
     episodeTitle.html(event.data.episode.title + yearText);
     episodeDetails.append(episodeTitle);
     if (event.data.episode.runtime) {
-      episodeDetails.append($('<p>').addClass('runtime').html('<strong>Runtime:</strong> ' + event.data.epispde.runtime + ' minutes'));
+      episodeDetails.append($('<p>').addClass('runtime').html('<strong>Runtime:</strong> ' + event.data.episode.runtime + ' minutes'));
     }
     if (event.data.episode.season) {
       episodeDetails.append($('<p>').addClass('season').html('<strong>Season:</strong> ' + event.data.episode.season));

@@ -8,7 +8,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2003-2012 Team XBMC
+ *      Copyright (C) 2003-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -128,6 +128,7 @@ public:
   float GetTextWidth( const vecText &text );
   float GetCharWidth( character_t ch );
   float GetTextHeight(int numLines) const;
+  float GetTextBaseLine() const;
   float GetLineHeight() const;
 
   //! get font scale factor (rendered height / original height)

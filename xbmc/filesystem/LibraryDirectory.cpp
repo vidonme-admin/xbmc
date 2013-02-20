@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -172,7 +172,7 @@ bool CLibraryDirectory::Exists(const char* strPath)
 CStdString CLibraryDirectory::GetNode(const CStdString &path)
 {
   CURL url(path);
-  CStdString libDir = URIUtils::AddFileToFolder(g_settings.GetDatabaseFolder(), url.GetHostName() + "/");
+  CStdString libDir = URIUtils::AddFileToFolder(g_settings.GetLibraryFolder(), url.GetHostName() + "/");
   if (!CDirectory::Exists(libDir))
     libDir = URIUtils::AddFileToFolder("special://xbmc/system/library/", url.GetHostName() + "/");
 

@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -92,7 +92,7 @@ bool CCoreAudioAEHALOSX::InitializePCM(ICoreAudioSource *pSource, AEAudioFormat 
   if (!m_audioGraph)
     return false;
 
-  AudioChannelLayoutTag layout = g_LayoutMap[ g_guiSettings.GetInt("audiooutput.channellayout") ];
+  AudioChannelLayoutTag layout = g_LayoutMap[ g_guiSettings.GetInt("audiooutput.channels") ];
   // force optical/coax to 2.0 output channels
   if (!m_Passthrough && g_guiSettings.GetInt("audiooutput.mode") == AUDIO_IEC958)
     layout = g_LayoutMap[1];
@@ -396,8 +396,7 @@ void CCoreAudioAEHALOSX::EnumerateOutputDevices(AEDeviceList &devices, bool pass
   CoreAudioDeviceList deviceList;
   CCoreAudioHardware::GetOutputDevices(&deviceList);
 
-  std::string defaultDeviceName;
-  CCoreAudioHardware::GetOutputDeviceName(defaultDeviceName);
+  devices.push_back(AEDevice("Default", "CoreAudio:default"));
 
   std::string deviceName;
   for (int i = 0; !deviceList.empty(); i++)

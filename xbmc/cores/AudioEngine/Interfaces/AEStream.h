@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -137,6 +137,18 @@ public:
    * @param factor The replay gain factor
    */
   virtual void SetReplayGain(float factor) = 0;
+
+  /**
+   * Gets the stream's volume amplification in linear units.
+   * @return The volume amplification factor between 1.0 and 1000.0
+   */
+  virtual float GetAmplification() = 0;
+
+  /**
+   * Sets the stream's volume amplification in linear units.
+   * @param The volume amplification factor between 1.0 and 1000.0
+   */
+  virtual void SetAmplification(float amplify) = 0;
 
   /**
    * Returns the size of one audio frame in bytes (channelCount * resolution)

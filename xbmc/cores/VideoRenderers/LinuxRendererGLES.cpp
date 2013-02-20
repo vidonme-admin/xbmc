@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -415,12 +415,21 @@ void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     if (m_RenderUpdateCallBackFn)
       (*m_RenderUpdateCallBackFn)(m_RenderUpdateCallBackCtx, m_sourceRect, m_destRect);
 
+    RESOLUTION res = GetResolution();
+    int iWidth = g_settings.m_ResInfo[res].iWidth;
+    int iHeight = g_settings.m_ResInfo[res].iHeight;
+
     g_graphicsContext.BeginPaint();
 
+    glScissor(m_destRect.x1, 
+              iHeight - m_destRect.y2, 
+              m_destRect.x2 - m_destRect.x1, 
+              m_destRect.y2 - m_destRect.y1);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT);
+    glScissor(0, 0, iWidth, iHeight);
 
     g_graphicsContext.EndPaint();
     return;
@@ -1316,14 +1325,22 @@ bool CLinuxRendererGLES::RenderCapture(CRenderCapture* capture)
 
   // new video rect is thumbnail size
   m_destRect.SetRect(0, 0, (float)capture->GetWidth(), (float)capture->GetHeight());
+  MarkDirty();
   syncDestRectToRotatedPoints();//syncs the changed destRect to m_rotatedDestCoords
   // clear framebuffer and invert Y axis to get non-inverted image
   glDisable(GL_BLEND);
 
   g_matrices.MatrixMode(MM_MODELVIEW);
   g_matrices.PushMatrix();
-  g_matrices.Translatef(0.0f, capture->GetHeight(), 0.0f);
-  g_matrices.Scalef(1.0f, -1.0f, 1.0f);
+  // fixme - we know that cvref is already flipped in y direction
+  // but somehow this also effects the rendercapture here
+  // for cvref we have to skip the flip here or we get upside down
+  // images
+  if (m_renderMethod != RENDER_CVREF)
+  {
+    g_matrices.Translatef(0.0f, capture->GetHeight(), 0.0f);
+    g_matrices.Scalef(1.0f, -1.0f, 1.0f);
+  }
 
   capture->BeginRender();
 

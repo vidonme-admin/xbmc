@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -106,6 +106,7 @@ protected:
   void       saveRotatedCoords();//saves the current state of m_rotatedDestCoords
   void       syncDestRectToRotatedPoints();//sync any changes of m_destRect to m_rotatedDestCoords
   void       restoreRotatedCoords();//restore the current state of m_rotatedDestCoords from saveRotatedCoords 
+  void       MarkDirty();
 
   RESOLUTION m_resolution;    // the resolution we're running in
   unsigned int m_sourceWidth;

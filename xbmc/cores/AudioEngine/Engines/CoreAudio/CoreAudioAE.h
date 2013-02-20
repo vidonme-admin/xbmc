@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -24,7 +24,7 @@
 
 #include "system.h"
 
-#include "Interfaces/AE.h"
+#include "cores/AudioEngine/Interfaces/AE.h"
 #include "ICoreAudioAEHAL.h"
 #include "ICoreAudioSource.h"
 #include "CoreAudioAEStream.h"
@@ -72,7 +72,7 @@ public:
   virtual void      Shutdown();
 
   virtual bool      Initialize();
-  virtual void      OnSettingsChange(std::string setting);
+  virtual void      OnSettingsChange(const std::string& setting);
 
   virtual bool      Suspend(); /* Suspend output and de-initialize "hog-mode" sink for external players and power savings */
   virtual bool      Resume();  /* Resume ouput and re-initialize sink after Suspend() above */
@@ -120,10 +120,13 @@ public:
   virtual OSStatus  Render(AudioUnitRenderActionFlags* actionFlags,
     const AudioTimeStamp* pTimeStamp, UInt32 busNumber,
     UInt32 frameCount, AudioBufferList* pBufList);
+    
+  void AudioDevicesChanged();
 
 
 private:
   CCriticalSection  m_callbackLock;
+  CCriticalSection  m_engineLock;
   CCriticalSection  m_streamLock;
   CCriticalSection  m_soundLock;
   CCriticalSection  m_soundSampleLock;
@@ -148,6 +151,9 @@ private:
   bool              m_callbackRunning;
 
   AEAudioFormat     m_format;
+  enum AEDataFormat m_lastStreamFormat;
+  unsigned int      m_lastChLayoutCount;
+  unsigned int      m_lastSampleRate;
   unsigned int      m_chLayoutCount;
   bool              m_rawPassthrough;
 
@@ -168,4 +174,6 @@ private:
   int               m_soundMode;
   bool              m_streamsPlaying;
   bool              m_isSuspended;
+  bool              m_softSuspend;
+  unsigned int      m_softSuspendTimer;
 };

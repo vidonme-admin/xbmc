@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,8 +27,6 @@ extern "C" FILE *fopen_utf8(const char *_Filename, const char *_Mode);
 #else
 #define fopen_utf8 fopen
 #endif
-
-using namespace MUSIC_INFO;
 
 CEncoderLame::CEncoderLame()
 {
@@ -89,16 +87,9 @@ bool CEncoderLame::Init(const char* strFile, int iInChannels, int iInRate, int i
   m_dll.lame_set_asm_optimizations(m_pGlobalFlags, SSE, 1);
   m_dll.lame_set_in_samplerate(m_pGlobalFlags, 44100);
 
-  // Now that all the options are set, lame needs to analyze them and
-  // set some more internal options and check for problems
-  if (m_dll.lame_init_params(m_pGlobalFlags) < 0)
-  {
-    CLog::Log(LOGERROR, "Error: Cannot init Lame params");
-    return false;
-  }
-
   // Setup the ID3 tagger
   m_dll.id3tag_init(m_pGlobalFlags);
+  m_dll.id3tag_add_v2(m_pGlobalFlags);
   m_dll.id3tag_set_title(m_pGlobalFlags, m_strTitle.c_str());
   m_dll.id3tag_set_artist(m_pGlobalFlags, m_strArtist.c_str());
   m_dll.id3tag_set_textinfo_latin1(m_pGlobalFlags, "TPE2", m_strAlbumArtist.c_str());
@@ -108,6 +99,14 @@ bool CEncoderLame::Init(const char* strFile, int iInChannels, int iInRate, int i
   int test = m_dll.id3tag_set_genre(m_pGlobalFlags, m_strGenre.c_str());
   if(test==-1)
     m_dll.id3tag_set_genre(m_pGlobalFlags,"Other");
+
+  // Now that all the options are set, lame needs to analyze them and
+  // set some more internal options and check for problems
+  if (m_dll.lame_init_params(m_pGlobalFlags) < 0)
+  {
+    CLog::Log(LOGERROR, "Error: Cannot init Lame params");
+    return false;
+  }
 
   return true;
 }

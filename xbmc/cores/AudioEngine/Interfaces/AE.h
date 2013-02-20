@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -52,6 +52,12 @@ protected:
   virtual ~IAE() {}
 
   /**
+   * Returns true when it should be possible to initialize this engine, if it returns false
+   * CAEFactory can possibly fall back to a different one
+   */
+  virtual bool CanInit() { return true; }
+
+  /**
    * Initializes the AudioEngine, called by CFactory when it is time to initialize the audio engine.
    * Do not call this directly, CApplication will call this when it is ready
    */
@@ -88,7 +94,7 @@ public:
    * Callback to alert the AudioEngine of setting changes
    * @param setting The name of the setting that was changed
    */
-  virtual void OnSettingsChange(std::string setting) {}
+  virtual void OnSettingsChange(const std::string& setting) {}
 
   /**
    * Returns the current master volume level of the AudioEngine

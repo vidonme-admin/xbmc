@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -70,19 +70,15 @@ bool CDVDSubtitleParserMicroDVD::Open(CDVDStreamInfo &hints)
     if (pos > -1)
     {
       const char* text = line + pos + reg.GetFindLen();
-      char* startFrame = reg.GetReplaceString("\\1");
-      char* endFrame   = reg.GetReplaceString("\\2");
+      std::string startFrame = reg.GetReplaceString("\\1");
+      std::string endFrame   = reg.GetReplaceString("\\2");
       CDVDOverlayText* pOverlay = new CDVDOverlayText();
       pOverlay->Acquire(); // increase ref count with one so that we can hold a handle to this overlay
 
-      pOverlay->iPTSStartTime = m_framerate * atoi(startFrame);
-      pOverlay->iPTSStopTime  = m_framerate * atoi(endFrame);
+      pOverlay->iPTSStartTime = m_framerate * atoi(startFrame.c_str());
+      pOverlay->iPTSStopTime  = m_framerate * atoi(endFrame.c_str());
 
       TagConv.ConvertLine(pOverlay, text, strlen(text));
-
-      free(startFrame);
-      free(endFrame);
-
       m_collection.Add(pOverlay);
     }
   }

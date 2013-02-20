@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -21,7 +21,8 @@
  */
 
 #include "DVDInputStream.h"
-
+#include <list>
+#include <boost/shared_ptr.hpp>
 
 extern "C"
 {
@@ -80,6 +81,7 @@ public:
   virtual bool OnMouseMove(const CPoint &point)  { return false; }
   virtual bool OnMouseClick(const CPoint &point) { return false; }
   virtual double GetTimeStampCorrection()        { return 0.0; }
+  virtual void SkipStill();
 
   void UserInput(bd_vk_key_e vk);
 
@@ -95,24 +97,57 @@ public:
   void GetStreamInfo(int pid, char* language);
 
   void OverlayCallback(const BD_OVERLAY * const);
+#ifdef HAVE_LIBBLURAY_BDJ
+  void OverlayCallbackARGB(const struct bd_argb_overlay_s * const);
+#endif
 
   BLURAY_TITLE_INFO* GetTitleLongest();
   BLURAY_TITLE_INFO* GetTitleFile(const std::string& name);
 
+  void ProcessEvent();
+
 protected:
+  struct SPlane;
+
+  void OverlayFlush(int64_t pts);
+  void OverlayClose();
+  void OverlayClear(SPlane& plane, int x, int y, int w, int h);
+  void OverlayInit (SPlane& plane, int w, int h);
+
   IDVDPlayer*   m_player;
   DllLibbluray *m_dll;
   BLURAY* m_bd;
   BLURAY_TITLE_INFO* m_title;
-  bool               m_title_playing;
+  uint32_t           m_playlist;
   uint32_t           m_clip;
+  uint32_t           m_angle;
+  bool               m_menu;
   bool m_navmode;
-  std::vector<CDVDOverlayImage*> m_overlays[2];
+
+  typedef boost::shared_ptr<CDVDOverlayImage> SOverlay;
+  typedef std::list<SOverlay>                 SOverlays;
+
+  struct SPlane
+  {
+    SOverlays o;
+    int       w;
+    int       h;
+
+    SPlane()
+    : w(0)
+    , h(0)
+    {}
+  };
+
+  SPlane m_planes[2];
   enum EHoldState {
     HOLD_NONE = 0,
     HOLD_HELD,
-    HOLD_SKIP,
     HOLD_DATA,
+    HOLD_STILL,
   } m_hold;
   BD_EVENT m_event;
+#ifdef HAVE_LIBBLURAY_BDJ
+  struct bd_argb_buffer_s m_argb;
+#endif
 };

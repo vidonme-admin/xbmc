@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
 
 #include "VideoDbUrl.h"
 #include "filesystem/VideoDatabaseDirectory.h"
+#include "playlists/SmartPlayList.h"
 #include "utils/StringUtils.h"
 #include "utils/Variant.h"
 
@@ -186,4 +187,26 @@ bool CVideoDbUrl::parse()
     AddOption("year", (int)queryParams.GetYear());
 
   return true;
+}
+
+bool CVideoDbUrl::validateOption(const std::string &key, const CVariant &value)
+{
+  if (!CDbUrl::validateOption(key, value))
+    return false;
+
+  // if the value is empty it will remove the option which is ok
+  // otherwise we only care about the "filter" option here
+  if (value.empty() || !StringUtils::EqualsNoCase(key, "filter"))
+    return true;
+
+  if (!value.isString())
+    return false;
+
+  CSmartPlaylist xspFilter;
+  if (!xspFilter.LoadFromJson(value.asString()))
+    return false;
+  
+  // check if the filter playlist matches the item type
+  return (xspFilter.GetType() == m_itemType ||
+         (xspFilter.GetType() == "movies" && m_itemType == "sets"));
 }

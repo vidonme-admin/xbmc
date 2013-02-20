@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-#   Copyright (C) 2008-2009 Team XBMC http://www.xbmc.org
+#   Copyright (C) 2008-2013 Team XBMC
 #
 #   This program is free software; you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -59,9 +59,9 @@ sub make_dmg {
 	`ditto VolumeDSStoreApp "/Volumes/$volname/.DS_Store"` if $ext eq "app";
     }
     if ( -d "background" ) {
-	`/Developer/Tools/SetFile -a V "/Volumes/$volname/background"`;
+	`xcrun SetFile -a V "/Volumes/$volname/background"`;
     }
-    `/Developer/Tools/SetFile -a C "/Volumes/$volname/"`;
+    `xcrun SetFile -a C "/Volumes/$volname/"`;
     `hdiutil detach $dev_handle`;
     `hdiutil convert "dist/$volname.dmg" -format UDZO -imagekey zlib-level=9 -o "dist/$volname.udzo.dmg"`;
     `rm -f "dist/$volname.dmg"`;

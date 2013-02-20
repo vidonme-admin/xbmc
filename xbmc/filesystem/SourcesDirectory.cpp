@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -75,7 +75,7 @@ bool CSourcesDirectory::GetDirectory(const VECSOURCES &sources, CFileItemList &i
       // CDetectDVDMedia::SetNewDVDShareUrl() caches disc thumb as special://temp/dvdicon.tbn
       CStdString strThumb = "special://temp/dvdicon.tbn";
       if (XFILE::CFile::Exists(strThumb))
-        pItem->SetThumbnailImage(strThumb);
+        pItem->SetArt("thumb", strThumb);
     }
     else if (pItem->GetPath().Left(9) == "addons://")
       strIcon = "DefaultHardDisk.png";

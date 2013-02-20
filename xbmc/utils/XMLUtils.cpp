@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -40,6 +40,17 @@ bool XMLUtils::GetUInt(const TiXmlNode* pRootNode, const char* strTag, uint32_t&
   if (!pNode || !pNode->FirstChild()) return false;
   uintValue = atol(pNode->FirstChild()->Value());
   return true;
+}
+
+bool XMLUtils::GetUInt(const TiXmlNode* pRootNode, const char* strTag, uint32_t &value, const uint32_t min, const uint32_t max)
+{
+  if (GetUInt(pRootNode, strTag, value))
+  {
+    if (value < min) value = min;
+    if (value > max) value = max;
+    return true;
+  }
+  return false;
 }
 
 bool XMLUtils::GetLong(const TiXmlNode* pRootNode, const char* strTag, long& lLongValue)

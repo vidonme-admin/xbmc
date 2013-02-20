@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -62,7 +62,7 @@ CFileItemPtr CBlurayDirectory::GetTitle(const BLURAY_TITLE_INFO* title, const CS
   buf.Format("BDMV/PLAYLIST/%05d.mpls", title->playlist);
   path.SetFileName(buf);
   item->SetPath(path.Get());
-  item->GetVideoInfoTag()->m_strRuntime.Format("%d",title->duration / 90000);
+  item->GetVideoInfoTag()->m_duration = (int)(title->duration / 90000);
   item->GetVideoInfoTag()->m_iTrack = title->playlist;
   buf.Format(label.c_str(), title->playlist);
   item->m_strTitle = buf;

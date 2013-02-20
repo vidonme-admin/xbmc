@@ -127,9 +127,6 @@
     <Filter Include="input\windows">
       <UniqueIdentifier>{2f7a07e4-ac48-4e30-beb3-550e50b59c09}</UniqueIdentifier>
     </Filter>
-    <Filter Include="interfaces\http-api">
-      <UniqueIdentifier>{3616033f-20f3-48c8-96bd-b07f2eed008e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="interfaces\json-rpc">
       <UniqueIdentifier>{15fc3844-6b50-4424-ba2c-ac9bd85d3ab0}</UniqueIdentifier>
     </Filter>
@@ -282,6 +279,9 @@
     </Filter>
     <Filter Include="interfaces\python\test">
       <UniqueIdentifier>{0a84b5ee-2ad4-4ae2-9a8d-fc585c6d8aae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="view">
+      <UniqueIdentifier>{90f512bb-8cda-4f04-b938-4f48d29bc82a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -1135,9 +1135,6 @@
     <ClCompile Include="..\..\xbmc\guilib\GUISpinControlEx.cpp">
       <Filter>guilib</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\guilib\GUIStandardWindow.cpp">
-      <Filter>guilib</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\xbmc\guilib\GUIStaticItem.cpp">
       <Filter>guilib</Filter>
     </ClCompile>
@@ -1215,12 +1212,6 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\input\windows\IrssMessage.cpp">
       <Filter>input\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\xbmc\interfaces\http-api\HttpApi.cpp">
-      <Filter>interfaces\http-api</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\xbmc\interfaces\http-api\XBMChttp.cpp">
-      <Filter>interfaces\http-api</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\interfaces\json-rpc\AudioLibrary.cpp">
       <Filter>interfaces\json-rpc</Filter>
@@ -1577,9 +1568,6 @@
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\utils\LabelFormatter.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\xbmc\utils\LCD.cpp">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\utils\log.cpp">
@@ -2053,9 +2041,6 @@
     <ClCompile Include="..\..\xbmc\filesystem\AFPDirectory.cpp">
       <Filter>filesystem</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\network\httprequesthandler\HTTPApiHandler.cpp">
-      <Filter>network\httprequesthandler</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\xbmc\network\httprequesthandler\HTTPVfsHandler.cpp">
       <Filter>network\httprequesthandler</Filter>
     </ClCompile>
@@ -2511,7 +2496,6 @@
     <ClCompile Include="..\..\xbmc\utils\Screenshot.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\xbmc\ViewDatabase.cpp" />
     <ClCompile Include="..\..\xbmc\ApplicationMessenger.cpp" />
     <ClCompile Include="..\..\xbmc\Autorun.cpp" />
     <ClCompile Include="..\..\xbmc\AutoSwitch.cpp" />
@@ -2537,12 +2521,16 @@
     <ClCompile Include="..\..\xbmc\XBApplicationEx.cpp" />
     <ClCompile Include="..\..\xbmc\XBDateTime.cpp" />
     <ClCompile Include="..\..\xbmc\GUILargeTextureManager.cpp" />
-    <ClCompile Include="..\..\xbmc\GUIViewControl.cpp" />
-    <ClCompile Include="..\..\xbmc\GUIViewState.cpp" />
     <ClCompile Include="..\..\xbmc\ThumbLoader.cpp" />
     <ClCompile Include="..\..\xbmc\BackgroundInfoLoader.cpp" />
     <ClCompile Include="..\..\xbmc\pictures\PictureThumbLoader.cpp">
       <Filter>pictures</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\music\MusicThumbLoader.cpp">
+      <Filter>music</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\video\VideoThumbLoader.cpp">
+      <Filter>video</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\dbwrappers\Database.cpp">
       <Filter>dbwrappers</Filter>
@@ -2587,8 +2575,14 @@
     <ClCompile Include="..\..\xbmc\utils\DatabaseUtils.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\xbmc\music\karaoke\karaokevideobackground.cpp">
+      <Filter>music\karaoke</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\filesystem\VideoDatabaseDirectory\DirectoryNodeTags.cpp">
       <Filter>filesystem\VideoDatabaseDirectory</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\utils\EdenVideoArtUpdater.cpp">
+      <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="..\..\xbmc\utils\EndianSwap.cpp">
       <Filter>utils</Filter>
@@ -2801,6 +2795,9 @@
     <ClCompile Include="..\..\xbmc\network\upnp\UPnPInternal.cpp">
       <Filter>network\upnp</Filter>
     </ClCompile>
+     <ClCompile Include="..\..\xbmc\network\upnp\UPnPPlayer.cpp">
+      <Filter>network\upnp</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\xbmc\network\upnp\UPnPRenderer.cpp">
       <Filter>network\upnp</Filter>
     </ClCompile>
@@ -2935,6 +2932,54 @@
     </ClCompile>
     <ClCompile Include="..\..\xbmc\dialogs\GUIDialogMediaFilter.cpp">
       <Filter>dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\test\TestFileItem.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\test\TestTextureCache.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\interfaces\json-rpc\PVROperations.cpp">
+      <Filter>interfaces\json-rpc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\filesystem\HTTPFile.cpp">
+      <Filter>filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\utils\GroupUtils.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\cores\AudioEngine\Utils\AELimiter.cpp">
+      <Filter>cores\AudioEngine\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\utils\test\TestUrlOptions.cpp">
+      <Filter>utils\test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\interfaces\python\PyContext.cpp">
+      <Filter>interfaces\python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\video\FFmpegVideoDecoder.cpp">
+      <Filter>video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\view\GUIViewControl.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\view\GUIViewState.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\view\ViewDatabase.cpp">
+      <Filter>view</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\guilib\imagefactory.cpp">
+      <Filter>guilib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\guilib\cximage.cpp">
+      <Filter>guilib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\filesystem\DAVFile.cpp">
+      <Filter>filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\xbmc\filesystem\DAVCommon.cpp">
+      <Filter>filesystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -3948,9 +3993,6 @@
     <ClInclude Include="..\..\xbmc\guilib\GUISpinControlEx.h">
       <Filter>guilib</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xbmc\guilib\GUIStandardWindow.h">
-      <Filter>guilib</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\xbmc\guilib\GUIStaticItem.h">
       <Filter>guilib</Filter>
     </ClInclude>
@@ -4058,12 +4100,6 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\input\windows\IrssMessage.h">
       <Filter>input\windows</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\xbmc\interfaces\http-api\HttpApi.h">
-      <Filter>interfaces\http-api</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\xbmc\interfaces\http-api\XBMChttp.h">
-      <Filter>interfaces\http-api</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\interfaces\json-rpc\AudioLibrary.h">
       <Filter>interfaces\json-rpc</Filter>
@@ -4416,6 +4452,9 @@
     <ClInclude Include="..\..\xbmc\utils\DownloadQueueManager.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\xbmc\utils\EdenVideoArtUpdater.h">
+      <Filter>utils</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\xbmc\utils\EndianSwap.h">
       <Filter>utils</Filter>
     </ClInclude>
@@ -4456,9 +4495,6 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\utils\LabelFormatter.h">
-      <Filter>utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\xbmc\utils\LCD.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\utils\log.h">
@@ -5309,9 +5345,6 @@
     <ClInclude Include="..\..\xbmc\network\httprequesthandler\IHTTPRequestHandler.h">
       <Filter>network\httprequesthandler</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xbmc\network\httprequesthandler\HTTPApiHandler.h">
-      <Filter>network\httprequesthandler</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\xbmc\network\httprequesthandler\HTTPVfsHandler.h">
       <Filter>network\httprequesthandler</Filter>
     </ClInclude>
@@ -5462,7 +5495,6 @@
     <ClInclude Include="..\..\xbmc\video\VideoDatabase.h">
       <Filter>video</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\xbmc\ViewDatabase.h" />
     <ClInclude Include="..\..\xbmc\ApplicationMessenger.h" />
     <ClInclude Include="..\..\xbmc\Autorun.h" />
     <ClInclude Include="..\..\xbmc\AutoSwitch.h" />
@@ -5492,12 +5524,15 @@
     <ClInclude Include="..\..\xbmc\XBApplicationEx.h" />
     <ClInclude Include="..\..\xbmc\XBDateTime.h" />
     <ClInclude Include="..\..\xbmc\GUILargeTextureManager.h" />
-    <ClInclude Include="..\..\xbmc\GUIViewControl.h" />
-    <ClInclude Include="..\..\xbmc\GUIViewState.h" />
-    <ClInclude Include="..\..\xbmc\ViewState.h" />
     <ClInclude Include="..\..\xbmc\ThumbLoader.h" />
     <ClInclude Include="..\..\xbmc\pictures\PictureThumbLoader.h">
       <Filter>pictures</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\music\MusicThumbLoader.h">
+      <Filter>music</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\video\VideoThumbLoader.h">
+      <Filter>video</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\dbwrappers\Database.h">
       <Filter>dbwrappers</Filter>
@@ -5582,6 +5617,9 @@
       <Filter>network\upnp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\network\upnp\UPnPInternal.h">
+      <Filter>network\upnp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\network\upnp\UPnPPlayer.h">
       <Filter>network\upnp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\xbmc\network\upnp\UPnPRenderer.h">
@@ -5739,6 +5777,55 @@
     </ClInclude>
     <ClInclude Include="..\..\xbmc\dialogs\GUIDialogMediaFilter.h">
       <Filter>dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\interfaces\json-rpc\PVROperations.h">
+      <Filter>interfaces\json-rpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\filesystem\HTTPFile.h">
+      <Filter>filesystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\utils\GroupUtils.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\cores\AudioEngine\Utils\AELimiter.h">
+      <Filter>cores\AudioEngine\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\interfaces\python\PyContext.h">
+      <Filter>interfaces\python</Filter>
+    </ClInclude>
+
+    <ClInclude Include="..\..\xbmc\guilib\iimage.h">
+      <Filter>guilib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\guilib\imagefactory.h">
+      <Filter>guilib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\guilib\cximage.h">
+      <Filter>guilib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\music\karaoke\karaokevideobackground.h">
+      <Filter>music\karaoke</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\video\FFmpegVideoDecoder.h">
+      <Filter>video</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\view\GUIViewControl.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\view\GUIViewState.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\view\ViewDatabase.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\view\ViewState.h">
+      <Filter>view</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\filesystem\DAVFile.h">
+      <Filter>filesystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\xbmc\filesystem\DAVCommon.h">
+      <Filter>filesystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

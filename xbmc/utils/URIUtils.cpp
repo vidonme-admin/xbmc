@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -18,6 +18,7 @@
  *
  */
 
+#include "network/Network.h"
 #include "URIUtils.h"
 #include "Application.h"
 #include "FileItem.h"
@@ -231,13 +232,15 @@ bool URIUtils::ProtocolHasParentInHostname(const CStdString& prot)
 {
   return prot.Equals("zip")
       || prot.Equals("rar")
-      || prot.Equals("bluray");
+      || prot.Equals("bluray")
+      || prot.Equals("udf");
 }
 
 bool URIUtils::ProtocolHasEncodedHostname(const CStdString& prot)
 {
   return ProtocolHasParentInHostname(prot)
-      || prot.Equals("musicsearch");
+      || prot.Equals("musicsearch")
+      || prot.Equals("image");
 }
 
 bool URIUtils::ProtocolHasEncodedFilename(const CStdString& prot)
@@ -266,22 +269,6 @@ bool URIUtils::GetParentPath(const CStdString& strPath, CStdString& strParent)
   {
     strFile = url.GetHostName();
     return GetParentPath(strFile, strParent);
-  }
-  else if ((url.GetProtocol() == "videodb" || url.GetProtocol() == "musicdb") && !url.GetOptions().empty())
-  {
-    CStdString options = url.GetOptions();
-    size_t filterStart = options.find("filter=");
-    if (filterStart != string::npos)
-    {
-      size_t filterEnd = options.find("&", filterStart);
-      options.erase(filterStart, filterEnd - filterStart);
-      if (options.Equals("?"))
-        options.clear();
-
-      url.SetOptions(options);
-      strParent = url.Get();
-      return true;
-    }
   }
   else if (url.GetProtocol() == "stack")
   {
@@ -385,7 +372,7 @@ CStdString URIUtils::SubstitutePath(const CStdString& strPath)
   for (CAdvancedSettings::StringMapping::iterator i = g_advancedSettings.m_pathSubstitutions.begin();
       i != g_advancedSettings.m_pathSubstitutions.end(); i++)
   {
-    if (strncmp(strPath.c_str(), i->first.c_str(), i->first.size()) == 0)
+    if (strncmp(strPath.c_str(), i->first.c_str(), HasSlashAtEnd(i->first.c_str()) ? i->first.size()-1 : i->first.size()) == 0)
     {
       if (strPath.size() > i->first.size())
         return URIUtils::AddFileToFolder(i->second, strPath.Mid(i->first.size()));
@@ -629,6 +616,18 @@ bool URIUtils::IsZIP(const CStdString& strFile) // also checks for comic books!
   return false;
 }
 
+bool URIUtils::IsArchive(const CStdString& strFile)
+{
+  CStdString extension;
+  GetExtension(strFile, extension);
+
+  return (extension.CompareNoCase(".zip") == 0 ||
+          extension.CompareNoCase(".rar") == 0 ||
+          extension.CompareNoCase(".apk") == 0 ||
+          extension.CompareNoCase(".cbz") == 0 ||
+          extension.CompareNoCase(".cbr") == 0);
+}
+
 bool URIUtils::IsSpecial(const CStdString& strFile)
 {
   CStdString strFile2(strFile);
@@ -697,6 +696,17 @@ bool URIUtils::IsFTP(const CStdString& strFile)
 
   return strFile2.Left(4).Equals("ftp:")  ||
          strFile2.Left(5).Equals("ftps:");
+}
+
+bool URIUtils::IsDAV(const CStdString& strFile)
+{
+  CStdString strFile2(strFile);
+
+  if (IsStack(strFile))
+    strFile2 = CStackDirectory::GetFirstStackedFile(strFile);
+
+  return strFile2.Left(4).Equals("dav:")  ||
+         strFile2.Left(5).Equals("davs:");
 }
 
 bool URIUtils::IsInternetStream(const CURL& url, bool bStrictCheck /* = false */)
@@ -954,6 +964,13 @@ void URIUtils::AddFileToFolder(const CStdString& strFolder,
     strResult.Replace('/', '\\');
 }
 
+CStdString URIUtils::GetDirectory(const CStdString &filePath)
+{
+  CStdString directory;
+  GetDirectory(filePath, directory);
+  return directory;
+}
+
 void URIUtils::GetDirectory(const CStdString& strFilePath,
                             CStdString& strDirectoryPath)
 {
@@ -1079,4 +1096,48 @@ std::string URIUtils::resolvePath(const std::string &path)
     realPath += delim;
 
   return realPath;
+}
+
+bool URIUtils::UpdateUrlEncoding(std::string &strFilename)
+{
+  if (strFilename.empty())
+    return false;
+  
+  CURL url(strFilename);
+  // if this is a stack:// URL we need to work with its filename
+  if (URIUtils::IsStack(strFilename))
+  {
+    vector<CStdString> files;
+    if (!CStackDirectory::GetPaths(strFilename, files))
+      return false;
+
+    for (vector<CStdString>::iterator file = files.begin(); file != files.end(); file++)
+    {
+      std::string filePath = *file;
+      UpdateUrlEncoding(filePath);
+      *file = filePath;
+    }
+
+    CStdString stackPath;
+    if (!CStackDirectory::ConstructStackPath(files, stackPath))
+      return false;
+
+    url.Parse(stackPath);
+  }
+  // if the protocol has an encoded hostname we need to work with its hostname
+  else if (URIUtils::ProtocolHasEncodedHostname(url.GetProtocol()))
+  {
+    std::string hostname = url.GetHostName();
+    UpdateUrlEncoding(hostname);
+    url.SetHostName(hostname);
+  }
+  else
+    return false;
+
+  std::string newFilename = url.Get();
+  if (newFilename == strFilename)
+    return false;
+  
+  strFilename = newFilename;
+  return true;
 }

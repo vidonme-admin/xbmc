@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -25,8 +25,6 @@
 #include "DVDStreamInfo.h"
 
 #include <IL/OMX_Video.h>
-
-#include "utils/BitstreamConverter.h"
 
 #include "OMXClock.h"
 
@@ -59,6 +57,7 @@ public:
   void SetVideoRect(const CRect& SrcRect, const CRect& DestRect);
   int GetInputBufferSize();
   void WaitCompletion();
+  bool BadState() { return m_omx_decoder.BadState(); };
 protected:
   // Video format
   bool              m_drop_state;
@@ -85,13 +84,15 @@ protected:
   uint8_t           *m_extradata;
   int               m_extrasize;
 
-  CBitstreamConverter   *m_converter;
   bool              m_video_convert;
   std::string       m_video_codec_name;
 
   bool              m_deinterlace;
   bool              m_hdmi_clock_sync;
   bool              m_first_frame;
+  uint32_t          m_history_valid_pts;
+
+  bool NaluFormatStartCodes(enum CodecID codec, uint8_t *in_extradata, int in_extrasize);
 };
 
 #endif

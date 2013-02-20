@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -283,10 +283,9 @@ TEST(TestFileOperationJob, GetFunctions)
   EXPECT_TRUE(XFILE::CFile::Exists(tmpfilepath));
   EXPECT_TRUE(XFILE::CFile::Exists(destfile));
 
-  fprintf(stdout, "GetAverageSpeed(): %s\n", job.GetAverageSpeed().c_str());
-  fprintf(stdout, "GetCurrentOperation(): %s\n",
-          job.GetCurrentOperation().c_str());
-  fprintf(stdout, "GetCurrentFile(): %s\n", job.GetCurrentFile().c_str());
+  std::cout << "GetAverageSpeed(): " << job.GetAverageSpeed() << std::endl;
+  std::cout << "GetCurrentOperation(): " << job.GetCurrentOperation() << std::endl;
+  std::cout << "GetCurrentFile(): " << job.GetCurrentFile() << std::endl;
   EXPECT_FALSE(job.GetItems().IsEmpty());
 
   EXPECT_TRUE(XBMC_DELETETEMPFILE(tmpfile));

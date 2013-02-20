@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 #endif
 #include "pictures/Picture.h"
 #include "dialogs/GUIDialogContextMenu.h"
-#include "ViewState.h"
+#include "view/ViewState.h"
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
 #include "FileItem.h"
@@ -194,7 +194,7 @@ void CGUIDialogVideoBookmarks::Update()
       bookmarkTime = StringUtils::SecondsToTimeString((long)m_bookmarks[i].timeInSeconds, TIME_FORMAT_HH_MM_SS);
 
     CFileItemPtr item(new CFileItem(bookmarkTime));
-    item->SetThumbnailImage(m_bookmarks[i].thumbNailImage);
+    item->SetArt("thumb", m_bookmarks[i].thumbNailImage);
     m_vecItems->Add(item);
   }
   m_viewControl.SetItems(*m_vecItems);

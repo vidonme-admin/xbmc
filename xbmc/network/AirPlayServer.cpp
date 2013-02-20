@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "network/Network.h"
 #include "AirPlayServer.h"
 
 #ifdef HAS_AIRPLAY
@@ -252,7 +253,15 @@ void CAirPlayServer::Process()
         newconnection.m_socket = accept(m_ServerSocket, &newconnection.m_cliaddr, &newconnection.m_addrlen);
 
         if (newconnection.m_socket == INVALID_SOCKET)
-          CLog::Log(LOGERROR, "AIRPLAY Server: Accept of new connection failed");
+        {
+          CLog::Log(LOGERROR, "AIRPLAY Server: Accept of new connection failed: %d", errno);
+          if (EBADF == errno)
+          {
+            Sleep(1000);
+            Initialize();
+            break;
+          }
+        }
         else
         {
           CLog::Log(LOGINFO, "AIRPLAY Server: New connection added");

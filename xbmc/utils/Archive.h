@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -52,6 +52,7 @@ public:
   CArchive& operator<<(uint64_t ui64);
   CArchive& operator<<(bool b);
   CArchive& operator<<(char c);
+  CArchive& operator<<(const std::string &str);
   CArchive& operator<<(const CStdString& str);
   CArchive& operator<<(const CStdStringW& str);
   CArchive& operator<<(const SYSTEMTIME& time);
@@ -69,6 +70,7 @@ public:
   CArchive& operator>>(uint64_t& ui64);
   CArchive& operator>>(bool& b);
   CArchive& operator>>(char& c);
+  CArchive& operator>>(std::string &str);
   CArchive& operator>>(CStdString& str);
   CArchive& operator>>(CStdStringW& str);
   CArchive& operator>>(SYSTEMTIME& time);

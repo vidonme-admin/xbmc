@@ -1,5 +1,5 @@
 /*
-*      Copyright (C) 2005-2012 Team XBMC
+*      Copyright (C) 2005-2013 Team XBMC
 *      http://www.xbmc.org
 *
 *  This Program is free software; you can redistribute it and/or modify
@@ -342,8 +342,10 @@ bool CD3DEffect::CreateEffect()
   {
     CStdString error;
     error.assign((const char*)pError->GetBufferPointer(), pError->GetBufferSize());
-    CLog::Log(LOGERROR, "%s", error.c_str());
+    CLog::Log(LOGERROR, "CD3DEffect::CreateEffect(): %s", error.c_str());
   }
+  else
+    CLog::Log(LOGERROR, "CD3DEffect::CreateEffect(): call to D3DXCreateEffect() failed with %" PRId32, hr);
   return false;
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -45,7 +45,7 @@
 
 #include "settings/VideoSettings.h"
 #include "Profile.h"
-#include "ViewState.h"
+#include "view/ViewState.h"
 #include "guilib/Resolution.h"
 #include "guilib/GraphicContext.h"
 
@@ -211,8 +211,6 @@ public:
 
   int iAdditionalSubtitleDirectoryChecked;
 
-  int m_HttpApiBroadcastPort;
-  int m_HttpApiBroadcastLevel;
   float m_fVolumeLevel;        // float 0.0 - 1.0 range
   bool m_bMute;
   int m_iSystemTimeTotalUp;    // Uptime in minutes!
@@ -344,6 +342,7 @@ public:
   CStdString GetThumbnailsFolder() const;
   CStdString GetVideoThumbFolder() const;
   CStdString GetBookmarksThumbFolder() const;
+  CStdString GetLibraryFolder() const;
   CStdString GetSourcesFile() const;
 
   CStdString GetSettingsFile() const;

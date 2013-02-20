@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -95,14 +95,7 @@ namespace XBMCAddon
     void executebuiltin(const char* function, bool wait = false);
 
     /**
-     * executehttpapi(httpcommand) -- Execute an HTTP API command.
-     * 
-     * httpcommand    : string - http command to execute.
-     * 
-     * List of commands - http://wiki.xbmc.org/?title=WebServerHTTP-API#The_Commands 
-     * 
-     * example:
-     *   - response = xbmc.executehttpapi('TakeScreenShot(special://temp/test.jpg,0,false,200,-1,90)')
+     * executehttpapi(httpcommand) -- Not implemented anymore.
      */
     String executehttpapi(const char* httpcommand);
 
@@ -387,18 +380,18 @@ namespace XBMCAddon
     bool startServer(int iTyp, bool bStart, bool bWait = false);
 
     /**
-     * AudioSuspend() -- Suspend Audio engine.
+     * audioSuspend() -- Suspend Audio engine.
      * 
      * example:
-     *   xbmc.AudioSuspend()
+     *   xbmc.audioSuspend()
      */
     void audioSuspend();
 
     /**
-     * AudioResume() -- Resume Audio engine.
+     * audioResume() -- Resume Audio engine.
      * 
      * example:
-     *   xbmc.AudioResume()
+     *   xbmc.audioResume()
      */  
     void audioResume();
 

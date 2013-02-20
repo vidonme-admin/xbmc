@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@ using namespace XFILE;
 
 SPCCodec::SPCCodec()
 {
-  m_CodecName = "SPC";
+  m_CodecName = "spc";
   m_szBuffer = NULL;
   m_pApuRAM = NULL;
   m_iDataPos = 0;

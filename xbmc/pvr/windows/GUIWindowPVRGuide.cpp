@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -64,7 +64,7 @@ void CGUIWindowPVRGuide::ResetObservers(void)
 
 void CGUIWindowPVRGuide::Notify(const Observable &obs, const ObservableMessage msg)
 {
-  if (msg == ObservableMessageEpg)
+  if (msg == ObservableMessageEpg || msg == ObservableMessageEpgContainer)
   {
     m_bUpdateRequired = true;
 
@@ -112,7 +112,7 @@ void CGUIWindowPVRGuide::GetContextButtons(int itemNumber, CContextButtons &butt
     buttons.Add(CONTEXT_BUTTON_END, 19064);             /* go to end */
   }
   if (pItem->GetEPGInfoTag()->HasPVRChannel() &&
-      g_PVRClients->HasMenuHooks(pItem->GetEPGInfoTag()->ChannelTag()->ClientID()))
+      g_PVRClients->HasMenuHooks(pItem->GetEPGInfoTag()->ChannelTag()->ClientID(), PVR_MENUHOOK_EPG))
     buttons.Add(CONTEXT_BUTTON_MENU_HOOKS, 19195);      /* PVR client specific action */
 }
 

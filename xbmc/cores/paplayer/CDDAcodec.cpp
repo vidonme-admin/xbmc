@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -39,7 +39,7 @@ CDDACodec::CDDACodec()
   m_DataFormat = AE_FMT_S16NE;
   m_TotalTime = 0;
   m_Bitrate = 0;
-  m_CodecName = "CDDA";
+  m_CodecName = "cdda";
 
   m_BufferSize=0;
   m_Buffer = new BYTE[MAX_BUFFER_SIZE];

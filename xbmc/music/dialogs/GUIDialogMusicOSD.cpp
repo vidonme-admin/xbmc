@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -66,6 +66,21 @@ bool CGUIDialogMusicOSD::OnMessage(CGUIMessage &message)
     break;
   }
   return CGUIDialog::OnMessage(message);
+}
+
+bool CGUIDialogMusicOSD::OnAction(const CAction &action)
+{
+  switch (action.GetID())
+  {
+  case ACTION_SHOW_OSD:
+    Close();
+    return true;
+
+  default:
+    break;
+  }
+
+  return CGUIDialog::OnAction(action);
 }
 
 void CGUIDialogMusicOSD::FrameMove()

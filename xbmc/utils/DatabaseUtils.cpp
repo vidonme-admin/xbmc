@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -487,7 +487,7 @@ bool DatabaseUtils::GetSelectFields(const Fields &fields, MediaType mediaType, F
 
     if (GetField(*it, mediaType, DatabaseQueryPartSelect).empty())
     {
-      CLog::Log(LOGWARNING, "DatabaseUtils::GetSortFieldList: unknown field %d", *it);
+      CLog::Log(LOGDEBUG, "DatabaseUtils::GetSortFieldList: unknown field %d", *it);
       continue;
     }
     selectFields.push_back(*it);

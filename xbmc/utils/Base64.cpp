@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@ void Base64::Encode(const char* input, unsigned int length, std::string &output)
 
   long l;
   output.clear();
+  output.reserve(((length + 2) / 3) * 4);
 
   for (unsigned int i = 0; i < length; i += 3)
   {
@@ -97,6 +98,8 @@ void Base64::Decode(const char* input, unsigned int length, std::string &output)
       break;
     }
   }
+
+  output.reserve(length - ((length + 2) / 4));
 
   for (unsigned int i = 0; i < length; i += 4)
   {

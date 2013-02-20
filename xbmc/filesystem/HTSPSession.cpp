@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -642,7 +642,7 @@ bool CHTSPSession::ParseItem(const SChannel& channel, int tagid, const SEvent& e
 
   item.SetPath(url.Get());
   item.m_strTitle = tag->m_strTitle;
-  item.SetThumbnailImage(channel.icon);
+  item.SetArt("thumb", channel.icon);
   item.SetMimeType("video/X-htsp");
   return true;
 }

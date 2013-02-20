@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -395,7 +395,11 @@ int CWebServer::CreateFileDownloadResponse(struct MHD_Connection *connection, co
                                                      &CWebServer::ContentReaderCallback, file,
                                                      &CWebServer::ContentReaderFreeCallback);
       if (response == NULL)
+      {
+        file->Close();
+        delete file;
         return MHD_NO;
+      }
     }
     else
     {

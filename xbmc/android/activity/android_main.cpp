@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,7 +27,6 @@
 
 #include "EventLoop.h"
 #include "XBMCApp.h"
-#include "unzip.h"
 
 void setup_env(struct android_app* state)
 {
@@ -104,10 +103,6 @@ void setup_env(struct android_app* state)
   setenv("XBMC_TEMP", tempDir, 0);
 
   strcat(cacheDir, "/apk");
-
-  //cache assets from the apk
-  extract_to_cache(apkPath, cacheDir);
-
   strcat(cacheDir, "/assets");
   setenv("XBMC_BIN_HOME", cacheDir, 0);
   setenv("XBMC_HOME"    , cacheDir, 0);

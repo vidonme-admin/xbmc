@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -32,8 +32,10 @@ public:
   CUrlOptions(const std::string &options);
   virtual ~CUrlOptions();
 
+  virtual void Clear() { m_options.clear(); }
+
   virtual const UrlOptions& GetOptions() const { return m_options; }
-  virtual std::string GetOptionsString() const;
+  virtual std::string GetOptionsString(bool withLeadingSeperator = false) const;
 
   virtual void AddOption(const std::string &key, const char *value);
   virtual void AddOption(const std::string &key, const std::string &value);
@@ -43,10 +45,12 @@ public:
   virtual void AddOption(const std::string &key, bool value);
   virtual void AddOptions(const std::string &options);
   virtual void AddOptions(const CUrlOptions &options);
+  virtual void RemoveOption(const std::string &key);
 
-  virtual bool HasOption(const std::string &key);
-  virtual bool GetOption(const std::string &key, CVariant &value);
+  virtual bool HasOption(const std::string &key) const;
+  virtual bool GetOption(const std::string &key, CVariant &value) const;
 
 protected:
   UrlOptions m_options;
+  std::string m_strLead;
 };

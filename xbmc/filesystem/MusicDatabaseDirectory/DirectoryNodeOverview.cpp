@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -73,7 +73,7 @@ bool CDirectoryNodeOverview::GetContent(CFileItemList& items) const
   bool showSingles = false;
   if (musicDatabase.Open())
   {
-    CDatabase::Filter filter("idAlbum IN (SELECT idAlbum FROM album WHERE strAlbum = '')");
+    CDatabase::Filter filter("songview.idAlbum IN (SELECT idAlbum FROM album WHERE strAlbum = '')");
     if (musicDatabase.GetSongsCount(filter) > 0)
       showSingles = true;
   }

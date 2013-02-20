@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -69,7 +69,8 @@ bool CMusicInfoTagLoaderASAP::Load(const CStdString &strFile, CMusicInfoTag &tag
     tag.SetDuration(songInfo.duration / 1000);
   if (songInfo.year > 0)
   {
-    SYSTEMTIME dateTime = { songInfo.year, songInfo.month, 0, songInfo.day, 0, 0, 0, 0 };
+    SYSTEMTIME dateTime = { (WORD)songInfo.year, (WORD)songInfo.month, 0, 
+                            (WORD)songInfo.day, 0, 0, 0, 0 };
     tag.SetReleaseDate(dateTime);
   }
   tag.SetLoaded(true);

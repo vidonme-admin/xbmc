@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -259,6 +259,10 @@ CDVDOverlay* CDVDOverlayCodecFFmpeg::GetOverlay()
     overlay->y        = rect.y;
     overlay->width    = rect.w;
     overlay->height   = rect.h;
+
+#if (!defined USE_EXTERNAL_FFMPEG) || (LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54,71,100))
+    overlay->bForced  = rect.flags != 0;
+#endif
 
     int right  = overlay->x + overlay->width;
     int bottom = overlay->y + overlay->height;

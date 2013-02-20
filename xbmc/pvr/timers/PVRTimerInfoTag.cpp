@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@ using namespace EPG;
 
 CPVRTimerInfoTag::CPVRTimerInfoTag(void)
 {
-  m_strTitle           = StringUtils::EmptyString;
+  m_strTitle           = g_localizeStrings.Get(19056); // New Timer
   m_strDirectory       = "/";
   m_strSummary         = StringUtils::EmptyString;
   m_iClientId          = g_PVRClients->GetFirstConnectedClientID();

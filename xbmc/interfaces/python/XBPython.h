@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -27,13 +27,14 @@
 #include "interfaces/IAnnouncer.h"
 #include "addons/IAddon.h"
 
+#include <boost/shared_ptr.hpp>
 #include <vector>
 
 typedef struct {
   int id;
   bool bDone;
   std::string strFile;
-  XBPyThread *pyThread;
+  boost::shared_ptr<XBPyThread> pyThread;
 }PyElem;
 
 class LibraryLoader;
@@ -46,15 +47,19 @@ namespace XBMCAddon
   }
 }
 
-typedef std::vector<PyElem> PyList;
-typedef std::vector<PVOID> PlayerCallbackList;
-typedef std::vector<XBMCAddon::xbmc::Monitor*> MonitorCallbackList;
+template <class T> struct LockableType : public T, public CCriticalSection 
+{ bool hadSomethingRemoved; };
+
+typedef LockableType<std::vector<PVOID> > PlayerCallbackList;
+typedef LockableType<std::vector<XBMCAddon::xbmc::Monitor*> > MonitorCallbackList;
+typedef LockableType<std::vector<PyElem> > PyList;
 typedef std::vector<LibraryLoader*> PythonExtensionLibraries;
 
 class XBPython : 
   public IPlayerCallback,
   public ANNOUNCEMENT::IAnnouncer
 {
+  void Finalize();
 public:
   XBPython();
   virtual ~XBPython();
@@ -77,15 +82,15 @@ public:
   void OnScreensaverActivated();
   void OnScreensaverDeactivated();
   void OnDatabaseUpdated(const std::string &database);
+  void OnDatabaseScanStarted(const std::string &database);
   void OnAbortRequested(const CStdString &ID="");
   void Initialize();
-  void Finalize();
   void FinalizeScript();
   void FreeResources();
   void Process();
 
   void PulseGlobalEvent();
-  void WaitForEvent(CEvent& hEvent);
+  bool WaitForEvent(CEvent& hEvent, unsigned int milliseconds);
 
   int ScriptsSize();
   int GetPythonScriptId(int scriptPosition);
@@ -126,8 +131,8 @@ public:
   void* getMainThreadState();
 
   bool m_bLogin;
-  CCriticalSection    m_critSection;
 private:
+  CCriticalSection    m_critSection;
   bool              FileExist(const char* strFile);
 
   int               m_nextid;

@@ -2,7 +2,7 @@
 #define __EVENT_CLIENT_H__
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -33,6 +33,8 @@
 
 namespace EVENTCLIENT
 {
+
+  #define ES_FLAG_UNICODE    0x80000000 // new 16bit key flag to support real unicode over EventServer
 
   class CEventAction
   {
@@ -68,7 +70,7 @@ namespace EVENTCLIENT
       m_iNextRepeat = 0;
     }
 
-    CEventButtonState(unsigned short iKeyCode,
+    CEventButtonState(unsigned int iKeyCode,
                       std::string mapName,
                       std::string buttonName,
                       float fAmount,
@@ -96,13 +98,13 @@ namespace EVENTCLIENT
     bool Repeat() const { return m_bRepeat; }
     int  ControllerNumber() const { return m_iControllerNumber; }
     bool Axis() const { return m_bAxis; }
-    unsigned short KeyCode() const { return m_iKeyCode; }
+    unsigned int KeyCode() const { return m_iKeyCode; }
     float Amount() const  { return m_fAmount; }
     void Load();
     const std::string& JoystickName() const { return m_joystickName; }
 
     // data
-    unsigned short    m_iKeyCode;
+    unsigned int      m_iKeyCode;
     unsigned short    m_iControllerNumber;
     std::string       m_buttonName;
     std::string       m_mapName;
@@ -189,7 +191,7 @@ namespace EVENTCLIENT
     void FreePacketQueues();
 
     // return event states
-    unsigned short GetButtonCode(std::string& strMapName, bool& isAxis, float& amount);
+    unsigned int GetButtonCode(std::string& strMapName, bool& isAxis, float& amount);
 
     // update mouse position
     bool GetMousePos(float& x, float& y);

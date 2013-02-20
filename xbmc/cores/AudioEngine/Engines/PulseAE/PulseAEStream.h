@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -53,8 +53,10 @@ public:
 
   virtual float GetVolume    ();
   virtual float GetReplayGain();
+  virtual float GetAmplification() { return 1.0f; }
   virtual void  SetVolume    (float volume);
   virtual void  SetReplayGain(float factor);
+  virtual void  SetAmplification(float amplify){}
   void SetMute(const bool muted);
 
   virtual const unsigned int      GetFrameSize   () const;
@@ -77,6 +79,12 @@ public:
   /* trigger the stream to update its volume relative to AE */
   void UpdateVolume(float max);
 
+  /* used to prepare a stream for resume */
+  void SetDrained() { m_ResumeCallback = true; };
+
+  /* Process the Resume of streams */
+  void ProcessCallbacks();
+
   virtual void RegisterSlave(IAEStream *stream);
 private:
   static void StreamRequestCallback(pa_stream *s, size_t length, void *userdata);
@@ -91,6 +99,7 @@ private:
   bool m_Destroyed;
   bool m_Initialized;
   bool m_Paused;
+  bool m_ResumeCallback;
 
   pa_stream *m_Stream;
   pa_sample_spec m_SampleSpec;

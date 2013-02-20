@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -20,9 +20,10 @@
  */
 
 #include "guilib/GUIDialog.h"
-#include "GUIViewControl.h"
+#include "view/GUIViewControl.h"
 #include "utils/Observer.h"
 #include "pvr/channels/PVRChannelGroupsContainer.h"
+#include <map>
 
 class CFileItemList;
 
@@ -53,6 +54,9 @@ namespace PVR
 
   private:
     CPVRChannelGroupPtr m_group;
+    std::map<int,int> m_groupSelectedItems;
+    void SetLastSelectedItem(int iGroupID);
+    int GetLastSelectedItem(int iGroupID) const;
   };
 }
 

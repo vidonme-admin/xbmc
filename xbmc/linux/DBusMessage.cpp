@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -47,6 +47,13 @@ bool CDBusMessage::AppendArgument(const char *string)
 {
   PrepareArgument();
   return dbus_message_iter_append_basic(&m_args, DBUS_TYPE_STRING, &string);
+}
+
+bool CDBusMessage::AppendArgument(const bool b)
+{
+  dbus_bool_t arg = (b == true);
+  PrepareArgument();
+  return dbus_message_iter_append_basic(&m_args, DBUS_TYPE_BOOLEAN, &arg);
 }
 
 bool CDBusMessage::AppendArgument(const char **arrayString, unsigned int length)

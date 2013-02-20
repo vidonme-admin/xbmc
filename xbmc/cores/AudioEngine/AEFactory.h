@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -46,6 +46,7 @@ public:
   static void SetSoundMode(const int mode);
   static void OnSettingsChange(std::string setting);
   static void EnumerateOutputDevices(AEDeviceList &devices, bool passthrough);
+  static void VerifyOutputDevice(std::string &device, bool passthrough);
   static std::string GetDefaultDevice(bool passthrough);
   static bool SupportsRaw();
   static void SetMute(const bool enabled);

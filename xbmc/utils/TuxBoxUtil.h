@@ -1,7 +1,7 @@
 #pragma once
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -153,7 +153,7 @@ class CTuxBoxUtil
     bool ParseBouquetsEnigma2(TiXmlElement *root, CFileItemList &items, CURL &url, CStdString& strFilter, CStdString& strChild);
     bool ParseChannels(TiXmlElement *root, CFileItemList &items, CURL &url, CStdString strFilter, CStdString strChild);
     bool ParseChannelsEnigma2(TiXmlElement *root, CFileItemList &items, CURL &url, CStdString& strFilter, CStdString& strChild);
-    bool ZapToUrl(CURL url, CStdString strOptions, int ipoint);
+    bool ZapToUrl(CURL url, const CStdString &pathOption);
     bool StreamInformations(TiXmlElement *pRootElement);
     bool CurrentServiceData(TiXmlElement *pRootElement);
     bool BoxStatus(TiXmlElement *pRootElement);

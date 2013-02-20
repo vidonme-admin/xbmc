@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -538,6 +538,14 @@ bool CLinuxInputDevice::KeyEvent(const struct input_event& levt, XBMC_Event& dev
 
       case BTN_BACK:
         devt.button.button = XBMC_BUTTON_WHEELUP;
+        break;
+
+      case BTN_TOUCH:
+        devt.button.button = XBMC_BUTTON_LEFT;
+        break;
+
+      case BTN_TOOL_DOUBLETAP:
+        devt.button.button = XBMC_BUTTON_RIGHT;
         break;
 
       default:

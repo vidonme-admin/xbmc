@@ -14,6 +14,7 @@ SRCS=AlarmClock.cpp \
      DownloadQueue.cpp \
      DownloadQueueManager.cpp \
      EndianSwap.cpp \
+     EdenVideoArtUpdater.cpp \
      Fanart.cpp \
      fastmemcpy.c \
      fastmemcpy-arm.S \
@@ -22,6 +23,7 @@ SRCS=AlarmClock.cpp \
      fstrcmp.c \
      fft.cpp \
      GLUtils.cpp \
+     GroupUtils.cpp \
      HTMLTable.cpp \
      HTMLUtil.cpp \
      HttpHeader.cpp \
@@ -33,8 +35,6 @@ SRCS=AlarmClock.cpp \
      JSONVariantWriter.cpp \
      LabelFormatter.cpp \
      LangCodeExpander.cpp \
-     LCD.cpp \
-     LCDFactory.cpp \
      log.cpp \
      md5.cpp \
      Observer.cpp \

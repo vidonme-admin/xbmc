@@ -1,6 +1,6 @@
 #pragma once
 /*
- *      Copyright (C) 2011-2012 Team XBMC
+ *      Copyright (C) 2011-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -80,7 +80,9 @@ public:
   virtual bool  SeekScene(bool bPlus = true);
   virtual void  SeekPercentage(float fPercent = 0.0f);
   virtual float GetPercentage();
+  virtual void  SetMute(bool bOnOff);
   virtual void  SetVolume(float volume);
+  virtual bool  ControlsVolume() {return true;}
   virtual void  SetDynamicRangeCompression(long drc)              {}
   virtual void  GetAudioInfo(CStdString &strAudioInfo);
   virtual void  GetVideoInfo(CStdString &strVideoInfo);
@@ -223,6 +225,8 @@ private:
   int                     m_audio_delay;
   bool                    m_audio_passthrough_ac3;
   bool                    m_audio_passthrough_dts;
+  bool                    m_audio_mute;
+  float                   m_audio_volume;
 
   int                     m_video_index;
   int                     m_video_count;

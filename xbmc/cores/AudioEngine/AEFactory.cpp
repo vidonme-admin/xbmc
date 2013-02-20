@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2010-2012 Team XBMC
+ *      Copyright (C) 2010-2013 Team XBMC
  *      http://xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -103,6 +103,12 @@ bool CAEFactory::LoadEngine(enum AEEngine engine)
       return false;
   }
 
+  if (AE && !AE->CanInit())
+  {
+    delete AE;
+    AE = NULL;
+  }
+
   return AE != NULL;
 }
 
@@ -189,6 +195,32 @@ void CAEFactory::EnumerateOutputDevices(AEDeviceList &devices, bool passthrough)
 {
   if(AE)
     AE->EnumerateOutputDevices(devices, passthrough);
+}
+
+void CAEFactory::VerifyOutputDevice(std::string &device, bool passthrough)
+{
+  AEDeviceList devices;
+  EnumerateOutputDevices(devices, passthrough);
+  std::string firstDevice;
+
+  for (AEDeviceList::const_iterator deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
+  {
+    std::string currentDevice = deviceIt->second;
+    /* remember the first device so we can default to it if required */
+    if (firstDevice.empty())
+      firstDevice = deviceIt->second;
+
+    if (deviceIt->second == device)
+      return;
+    else if (deviceIt->first == device)
+    {
+      device = deviceIt->second;
+      return;
+    }
+  }
+
+  /* if the device wasnt found, set it to the first viable output */
+  device = firstDevice;
 }
 
 std::string CAEFactory::GetDefaultDevice(bool passthrough)

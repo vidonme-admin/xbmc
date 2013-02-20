@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -148,7 +148,7 @@ bool CHTTPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &item
         {
           if (reSize.RegFind(strBuffer.c_str()) >= 0)
           {
-            double Size = atof(reSize.GetReplaceString("\\1"));
+            double Size = atof(reSize.GetReplaceString("\\1").c_str());
             CStdString strUnit = reSize.GetReplaceString("\\2");
 
             if (strUnit == "K")
@@ -162,7 +162,7 @@ bool CHTTPDirectory::GetDirectory(const CStdString& strPath, CFileItemList &item
           }
           else if (reSizeNginx.RegFind(strBuffer.c_str()) >= 0)
           {
-            double Size = atof(reSizeNginx.GetReplaceString("\\1"));
+            double Size = atof(reSizeNginx.GetReplaceString("\\1").c_str());
             CStdString strUnit = reSizeNginx.GetReplaceString("\\2");
 
             if (strUnit == "K")

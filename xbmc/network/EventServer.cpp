@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -155,7 +155,7 @@ void CEventServer::Run()
   CAddress any_addr;
   CSocketListener listener;
   int packetSize = 0;
-  std::map<std::string, std::string> txt;  
+  std::vector<std::pair<std::string, std::string> > txt;
 
   CLog::Log(LOGNOTICE, "ES: Starting UDP Event server on %s:%d", any_addr.Address(), m_iPort);
 
@@ -363,11 +363,11 @@ bool CEventServer::ExecuteNextAction()
   return false;
 }
 
-unsigned short CEventServer::GetButtonCode(std::string& strMapName, bool& isAxis, float& fAmount)
+unsigned int CEventServer::GetButtonCode(std::string& strMapName, bool& isAxis, float& fAmount)
 {
   CSingleLock lock(m_critSection);
   map<unsigned long, CEventClient*>::iterator iter = m_clients.begin();
-  unsigned short bcode = 0;
+  unsigned int bcode = 0;
 
   while (iter != m_clients.end())
   {

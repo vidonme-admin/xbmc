@@ -1,5 +1,5 @@
 /*
- *      Copyright (C) 2012 Team XBMC
+ *      Copyright (C) 2012-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -40,6 +40,9 @@ CGUIViewStatePVR::CGUIViewStatePVR(const CFileItemList& items) :
     AddSortMethod(SORT_METHOD_SIZE, 553, LABEL_MASKS("%L", "%I", "%L", "%I"));  // FileName, Size | Foldername, Size
     AddSortMethod(SORT_METHOD_DATE, 552, LABEL_MASKS("%L", "%J", "%L", "%J"));  // FileName, Date | Foldername, Date
     AddSortMethod(SORT_METHOD_FILE, 561, LABEL_MASKS("%L", "%I", "%L", ""));  // Filename, Size | FolderName, empty
+
+    // Sort recordings view by date as default
+    SetSortMethod(SORT_METHOD_DATE);
   }
 
   LoadViewState(items.GetPath(), ActiveView == PVR_WINDOW_UNKNOWN ? WINDOW_PVR : WINDOW_PVR + 100 - ActiveView );

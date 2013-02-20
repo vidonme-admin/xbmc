@@ -183,6 +183,7 @@ public:
             path += "/";
         }
 
+        CLog::Log(LOGDEBUG, "UPNP: notfified container update %s", (const char*)path);
         CGUIMessage message(GUI_MSG_NOTIFY_ALL, 0, 0, GUI_MSG_UPDATE_PATH);
         message.SetStringParam(path.GetChars());
         g_windowManager.SendThreadMessage(message);
@@ -191,10 +192,77 @@ public:
 
 
 /*----------------------------------------------------------------------
+|   CMediaController class
++---------------------------------------------------------------------*/
+class CMediaController
+  : public PLT_MediaControllerDelegate
+  , public PLT_MediaController
+{
+public:
+  CMediaController(PLT_CtrlPointReference& ctrl_point)
+    : PLT_MediaController(ctrl_point)
+  {
+    PLT_MediaController::SetDelegate(this);
+  }
+
+  ~CMediaController()
+  {
+  }
+
+  virtual void OnStopResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnStopResult(res, device, userdata); }
+
+  virtual void OnSetPlayModeResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnSetPlayModeResult(res, device, userdata); }
+
+  virtual void OnSetAVTransportURIResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnSetAVTransportURIResult(res, device, userdata); }
+
+  virtual void OnSeekResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnSeekResult(res, device, userdata); }
+
+  virtual void OnPreviousResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnPreviousResult(res, device, userdata); }
+
+  virtual void OnPlayResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnPlayResult(res, device, userdata); }
+
+  virtual void OnPauseResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnPauseResult(res, device, userdata); }
+
+  virtual void OnNextResult(NPT_Result res, PLT_DeviceDataReference& device, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnNextResult(res, device, userdata); }
+
+  virtual void OnGetMediaInfoResult(NPT_Result res, PLT_DeviceDataReference& device, PLT_MediaInfo* info, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnGetMediaInfoResult(res, device, info, userdata); }
+
+  virtual void OnGetPositionInfoResult(NPT_Result res, PLT_DeviceDataReference& device, PLT_PositionInfo* info, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnGetPositionInfoResult(res, device, info, userdata); }
+
+  virtual void OnGetTransportInfoResult(NPT_Result res, PLT_DeviceDataReference& device, PLT_TransportInfo* info, void* userdata)
+  { static_cast<PLT_MediaControllerDelegate*>(userdata)->OnGetTransportInfoResult(res, device, info, userdata); }
+
+
+  virtual bool OnMRAdded(PLT_DeviceDataReference& device )
+  {
+    CPlayerCoreFactory::OnPlayerDiscovered((const char*)device->GetUUID()
+                                          ,(const char*)device->GetFriendlyName()
+                                          , EPC_UPNPPLAYER);
+    return true;
+  }
+
+  virtual void OnMRRemoved(PLT_DeviceDataReference& device )
+  {
+    CPlayerCoreFactory::OnPlayerRemoved((const char*)device->GetUUID());
+  }
+};
+
+/*----------------------------------------------------------------------
 |   CUPnP::CUPnP
 +---------------------------------------------------------------------*/
 CUPnP::CUPnP() :
     m_MediaBrowser(NULL),
+    m_MediaController(NULL),
     m_ServerHolder(new CDeviceHostReferenceHolder()),
     m_RendererHolder(new CRendererReferenceHolder()),
     m_CtrlPointHolder(new CCtrlPointReferenceHolder())
@@ -207,9 +275,11 @@ CUPnP::CUPnP() :
         m_IP = g_application.getNetwork().GetFirstConnectedInterface()->GetCurrentIPAddress().c_str();
     }
     NPT_List<NPT_IpAddress> list;
-    if (NPT_SUCCEEDED(PLT_UPnPMessageHelper::GetIPAddresses(list))) {
+    if (NPT_SUCCEEDED(PLT_UPnPMessageHelper::GetIPAddresses(list)) && list.GetItemCount()) {
         m_IP = (*(list.GetFirstItem())).ToString();
     }
+    else if(m_IP.IsEmpty())
+        m_IP = "localhost";
 
     // start upnp monitoring
     m_UPnP->Start();
@@ -265,6 +335,16 @@ CUPnP::ReleaseInstance(bool bWait)
 }
 
 /*----------------------------------------------------------------------
+|   CUPnP::StartServer
++---------------------------------------------------------------------*/
+CUPnPServer* CUPnP::GetServer()
+{
+  if(upnp)
+    return (CUPnPServer*)upnp->m_ServerHolder->m_Device.AsPointer();
+  return NULL;
+}
+
+/*----------------------------------------------------------------------
 |   CUPnP::StartClient
 +---------------------------------------------------------------------*/
 void
@@ -280,6 +360,11 @@ CUPnP::StartClient()
 
     // start browser
     m_MediaBrowser = new CMediaBrowser(m_CtrlPointHolder->m_CtrlPoint);
+
+    // start controller
+    if (g_guiSettings.GetBool("services.upnpcontroller")) {
+        m_MediaController = new CMediaController(m_CtrlPointHolder->m_CtrlPoint);
+    }
 }
 
 /*----------------------------------------------------------------------
@@ -295,6 +380,8 @@ CUPnP::StopClient()
 
     delete m_MediaBrowser;
     m_MediaBrowser = NULL;
+    delete m_MediaController;
+    m_MediaController = NULL;
 }
 
 /*----------------------------------------------------------------------

@@ -2,7 +2,7 @@
 #define __EVENT_PACKET_H__
 
 /*
- *      Copyright (C) 2005-2012 Team XBMC
+ *      Copyright (C) 2005-2013 Team XBMC
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
@@ -87,7 +87,8 @@ namespace EVENTPACKET
     PTB_NO_REPEAT  = 0x20,
     PTB_VKEY       = 0x40,
     PTB_AXIS       = 0x80,
-    PTB_AXISSINGLE = 0x100
+    PTB_AXISSINGLE = 0x100,
+    PTB_UNICODE    = 0x200
   };
 
   enum MouseFlags

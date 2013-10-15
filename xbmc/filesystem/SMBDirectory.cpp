@@ -44,7 +44,7 @@
 #include "threads/SingleLock.h"
 #include "PasswordManager.h"
 
-#include <libsmbclient.h>
+#include <samba-4.0/libsmbclient.h>
 
 #if defined(TARGET_DARWIN)
 #define XBMC_SMB_MOUNT_PATH "Library/Application Support/XBMC/Mounts/"

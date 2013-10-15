@@ -1984,7 +1984,7 @@ int A10VLDisplayPicture(cedarv_picture_t &picture,
     g_srcRect = srcRect;
     g_dstRect = dstRect;
 
-    g_android_mouse_count = 0;
+    //g_android_mouse_count = 0;
   }
 
   args[0] = g_screenid;

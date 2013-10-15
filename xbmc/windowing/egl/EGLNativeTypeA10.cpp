@@ -23,7 +23,7 @@
 #include "utils/log.h"
 #include "guilib/gui3d.h"
 
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
 #include "cores/VideoRenderers/LinuxRendererA10.h"
 static struct mali_native_window g_fbwin;
 static double       g_refreshRate;
@@ -31,7 +31,7 @@ static double       g_refreshRate;
 
 CEGLNativeTypeA10::CEGLNativeTypeA10()
 {
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
   int width, height;
 
   A10VLInit(width, height, g_refreshRate);
@@ -42,14 +42,14 @@ CEGLNativeTypeA10::CEGLNativeTypeA10()
 
 CEGLNativeTypeA10::~CEGLNativeTypeA10()
 {
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
   A10VLExit();
 #endif
 } 
 
 bool CEGLNativeTypeA10::CheckCompatibility()
 {
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
   return true;
 #endif
   return false;
@@ -72,7 +72,7 @@ bool CEGLNativeTypeA10::CreateNativeDisplay()
 
 bool CEGLNativeTypeA10::CreateNativeWindow()
 {
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
   m_nativeWindow = &g_fbwin;
   return true;
 #else
@@ -108,7 +108,7 @@ bool CEGLNativeTypeA10::DestroyNativeWindow()
 
 bool CEGLNativeTypeA10::GetNativeResolution(RESOLUTION_INFO *res) const
 {
-#if defined(ALLWINNERA10) && !defined(TARGET_ANDROID)
+#if defined(__DVDFAB_FUNC_A10CODEC__) && !defined(TARGET_ANDROID)
   res->iWidth = g_fbwin.width;
   res->iHeight= g_fbwin.height;
 

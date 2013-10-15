@@ -14,7 +14,7 @@
 #define MEDIAINFO
 
 extern void A10VLExit(); 
-extern bool A10VLInit(int &width, int &height);
+extern bool A10VLInit(int &width, int &height, double &refreshRate);
 
 static bool a10IsEnabled = false;
 
@@ -253,7 +253,8 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 	CLog::Log(LOGDEBUG, "A10: cedar open.");
 
 	int width = 0, height = 0;
-	A10VLInit (width, height);
+	double refresh =0.0;
+	A10VLInit (width, height, refresh);
 
 	/*
 	pthread_attr_t attr;

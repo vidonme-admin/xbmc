@@ -22,6 +22,7 @@
 
 #ifdef HAS_EGL
 
+#include "system_gl.h"
 #include "utils/log.h"
 #include "EGLNativeTypeA10.h"
 #include "EGLNativeTypeAndroid.h"

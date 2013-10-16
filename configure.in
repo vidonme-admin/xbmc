@@ -2353,6 +2353,9 @@ else
   final_message="$final_message\n  PVR add-ons:\t\tNo"
 fi
 
+#A10 libfile !
+LIBS="$LIBS -L$(abs_top_srcdir)/lib/ -lvecore"
+
 OUTPUT_FILES="Makefile \
     Makefile.include \
     addons/skin.confluence/media/Makefile \

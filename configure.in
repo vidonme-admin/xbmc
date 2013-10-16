@@ -2354,7 +2354,7 @@ else
 fi
 
 #A10 libfile !
-LIBS="$LIBS -L$(abs_top_srcdir)/lib/ -lvecore"
+LIBS="$LIBS -lvecore"
 
 OUTPUT_FILES="Makefile \
     Makefile.include \

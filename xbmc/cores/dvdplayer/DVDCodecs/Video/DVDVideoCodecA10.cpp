@@ -88,6 +88,7 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 	m_info.video_width = hints.width;
 	m_info.video_height = hints.height;
 	m_info.aspect_ratio = 1000;
+	m_info.is_pts_correct = !m_hints.ptsinvalid;
 	m_info.sub_format = CEDARV_SUB_FORMAT_UNKNOW;
 	m_info.container_format = CEDARV_CONTAINER_FORMAT_UNKNOW;
 	m_info.init_data_len = 0;

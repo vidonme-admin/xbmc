@@ -57,6 +57,7 @@ using namespace Shaders;
 
 CLinuxRendererA10::CLinuxRendererA10()
 {
+	printf("LinuxRender A10 constructor");
   m_textureTarget = GL_TEXTURE_2D;
 
   for (int i = 0; i < NUM_BUFFERS; i++)

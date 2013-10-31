@@ -83,150 +83,150 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 
 	m_aspect = hints.aspect;
 
-	//memset(&m_info, 0, sizeof(m_info));
+	memset(&m_info, 0, sizeof(m_info));
 
-	//m_info.frame_duration = 0;
-	//m_info.video_width = hints.width;
-	//m_info.video_height = hints.height;
-	//m_info.aspect_ratio = 1000;
-	//m_info.is_pts_correct = !m_hints.ptsinvalid;
-	//m_info.sub_format = CEDARV_SUB_FORMAT_UNKNOW;
-	//m_info.container_format = CEDARV_CONTAINER_FORMAT_UNKNOW;
-	//m_info.init_data_len = 0;
-	//m_info.init_data = NULL;
+	m_info.frame_duration = 0;
+	m_info.video_width = hints.width;
+	m_info.video_height = hints.height;
+	m_info.aspect_ratio = 1000;
+	m_info.is_pts_correct = !m_hints.ptsinvalid;
+	m_info.sub_format = CEDARV_SUB_FORMAT_UNKNOW;
+	m_info.container_format = CEDARV_CONTAINER_FORMAT_UNKNOW;
+	m_info.init_data_len = 0;
+	m_info.init_data = NULL;
 
-	//switch(hints.codec) {
-	//	//TODO: all the mapping ...
+	switch(hints.codec) {
+		//TODO: all the mapping ...
 
-	//	//*CEDARV_STREAM_FORMAT_MPEG2
-	//case CODEC_ID_MPEG1VIDEO:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG2;
-	//	m_info.sub_format = CEDARV_MPEG2_SUB_FORMAT_MPEG1;
-	//	break;
-	//case CODEC_ID_MPEG2VIDEO:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG2;
-	//	m_info.sub_format = CEDARV_MPEG2_SUB_FORMAT_MPEG2;
-	//	break;
+		//*CEDARV_STREAM_FORMAT_MPEG2
+	case CODEC_ID_MPEG1VIDEO:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG2;
+		m_info.sub_format = CEDARV_MPEG2_SUB_FORMAT_MPEG1;
+		break;
+	case CODEC_ID_MPEG2VIDEO:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG2;
+		m_info.sub_format = CEDARV_MPEG2_SUB_FORMAT_MPEG2;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_H264
-	//case CODEC_ID_H264:
-	//	m_info.format = CEDARV_STREAM_FORMAT_H264;
-	//	m_info.init_data_len = hints.extrasize;
-	//	m_info.init_data = (u8*)hints.extradata;
-	//	if(hints.codec_tag==27) //M2TS and TS
-	//		m_info.container_format = CEDARV_CONTAINER_FORMAT_TS;
-	//	
+		//*CEDARV_STREAM_FORMAT_H264
+	case CODEC_ID_H264:
+		m_info.format = CEDARV_STREAM_FORMAT_H264;
+		m_info.init_data_len = hints.extrasize;
+		m_info.init_data = (u8*)hints.extradata;
+		if(hints.codec_tag==27) //M2TS and TS
+			m_info.container_format = CEDARV_CONTAINER_FORMAT_TS;
+		
 #if 0 
-	//	//disable it temporary 
-	//	// valid avcC data (bitstream) always starts with the value 1 (version)
-	//	if ( *(char*)hints.extradata == 1 )
-	//	{
-	//		CLog::Log(LOGDEBUG, "A10: try to enable bitstream convert.");
+		//disable it temporary 
+		// valid avcC data (bitstream) always starts with the value 1 (version)
+		if ( *(char*)hints.extradata == 1 )
+		{
+			CLog::Log(LOGDEBUG, "A10: try to enable bitstream convert.");
 
-	//		m_convert_bitstream = bitstream_convert_init(hints.extradata, hints.extrasize);
+			m_convert_bitstream = bitstream_convert_init(hints.extradata, hints.extrasize);
 
-	//		if( m_convert_bitstream )
-	//		{
-	//			CLog::Log(LOGDEBUG, "A10: enable bitstream convert.");
-	//		}
-	//	}
+			if( m_convert_bitstream )
+			{
+				CLog::Log(LOGDEBUG, "A10: enable bitstream convert.");
+			}
+		}
 #endif 
 
-	//	break;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_MPEG4
-	//case CODEC_ID_MPEG4:
-	//	m_info.format = CEDARV_STREAM_FORMAT_MPEG4;
-        //        switch(m_hints.codec_tag)
-        //        {
-        //          case _4CC('D','I','V','X'):
-        //            m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX4;
-        //            break;
-        //          case _4CC('D','X','5','0'):
-        //          case _4CC('D','I','V','5'):
-        //            m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX5;
-        //            break;
-        //          case _4CC('X','V','I','D'):
-        //          case _4CC('M','P','4','V'):
-        //          case _4CC('P','M','P','4'):
-        //          case _4CC('F','M','P','4'):
-        //            m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_XVID;
-        //            break;
-        //          default:
-        //            CLog::Log(LOGERROR, "A10: (MPEG4)Codec Tag %d is unknown.\n", m_hints.codec_tag);
-        //            return false;
-        //        }
-	//	break;
+		//*CEDARV_STREAM_FORMAT_MPEG4
+	case CODEC_ID_MPEG4:
+		m_info.format = CEDARV_STREAM_FORMAT_MPEG4;
+                switch(m_hints.codec_tag)
+                {
+                  case _4CC('D','I','V','X'):
+                    m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX4;
+                    break;
+                  case _4CC('D','X','5','0'):
+                  case _4CC('D','I','V','5'):
+                    m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX5;
+                    break;
+                  case _4CC('X','V','I','D'):
+                  case _4CC('M','P','4','V'):
+                  case _4CC('P','M','P','4'):
+                  case _4CC('F','M','P','4'):
+                    m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_XVID;
+                    break;
+                  default:
+                    CLog::Log(LOGERROR, "A10: (MPEG4)Codec Tag %d is unknown.\n", m_hints.codec_tag);
+                    return false;
+                }
+		break;
 
-	//	//DIVX4
-	//	//DIVX5
-	//	//SORENSSON_H263
-	//	//H263
-	//	//RMG2
+		//DIVX4
+		//DIVX5
+		//SORENSSON_H263
+		//H263
+		//RMG2
 
-	//	//VP6
-	//case CODEC_ID_VP6F:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_VP6;
-	//	m_info.init_data_len = hints.extrasize;
-	//	m_info.init_data     = (u8*)hints.extradata;
-	//	break;
-	//	//WMV1
-	//case CODEC_ID_WMV1:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_WMV1;
-	//	break;
-	//	//WMV2
-	//case CODEC_ID_WMV2:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_WMV2;
-	//	break;
-	//	//DIVX1
-	//case CODEC_ID_MSMPEG4V1:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX1;
-	//	break;
-	//	//DIVX2
-	//case CODEC_ID_MSMPEG4V2:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX2;
-	//	break;
-	//	//DIVX3
-	//case CODEC_ID_MSMPEG4V3:
-	//	m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
-	//	m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX3;
-	//	break;
+		//VP6
+	case CODEC_ID_VP6F:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_VP6;
+		m_info.init_data_len = hints.extrasize;
+		m_info.init_data     = (u8*)hints.extradata;
+		break;
+		//WMV1
+	case CODEC_ID_WMV1:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_WMV1;
+		break;
+		//WMV2
+	case CODEC_ID_WMV2:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_WMV2;
+		break;
+		//DIVX1
+	case CODEC_ID_MSMPEG4V1:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX1;
+		break;
+		//DIVX2
+	case CODEC_ID_MSMPEG4V2:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX2;
+		break;
+		//DIVX3
+	case CODEC_ID_MSMPEG4V3:
+		m_info.format     = CEDARV_STREAM_FORMAT_MPEG4;
+		m_info.sub_format = CEDARV_MPEG4_SUB_FORMAT_DIVX3;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_REALVIDEO
-	//case CODEC_ID_RV10:
-	//case CODEC_ID_RV20:
-	//case CODEC_ID_RV30:
-	//case CODEC_ID_RV40:
-	//	m_info.format = CEDARV_STREAM_FORMAT_REALVIDEO;
-	//	break;
+		//*CEDARV_STREAM_FORMAT_REALVIDEO
+	case CODEC_ID_RV10:
+	case CODEC_ID_RV20:
+	case CODEC_ID_RV30:
+	case CODEC_ID_RV40:
+		m_info.format = CEDARV_STREAM_FORMAT_REALVIDEO;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_VC1
-	//case CODEC_ID_VC1:
-	//	m_info.format	  = CEDARV_STREAM_FORMAT_VC1;
-	//	break;
+		//*CEDARV_STREAM_FORMAT_VC1
+	case CODEC_ID_VC1:
+		m_info.format	  = CEDARV_STREAM_FORMAT_VC1;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_AVS
+		//*CEDARV_STREAM_FORMAT_AVS
 
-	//	//*CEDARV_STREAM_FORMAT_MJPEG
-	//case CODEC_ID_MJPEG:
-	//	m_info.format = CEDARV_STREAM_FORMAT_MJPEG;
-	//	break;
+		//*CEDARV_STREAM_FORMAT_MJPEG
+	case CODEC_ID_MJPEG:
+		m_info.format = CEDARV_STREAM_FORMAT_MJPEG;
+		break;
 
-	//	//*CEDARV_STREAM_FORMAT_VP8
-	//case CODEC_ID_VP8:
-	//	m_info.format = CEDARV_STREAM_FORMAT_VP8;
-	//	break;
+		//*CEDARV_STREAM_FORMAT_VP8
+	case CODEC_ID_VP8:
+		m_info.format = CEDARV_STREAM_FORMAT_VP8;
+		break;
 
-	//	//*
-	//default:
-	//	CLog::Log(LOGERROR, "A10: codecid %d is unknown.\n", hints.codec);
-	//	return false;
-	//}
+		//*
+	default:
+		CLog::Log(LOGERROR, "A10: codecid %d is unknown.\n", hints.codec);
+		return false;
+	}
 
 	m_hcedarv = g_libbdv.libcedarv_init(&ret);
 	if (ret < 0) {

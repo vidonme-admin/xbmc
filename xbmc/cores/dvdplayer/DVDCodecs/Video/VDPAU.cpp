@@ -218,7 +218,7 @@ bool CVDPAU::Open(AVCodecContext* avctx, const enum PixelFormat, unsigned int su
     avctx->draw_horiz_band = CVDPAU::FFDrawSlice;
     avctx->slice_flags=SLICE_FLAG_CODED_ORDER|SLICE_FLAG_ALLOW_FIELD;
 
-    g_Windowing.Register(this);
+    //g_Windowing.Register(this);
     return true;
   }
   return false;
@@ -246,7 +246,7 @@ void CVDPAU::Close()
     free(render);
   }
 
-  g_Windowing.Unregister(this);
+  //g_Windowing.Unregister(this);
   m_dllAvUtil.Unload();
 }
 

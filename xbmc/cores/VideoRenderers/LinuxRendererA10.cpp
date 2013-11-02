@@ -501,7 +501,7 @@ unsigned int CLinuxRendererA10::PreInit()
 
   m_formats.push_back(RENDER_FMT_YUV420P);
   m_formats.push_back(RENDER_FMT_BYPASS);
-  m_formats.push_back(RENDER_FMT_A10BUF);
+  //m_formats.push_back(RENDER_FMT_A10BUF);
 
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
@@ -589,12 +589,12 @@ void CLinuxRendererA10::LoadShaders(int field)
   {
     case RENDER_METHOD_AUTO:
     case RENDER_METHOD_GLSL:
-      if (m_format == RENDER_FMT_A10BUF)
-      {
-        CLog::Log(LOGNOTICE, "using A10 render method");
-        m_renderMethod = RENDER_A10BUF;
-        break;
-      }
+      //if (m_format == RENDER_FMT_A10BUF)
+      //{
+      //  CLog::Log(LOGNOTICE, "using A10 render method");
+      //  m_renderMethod = RENDER_A10BUF;
+      //  break;
+      //}
       // Try GLSL shaders if supported and user requested auto or GLSL.
       // create regular progressive scan shader
       m_pYUVShader = new YUV2RGBProgressiveShader(false, m_iFlags, m_format);
@@ -621,13 +621,13 @@ void CLinuxRendererA10::LoadShaders(int field)
   }
 
   // Now that we now the render method, setup texture function handlers
-  if (m_format == RENDER_FMT_BYPASS || m_format == RENDER_FMT_A10BUF)
-  {
-    m_textureUpload = &CLinuxRendererA10::UploadBYPASSTexture;
-    m_textureCreate = &CLinuxRendererA10::CreateBYPASSTexture;
-    m_textureDelete = &CLinuxRendererA10::DeleteBYPASSTexture;
-  }
-  else
+  //if (m_format == RENDER_FMT_BYPASS || m_format == RENDER_FMT_A10BUF)
+  //{
+  //  m_textureUpload = &CLinuxRendererA10::UploadBYPASSTexture;
+  //  m_textureCreate = &CLinuxRendererA10::CreateBYPASSTexture;
+  //  m_textureDelete = &CLinuxRendererA10::DeleteBYPASSTexture;
+  //}
+  //else
   {
     // default to YV12 texture handlers
     m_textureUpload = &CLinuxRendererA10::UploadYV12Texture;

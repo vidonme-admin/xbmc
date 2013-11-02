@@ -529,7 +529,7 @@ int CDVDVideoCodecA10::Decode(BYTE* pData, int iSize, double dts, double pts)
 		//m_hcedarv->display_release(m_hcedarv, picture.id);
                 //picture.y = y_p;
                 //picture.u = u_p; 
-		m_picture.format     = RENDER_FMT_A10BUF;
+//ifndef DVDFAB		m_picture.format     = RENDER_FMT_A10BUF;
 		m_picture.a10buffer  = A10VLPutQueue(freecallback, (void*)this, NULL, picture);
 		m_picture.iFlags    |= DVP_FLAG_ALLOCATED;
 #endif

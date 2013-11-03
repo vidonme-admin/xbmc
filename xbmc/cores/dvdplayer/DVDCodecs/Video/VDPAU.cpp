@@ -356,6 +356,7 @@ bool CVDPAU::MakePixmap(int width, int height)
 
 void CVDPAU::BindPixmap()
 {
+printf("VDP:BindPixmap");
   CSharedLock lock(m_DecoderSection);
 
   { CSharedLock dLock(m_DisplaySection);
@@ -1584,6 +1585,7 @@ bool CVDPAU::GetPicture(AVCodecContext* avctx, AVFrame* frame, DVDVideoPicture* 
 {
   CSharedLock lock(m_DecoderSection);
 
+printf("VDPAU GetPicure\n");
   { CSharedLock dLock(m_DisplaySection);
     if (m_DisplayState != VDPAU_OPEN)
       return false;

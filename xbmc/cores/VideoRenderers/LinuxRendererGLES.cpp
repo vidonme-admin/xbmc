@@ -448,6 +448,8 @@ void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
 
   int index = m_iYV12RenderBuffer;
   YUVBUFFER& buf =  m_buffers[index];
+    m_buffers[index].vdpau->Present();
+    return;
 
   if (m_format != RENDER_FMT_OMXEGL)
   {
@@ -550,7 +552,7 @@ unsigned int CLinuxRendererGLES::PreInit()
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
 
   if (!m_dllSwScale->Load())
-    CLog::Log(LOGERROR,"CLinuxRendererGL::PreInit - failed to load rescale libraries!");
+    CLog::Log(LOGERROR,"CLinuxRendererGLES::PreInit - failed to load rescale libraries!");
 
   return true;
 }
@@ -621,6 +623,7 @@ void CLinuxRendererGLES::UpdateVideoFilter()
 
 void CLinuxRendererGLES::LoadShaders(int field)
 {
+printf("load shaders decide render based on format\n");
 #ifdef TARGET_DARWIN_IOS
   float ios_version = GetIOSVersion();
 #endif
@@ -736,7 +739,7 @@ void CLinuxRendererGLES::LoadShaders(int field)
 
 void CLinuxRendererGLES::UnInit()
 {
-  CLog::Log(LOGDEBUG, "LinuxRendererGL: Cleaning up GL resources");
+  CLog::Log(LOGDEBUG, "CLinuxRendererGLES: Cleaning up GL resources");
   CSingleLock lock(g_graphicsContext);
 
   if (m_rgbBuffer != NULL)
@@ -802,21 +805,25 @@ void CLinuxRendererGLES::Render(DWORD flags, int index)
 
   if (m_renderMethod & RENDER_GLSL)
   {
+	  printf("RENDER_GLSL\n");
     UpdateVideoFilter();
     switch(m_renderQuality)
     {
     case RQ_LOW:
     case RQ_SINGLEPASS:
+	  printf("RENDER_GLSL single\n");
       RenderSinglePass(index, m_currentField);
       VerifyGLState();
       break;
 
     case RQ_MULTIPASS:
+	  printf("RENDER_GLSL mutiple\n");
       RenderMultiPass(index, m_currentField);
       VerifyGLState();
       break;
 
     case RQ_SOFTWARE:
+	  printf("RENDER_GLSL soft\n");
       RenderSoftware(index, m_currentField);
       VerifyGLState();
       break;
@@ -1338,6 +1345,7 @@ void CLinuxRendererGLES::RenderCoreVideoRef(int index, int field)
 void CLinuxRendererGLES::RenderVDPAU(int index, int field)
 {
 #ifdef HAVE_LIBVDPAU
+printf("LRGLES Render VDPAU\n");
   YUVPLANE &plane = m_buffers[index].fields[field][0];
   CVDPAU   *vdpau = m_buffers[m_iYV12RenderBuffer].vdpau;
 

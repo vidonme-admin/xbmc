@@ -151,6 +151,7 @@ bool CRenderSystemGLES::ResetRenderSystem(int width, int height, bool fullScreen
   glEnable(GL_BLEND);          // Turn Blending On
   glDisable(GL_DEPTH_TEST);  
     
+  CLog::Log(LOGINFO, "GLES: RenderSystemGLES::ResetRenderSystem succeed %u", m_maxTextureSize);
   return true;
 }
 

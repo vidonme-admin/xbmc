@@ -132,7 +132,7 @@ public:
   VdpChromaType vdp_chroma_type;
 
 
-  //  protected:
+  //protected:
   void      InitVDPAUProcs();
   void      FiniVDPAUProcs();
   void      FiniVDPAUOutput();

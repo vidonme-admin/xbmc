@@ -41,7 +41,7 @@ bool CAndroidMouse::onMouseEvent(AInputEvent* event)
   int8_t mouseAction = eventAction & AMOTION_EVENT_ACTION_MASK;
   size_t mousePointer = eventAction >> AMOTION_EVENT_ACTION_POINTER_INDEX_SHIFT;
 
-  CXBMCApp::android_printf("%s pointer:%i", __PRETTY_FUNCTION__, mousePointer);
+//  CXBMCApp::android_printf("%s pointer:%i", __PRETTY_FUNCTION__, mousePointer);
   float x = AMotionEvent_getX(event, mousePointer);
   float y = AMotionEvent_getY(event, mousePointer);
 
@@ -60,7 +60,7 @@ bool CAndroidMouse::onMouseEvent(AInputEvent* event)
 
 void CAndroidMouse::MouseMove(float x, float y)
 {
-  CXBMCApp::android_printf("%s: x:%f, y:%f", __PRETTY_FUNCTION__, x, y);
+ // CXBMCApp::android_printf("%s: x:%f, y:%f", __PRETTY_FUNCTION__, x, y);
   XBMC_Event newEvent;
 
   memset(&newEvent, 0, sizeof(newEvent));
@@ -78,7 +78,7 @@ void CAndroidMouse::MouseMove(float x, float y)
 
 void CAndroidMouse::MouseButton(float x, float y, int32_t action)
 {
-  CXBMCApp::android_printf("%s: x:%f, y:%f, action:%i", __PRETTY_FUNCTION__, x, y, action);
+ // CXBMCApp::android_printf("%s: x:%f, y:%f, action:%i", __PRETTY_FUNCTION__, x, y, action);
   XBMC_Event newEvent;
 
   memset(&newEvent, 0, sizeof(newEvent));

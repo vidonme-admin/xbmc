@@ -62,7 +62,6 @@ namespace XFILE
       virtual int Write(const void* lpBuf, int64_t uiBufSize);
       virtual CStdString GetMimeType()                           { return m_state->m_httpheader.GetMimeType(); }
       virtual int IoControl(EIoControl request, void* param);
-
       bool Post(const CStdString& strURL, const CStdString& strPostData, CStdString& strHTML);
       bool Get(const CStdString& strURL, CStdString& strHTML);
       bool ReadData(CStdString& strHTML);
@@ -188,6 +187,13 @@ namespace XFILE
       MAPHTTPHEADERS m_requestheaders;
 
       long            m_httpresponse;
+
+#if defined(__VIDONME_MEDIACENTER__)
+public:
+	  bool PostJson(const CStdString& strURL, const CStdString& strPostData, CStdString& strHTML);
+private:
+	  CStdString      m_posttype;
+#endif
   };
 }
 

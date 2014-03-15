@@ -43,7 +43,11 @@ private:
   void         Dispose();
   void         GetRoot  (CFileItemList &items);
   void         GetTitles(bool main, CFileItemList &items);
+#if !defined(__VIDONME_MEDIACENTER__)
   CFileItemPtr GetTitle(const BLURAY_TITLE_INFO* title, const CStdString& label);
+#else
+  CFileItemPtr GetTitle(const BLURAY_TITLE_INFO* title, const bool bIsMainTitle, const CStdString& label);
+#endif
   CURL          m_url;
   DllLibbluray* m_dll;
   BLURAY*       m_bd;

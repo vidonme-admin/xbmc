@@ -47,21 +47,45 @@ void CBlurayDirectory::Dispose()
 {
   if(m_bd)
   {
-    m_dll->bd_close(m_bd);
+#if defined(__VIDONME_UDFSUPPORT__)
+	m_dll->CloseBluray(m_bd);
+#else 
+	m_dll->bd_close(m_bd);
+#endif 
     m_bd = NULL;
   }
   delete m_dll;
   m_dll = NULL;
 }
 
+#if !defined(__VIDONME_MEDIACENTER__)
 CFileItemPtr CBlurayDirectory::GetTitle(const BLURAY_TITLE_INFO* title, const CStdString& label)
+#else
+CFileItemPtr CBlurayDirectory::GetTitle(const BLURAY_TITLE_INFO* title, const bool bIsMainTitle, const CStdString& label)
+#endif
 {
   CStdString buf;
   CFileItemPtr item(new CFileItem("", false));
   CURL path(m_url);
   buf.Format("BDMV/PLAYLIST/%05d.mpls", title->playlist);
+  
+#if defined(__VIDONME_MEDIACENTER__)
+  if (path.GetProtocol() == "bluray")
+  {
+    path = CURL(path.GetHostName());
+  }
+
+  if (path.GetProtocol() == "udf")
+  {
+    path = CURL(path.GetHostName());
+  }
+
+  buf.Format("%s/%s", path.GetFileName(), buf);
+#endif
+
   path.SetFileName(buf);
   item->SetPath(path.Get());
+  
   item->GetVideoInfoTag()->m_duration = (int)(title->duration / 90000);
   item->GetVideoInfoTag()->m_iTrack = title->playlist;
   buf.Format(label.c_str(), title->playlist);
@@ -71,6 +95,26 @@ CFileItemPtr CBlurayDirectory::GetTitle(const BLURAY_TITLE_INFO* title, const CS
   item->SetIconImage("DefaultVideo.png");
   for(unsigned int i = 0; i < title->clip_count; ++i)
     item->m_dwSize += title->clips[i].pkt_count * 192;
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+
+  CVariant vChapters = CVariant::VariantTypeArray;
+  for (unsigned int index = 0; index < title->chapter_count; ++index)
+  {
+      vChapters.push_back(CVariant::VariantTypeObject);
+      CVariant& vChapter = vChapters[index];
+
+      const BLURAY_TITLE_CHAPTER &chapter = title->chapters[index];
+      vChapter["idx"] = chapter.idx;
+      vChapter["start"] = chapter.start;
+      vChapter["offset"] = chapter.offset;
+      vChapter["duration"] = chapter.duration;
+  }
+
+  item->SetProperty("IsMainTitle", bIsMainTitle);
+  item->SetProperty("chapters", vChapters );
+#endif
 
   return item;
 }
@@ -98,18 +142,35 @@ void CBlurayDirectory::GetTitles(bool main, CFileItemList &items)
     buffer.push_back(t);
   }
 
+#if !defined(__VIDONME_MEDIACENTER__)
   if(main)
     duration = duration * MAIN_TITLE_LENGTH_PERCENT / 100;
   else
     duration = 0;
+#else
+  const uint64_t main_title_duration = (duration * MAIN_TITLE_LENGTH_PERCENT) / 100;
+  duration = main ? main_title_duration : 60;
+#endif
 
   for(std::vector<BLURAY_TITLE_INFO*>::iterator it = buffer.begin(); it != buffer.end(); ++it)
   {
     if((*it)->duration < duration)
       continue;
+#if !defined(__VIDONME_MEDIACENTER__)
     items.Add(GetTitle(*it, main ? g_localizeStrings.Get(25004) /* Main Title */ : g_localizeStrings.Get(25005) /* Title */));
+#else
+    const uint32_t kLabel = main 
+        ? 25004 /* Main Title */ 
+        : 25005 /* Title */;
+    items.Add(GetTitle(*it, 
+        (*it)->duration > main_title_duration, 
+        g_localizeStrings.Get(kLabel)));
+#endif
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  items.Sort(SORT_METHOD_VIDEO_RUNTIME, SortOrderDescending);
+#endif
 
   for(std::vector<BLURAY_TITLE_INFO*>::iterator it = buffer.begin(); it != buffer.end(); ++it)
     m_dll->bd_free_title_info(*it);
@@ -159,7 +220,12 @@ bool CBlurayDirectory::GetDirectory(const CStdString& path, CFileItemList &items
   m_dll->bd_set_debug_handler(DllLibbluray::bluray_logger);
   m_dll->bd_set_debug_mask(DBG_CRIT | DBG_BLURAY | DBG_NAV);
 
+#if defined(__VIDONME_UDFSUPPORT__)
+  //root path needs url encode
+  m_bd = m_dll->OpenBluray(root.c_str(), NULL);
+#else 
   m_bd = m_dll->bd_open(root.c_str(), NULL);
+#endif 
 
   if(!m_bd)
   {

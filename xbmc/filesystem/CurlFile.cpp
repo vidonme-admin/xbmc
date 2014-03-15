@@ -373,6 +373,10 @@ CCurlFile::CCurlFile()
   m_state = new CReadState();
   m_skipshout = false;
   m_httpresponse = -1;
+
+#if defined(__VIDONME_MEDIACENTER__)
+  m_posttype = "";
+#endif
 }
 
 //Has to be called before Open()
@@ -483,6 +487,11 @@ void CCurlFile::SetCommonOptions(CReadState* state)
     g_curlInterface.easy_setopt(h, CURLOPT_POST, 1 );
     g_curlInterface.easy_setopt(h, CURLOPT_POSTFIELDSIZE, m_postdata.length());
     g_curlInterface.easy_setopt(h, CURLOPT_POSTFIELDS, m_postdata.c_str());
+
+#if defined(__VIDONME_MEDIACENTER__)
+	if (!m_posttype.IsEmpty())
+		SetRequestHeader("Content-Type", m_posttype.c_str());
+#endif
   }
 
   // setup Referer header if needed
@@ -1551,3 +1560,13 @@ int CCurlFile::IoControl(EIoControl request, void* param)
 
   return -1;
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+bool CCurlFile::PostJson(const CStdString& strURL, const CStdString& strPostData, CStdString& strHTML)
+{
+	m_posttype = "application/json";
+	bool ret = Post(strURL, strPostData, strHTML);
+	m_posttype = "";
+	return ret;
+}
+#endif

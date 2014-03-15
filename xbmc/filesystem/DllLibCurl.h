@@ -78,6 +78,10 @@ namespace XCURL
     DEFINE_METHOD1(void, multi_cleanup, (CURLM *p1))
     DEFINE_METHOD2(struct curl_slist*, slist_append, (struct curl_slist * p1, const char * p2))
     DEFINE_METHOD1(void, slist_free_all, (struct curl_slist * p1))
+#if defined(__VIDONME_MEDIACENTER__)
+    DEFINE_METHOD_FP(CURLFORMcode, formadd, (struct curl_httppost **p1, struct curl_httppost **p2, ...))
+    DEFINE_METHOD_FP(const char*, easy_strerror, (CURLcode p1))
+#endif
     BEGIN_METHOD_RESOLVE()
       RESOLVE_METHOD_RENAME(curl_global_init, global_init)
       RESOLVE_METHOD_RENAME(curl_global_cleanup, global_cleanup)
@@ -99,6 +103,10 @@ namespace XCURL
       RESOLVE_METHOD_RENAME(curl_multi_cleanup, multi_cleanup)
       RESOLVE_METHOD_RENAME(curl_slist_append, slist_append)
       RESOLVE_METHOD_RENAME(curl_slist_free_all, slist_free_all)
+#if defined(__VIDONME_MEDIACENTER__)
+      RESOLVE_METHOD_RENAME_FP(curl_formadd, formadd)
+      RESOLVE_METHOD_RENAME_FP(curl_easy_strerror,easy_strerror)
+#endif
     END_METHOD_RESOLVE()
 
   };

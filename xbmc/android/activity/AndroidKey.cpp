@@ -23,6 +23,35 @@
 #include "guilib/Key.h"
 #include "windowing/WinEvents.h"
 
+#if defined(__ANDROID_ALLWINNER__)
+
+#if defined AKEYCODE_AUDIO
+#undef AKEYCODE_AUDIO
+#endif
+#define AKEYCODE_AUDIO 10003
+
+#if defined AKEYCODE_SUBTITLE
+#undef AKEYCODE_SUBTITLE
+#endif
+#define AKEYCODE_SUBTITLE 10002
+
+#if defined AKEYCODE_INFO
+#undef AKEYCODE_INFO
+#endif
+#define AKEYCODE_INFO 0xa5
+
+#if defined AKEYCODE_FASTFORWARD
+#undef AKEYCODE_FASTFORWARD
+#endif
+#define AKEYCODE_FASTFORWARD 0x5a
+
+#if defined AKEYCODE_REWIND
+#undef AKEYCODE_REWIND
+#endif
+#define AKEYCODE_REWIND 0x59
+
+#endif
+
 static KeyMap keyMap[] = {
   { AKEYCODE_UNKNOWN         , XBMCK_LAST },
   { AKEYCODE_SOFT_LEFT       , XBMCK_LEFT },
@@ -118,6 +147,13 @@ static KeyMap keyMap[] = {
   { AKEYCODE_MUTE            , XBMCK_VOLUME_MUTE },
   { AKEYCODE_PAGE_UP         , XBMCK_PAGEUP },
   { AKEYCODE_PAGE_DOWN       , XBMCK_PAGEDOWN },
+#if defined(__ANDROID_ALLWINNER__)
+	{ AKEYCODE_AUDIO           , XBMCK_AUDIO },
+	{ AKEYCODE_SUBTITLE        , XBMCK_SUBTITLE },
+	{ AKEYCODE_INFO            , XBMCK_INFO },
+	{ AKEYCODE_FASTFORWARD     , XBMCK_FASTFORWARD},
+	{ AKEYCODE_REWIND          , XBMCK_REWIND},
+#endif
   { AKEYCODE_PICTSYMBOLS     , XBMCK_LAST },
   { AKEYCODE_SWITCH_CHARSET  , XBMCK_LAST },
   { AKEYCODE_BUTTON_A        , XBMCK_LAST },

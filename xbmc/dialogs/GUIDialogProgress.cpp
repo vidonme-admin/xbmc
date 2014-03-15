@@ -32,8 +32,19 @@ using namespace std;
 #define CONTROL_CANCEL_BUTTON 10
 #define CONTROL_PROGRESS_BAR 20
 
+#if defined(__VIDONME_MEDIACENTER__)
+static int  sWindowId = WINDOW_DIALOG_PROGRESS;
+static CStdString sWindowXmlFile = "DialogProgress.xml";
+#endif
+
 CGUIDialogProgress::CGUIDialogProgress(void)
-    : CGUIDialogBoxBase(WINDOW_DIALOG_PROGRESS, "DialogProgress.xml")
+#if defined(__VIDONME_MEDIACENTER__)
+  : CGUIDialogBoxBase(sWindowId, sWindowXmlFile),
+  m_bShowProgress(true),
+  m_bCancelTextAppend(true)
+#else
+  : CGUIDialogBoxBase(WINDOW_DIALOG_PROGRESS, "DialogProgress.xml")
+#endif
 {
   m_bCanceled = false;
   m_iCurrent=0;
@@ -123,10 +134,20 @@ bool CGUIDialogProgress::OnMessage(CGUIMessage& message)
       int iControl = message.GetSenderId();
       if (iControl == CONTROL_CANCEL_BUTTON && m_bCanCancel && !m_bCanceled)
       {
+#if defined(__VIDONME_MEDIACENTER__)
+        if ( m_bCancelTextAppend )
+        {
+          string strHeading = m_strHeading;
+          strHeading.append(" : ");
+          strHeading.append(g_localizeStrings.Get(16024));
+          CGUIDialogBoxBase::SetHeading(strHeading);
+        }        
+#else
         string strHeading = m_strHeading;
         strHeading.append(" : ");
         strHeading.append(g_localizeStrings.Get(16024));
         CGUIDialogBoxBase::SetHeading(strHeading);
+#endif
         m_bCanceled = true;
         return true;
       }
@@ -204,3 +225,29 @@ int CGUIDialogProgress::GetDefaultLabelID(int controlId) const
     return 222;
   return CGUIDialogBoxBase::GetDefaultLabelID(controlId);
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+CGUIDialogProgress* CGUIDialogProgress::ShowDialogProgress(int windowId, const CStdString windowXmlFile)
+{
+  sWindowId   = windowId;
+  sWindowXmlFile = windowXmlFile;
+  CGUIDialogProgress *progress = new CGUIDialogProgress();
+  if (!progress) return NULL;
+
+  g_windowManager.AddUniqueInstance(progress);
+  return progress;
+}
+
+void CGUIDialogProgress::SetShowProgress(bool bShowProgress)
+{
+  m_bShowProgress = bShowProgress;
+  m_bCancelTextAppend = bShowProgress;
+  CLog::Log(LOGDEBUG, "set show progress to %d", (int)m_bShowProgress);
+}
+
+void CGUIDialogProgress::Release()
+{
+  g_windowManager.Remove(GetID());
+  delete this;
+}
+#endif

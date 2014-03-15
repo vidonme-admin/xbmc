@@ -26,6 +26,9 @@
 #include "FileItem.h"
 #include "settings/GUISettings.h"
 #include "utils/SeekHandler.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
 
 #define SEEK_BAR_DISPLAY_TIME 2000L
 #define SEEK_BAR_SEEK_TIME     500L
@@ -63,6 +66,13 @@ bool CGUIDialogSeekBar::OnMessage(CGUIMessage& message)
 
 void CGUIDialogSeekBar::FrameMove()
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    return;
+  }
+#endif
+
   if (!g_application.m_pPlayer)
   {
     Close(true);

@@ -36,6 +36,11 @@ public:
   static bool ShowAndGetInput(int heading, int line0, int line1, int line2, int iNoLabel, int iYesLabel, bool& bCanceled, unsigned int autoCloseTime = 0);
   static bool ShowAndGetInput(const CStdString& heading, const CStdString& line0, const CStdString& line1, const CStdString& line2, const CStdString& noLabel="", const CStdString& yesLabel="");
   static bool ShowAndGetInput(const CStdString& heading, const CStdString& line0, const CStdString& line1, const CStdString& line2, bool &bCanceled, const CStdString& noLabel="", const CStdString& yesLabel="");
+
+#if defined(__VIDONME_MEDIACENTER_ANDROID__)
+  static bool ShowAndGetInput4Box(const CStdString& heading, const CStdString& line0, const CStdString& line1, const CStdString& line2, bool &bCanceled, const CStdString& noLabel="", const CStdString& yesLabel="");
+#endif
+
 protected:
   virtual int GetDefaultLabelID(int controlId) const;
 

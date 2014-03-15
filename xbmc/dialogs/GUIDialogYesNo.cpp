@@ -24,8 +24,17 @@
 #define CONTROL_NO_BUTTON 10
 #define CONTROL_YES_BUTTON 11
 
+#if defined(__VIDONME_MEDIACENTER_ANDROID__)
+static int  sWindowId = WINDOW_DIALOG_YES_NO;
+static CStdString sWindowXmlFile = "DialogYesNo.xml";
+#endif
+
 CGUIDialogYesNo::CGUIDialogYesNo(int overrideId /* = -1 */)
-    : CGUIDialogBoxBase(overrideId == -1 ? WINDOW_DIALOG_YES_NO : overrideId, "DialogYesNo.xml")
+#if defined(__VIDONME_MEDIACENTER_ANDROID__)
+  : CGUIDialogBoxBase(overrideId == -1 ? sWindowId : overrideId, sWindowXmlFile)
+#else
+  : CGUIDialogBoxBase(overrideId == -1 ? WINDOW_DIALOG_YES_NO : overrideId, "DialogYesNo.xml")
+#endif
 {
   m_bConfirmed = false;
 }
@@ -143,3 +152,34 @@ int CGUIDialogYesNo::GetDefaultLabelID(int controlId) const
     return 107;
   return CGUIDialogBoxBase::GetDefaultLabelID(controlId);
 }
+
+#if defined(__VIDONME_MEDIACENTER_ANDROID__)
+bool CGUIDialogYesNo::ShowAndGetInput4Box(const CStdString& heading,
+  const CStdString& line0, const CStdString& line1, const CStdString& line2,
+  bool& bCanceled, const CStdString& noLabel, const CStdString& yesLabel)
+{
+  sWindowXmlFile = "customUpdate.xml";
+  sWindowId = CUSTOM_FabboxDialog_YES_NO;
+  CGUIDialogYesNo * dialog = new CGUIDialogYesNo();
+
+  if (!dialog) return false;
+  g_windowManager.AddUniqueInstance(dialog);
+
+  dialog->SetHeading(heading);
+  dialog->SetLine(0, line0);
+  dialog->SetLine(1, line1);
+  dialog->SetLine(2, line2);
+  dialog->m_bCanceled = false;
+  if (!noLabel.IsEmpty())
+    dialog->SetChoice(0,noLabel);
+  if (!yesLabel.IsEmpty())
+    dialog->SetChoice(1,yesLabel);
+  dialog->DoModal();
+  bCanceled = dialog->m_bCanceled;
+  bool bRet = (dialog->IsConfirmed()) ? true : false;
+
+  g_windowManager.Remove(dialog->GetID());
+  delete dialog;
+  return bRet;
+}
+#endif

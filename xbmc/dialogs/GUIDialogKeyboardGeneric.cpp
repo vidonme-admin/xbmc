@@ -150,6 +150,52 @@ bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
     {
       SetCursorPos(m_strEdit.GetLength());
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (b == XBMCVK_LEFT || b == XBMCVK_RIGHT || b == XBMCVK_UP || b == XBMCVK_DOWN)
+    {
+      handled = CGUIDialog::OnAction(action);
+    }
+    else if (b == XBMCVK_RETURN || b == XBMCVK_NUMPADENTER)
+    {
+      int iControl = GetFocusedControlID();
+
+      switch (iControl)
+      {
+      case CTL_BUTTON_DONE:
+        OnOK();
+        break;
+      case CTL_BUTTON_CANCEL:
+        Close();
+        break;
+      case CTL_BUTTON_SHIFT:
+        OnShift();
+        break;
+      case CTL_BUTTON_CAPS:
+        if (m_keyType == LOWER)
+          m_keyType = CAPS;
+        else if (m_keyType == CAPS)
+          m_keyType = LOWER;
+        UpdateButtons();
+        break;
+      case CTL_BUTTON_SYMBOLS:
+        OnSymbols();
+        break;
+      case CTL_BUTTON_LEFT:
+        MoveCursor( -1);
+        break;
+      case CTL_BUTTON_RIGHT:
+        MoveCursor(1);
+        break;
+      case CTL_BUTTON_IP_ADDRESS:
+        OnIPAddress();
+        break;
+      default:
+        m_lastRemoteKeyClicked = 0;
+        OnClickButton(iControl);
+        break;
+      }
+    }
+#else
     else if (b == XBMCVK_LEFT)
     {
       MoveCursor( -1);
@@ -162,6 +208,7 @@ bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
     {
       OnOK();
     }
+#endif
     else if (b == XBMCVK_DELETE)
     {
       if (GetCursorPos() < m_strEdit.GetLength())
@@ -170,7 +217,11 @@ bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
         Backspace();
       }
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (b == XBMCVK_BACK) OnOK();
+#else
     else if (b == XBMCVK_BACK) Backspace();
+#endif
     else if (b == XBMCVK_ESCAPE) Close();
   }
   else if (action.GetID() >= KEY_ASCII)

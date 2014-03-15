@@ -24,6 +24,9 @@
 #include "guilib/GUIWindowManager.h"
 #include "threads/SingleLock.h"
 #include "utils/TimeUtils.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
 
 #define POPUP_ICON                400
 #define POPUP_CAPTION_TEXT        401
@@ -88,6 +91,13 @@ void CGUIDialogKaiToast::QueueNotification(const CStdString& aCaption, const CSt
 
 void CGUIDialogKaiToast::QueueNotification(const CStdString& aImageFile, const CStdString& aCaption, const CStdString& aDescription, unsigned int displayTime /*= TOAST_DISPLAY_TIME*/, bool withSound /*= true*/, unsigned int messageTime /*= TOAST_MESSAGE_TIME*/)
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    //do nothing
+    return;
+  }
+#endif
   CGUIDialogKaiToast *toast = (CGUIDialogKaiToast *)g_windowManager.GetWindow(WINDOW_DIALOG_KAI_TOAST);
   if (toast)
     toast->AddToQueue(aImageFile, aCaption, aDescription, displayTime, withSound, messageTime);

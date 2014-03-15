@@ -116,11 +116,42 @@ bool CGUIDialogNumeric::OnAction(const CAction &action)
   else if (action.GetID() >= KEY_VKEY && action.GetID() < KEY_ASCII)
   { // input from the keyboard (vkey, not ascii)
     BYTE b = action.GetID() & 0xFF;
+#if defined(__VIDONME_MEDIACENTER__)
+  if (b == XBMCVK_LEFT || b == XBMCVK_RIGHT || b == XBMCVK_UP || b == XBMCVK_DOWN)
+  {
+    return CGUIDialog::OnAction(action);
+  }
+  else if (b == XBMCVK_RETURN || b == XBMCVK_NUMPADENTER)
+  {
+    int iControl = GetFocusedControlID();
+    if (CONTROL_NUM0 <= iControl && iControl <= CONTROL_NUM9)  // User numeric entry via dialog button UI
+    {
+      OnNumber(iControl - 10);
+    }
+    else if (iControl == CONTROL_PREVIOUS)
+    {
+      OnPrevious();
+    }
+    else if (iControl == CONTROL_NEXT)
+    {
+      OnNext();
+    }
+    else if (iControl == CONTROL_BACKSPACE)
+    {
+      OnBackSpace();
+    }
+    else if (iControl == CONTROL_ENTER)
+    {
+      OnOK();
+    }
+  }
+#else
     if (b == XBMCVK_LEFT) OnPrevious();
     else if (b == XBMCVK_RIGHT) OnNext();
     else if (b == XBMCVK_RETURN || b == XBMCVK_NUMPADENTER) OnOK();
     else if (b == XBMCVK_BACK) OnBackSpace();
     else if (b == XBMCVK_ESCAPE) OnCancel();
+#endif
   }
   else if (action.GetID() >= KEY_ASCII) // FIXME make it KEY_UNICODE
   { // input from the keyboard

@@ -48,6 +48,13 @@ public:
 
   void SetCanCancel(bool bCanCancel);
 
+#if defined(__VIDONME_MEDIACENTER__)
+  void SetOptionCancelTextAppend( bool bFlag ) { m_bCancelTextAppend = bFlag; }
+  static  CGUIDialogProgress* ShowDialogProgress(int windowId, const CStdString windowXmlFile);
+  void SetShowProgress(bool bShowProgress);
+  void Release();
+#endif
+
 protected:
   virtual int GetDefaultLabelID(int controlId) const;
 
@@ -57,4 +64,9 @@ protected:
   int  m_iCurrent;
   int  m_iMax;
   int m_percentage;
+
+#if defined(__VIDONME_MEDIACENTER__)
+  bool m_bCancelTextAppend;
+  bool m_bShowProgress;
+#endif
 };

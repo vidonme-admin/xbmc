@@ -143,7 +143,12 @@ void CGUIDialogAddonInfo::UpdateControls()
 {
   CStdString xbmcPath = CSpecialProtocol::TranslatePath("special://xbmc/addons");
   bool isInstalled = NULL != m_localAddon.get();
+#if defined(__VIDONME_MEDIACENTER__)
+  bool isSystem = false;
+#else
   bool isSystem = isInstalled && m_localAddon->Path().Left(xbmcPath.size()).Equals(xbmcPath);
+#endif
+
   bool isEnabled = isInstalled && m_item->GetProperty("Addon.Enabled").asBoolean();
   bool isUpdatable = isInstalled && m_item->GetProperty("Addon.UpdateAvail").asBoolean();
   if (isInstalled)

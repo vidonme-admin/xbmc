@@ -245,10 +245,14 @@ bool CRepositoryUpdateJob::DoWork()
     {
       if (database.IsAddonBroken(addons[i]->ID()).IsEmpty())
       {
+#if defined(__VIDONME_MEDIACENTER_ANDROID__) || defined(__VIDONME_MEDIACENTER__)
+        // don't prompt
+#else
         if (addon && CGUIDialogYesNo::ShowAndGetInput(addons[i]->Name(),
                                              g_localizeStrings.Get(24096),
                                              g_localizeStrings.Get(24097),
                                              ""))
+#endif
           database.DisableAddon(addons[i]->ID());
       }
     }

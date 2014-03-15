@@ -199,6 +199,12 @@ void CSkinInfo::ResolveIncludes(TiXmlElement *node, std::map<int, bool>* xmlIncl
 
 int CSkinInfo::GetStartWindow() const
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  if (ID() == DEFAULT_SKIN)
+  {
+    return VDM_WINDOW_HOME;
+  }
+#endif
   int windowID = g_guiSettings.GetInt("lookandfeel.startupwindow");
   assert(m_startupWindows.size());
   for (vector<CStartupWindow>::const_iterator it = m_startupWindows.begin(); it != m_startupWindows.end(); it++)
@@ -213,6 +219,12 @@ int CSkinInfo::GetStartWindow() const
 bool CSkinInfo::LoadStartupWindows(const cp_extension_t *ext)
 {
   m_startupWindows.clear();
+#if defined(__VIDONME_MEDIACENTER__)
+#if defined(__ANDROID_ALLWINNER__)
+#else
+  m_startupWindows.push_back(CStartupWindow(VDM_WINDOW_HOME, "VidOnMe Media Center"));
+#endif
+#endif
   m_startupWindows.push_back(CStartupWindow(WINDOW_HOME, "513"));
   m_startupWindows.push_back(CStartupWindow(WINDOW_PVR, "19180"));
   m_startupWindows.push_back(CStartupWindow(WINDOW_PROGRAMS, "0"));
@@ -229,7 +241,11 @@ bool CSkinInfo::LoadStartupWindows(const cp_extension_t *ext)
 void CSkinInfo::GetSkinPaths(std::vector<CStdString> &paths) const
 {
   RESOLUTION_INFO res;
+#if defined(__VIDONME_MEDIACENTER__)
+  GetSkinPath("VDMHome.xml", &res);
+#else
   GetSkinPath("Home.xml", &res);
+#endif
   if (!res.strMode.empty())
     paths.push_back(URIUtils::AddFileToFolder(Path(), res.strMode));
   if (res.strMode != m_defaultRes.strMode)

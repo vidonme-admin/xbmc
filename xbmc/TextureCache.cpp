@@ -89,20 +89,7 @@ CStdString CTextureCache::GetCachedImage(const CStdString &image, CTextureDetail
   {
     if (trackUsage)
       IncrementUseCount(details);
-#if defined(__VIDONME_MEDIACENTER__)
-    CStdString strPath = GetCachedPath(details.file);
-    if (!XFILE::CFile::Exists(strPath))
-    {
-      CLog::Log(LOGINFO, "------------------CTextureCache::GetCachedImage() strPath = %s -------------------------", strPath.c_str());
-      return "";
-    }
-    else
-    {
-      return strPath;
-    }
-#else
     return GetCachedPath(details.file);
-#endif
   }
   return "";
 }

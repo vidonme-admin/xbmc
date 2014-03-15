@@ -45,7 +45,13 @@
 #include "utils/log.h"
 #include "ApplicationMessenger.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "input/XBMC_vkeys.h"
+#endif
+
 #define GIGABYTES       1073741824
+
+extern void AllWinnerVLExit();
 
 using namespace std;
 
@@ -59,11 +65,24 @@ void* thread_run(void* obj)
 ANativeActivity *CXBMCApp::m_activity = NULL;
 ANativeWindow* CXBMCApp::m_window = NULL;
 
+extern "C" {
+static struct sigaction old_sa[NSIG];
+
+void android_sigaction(int signal, siginfo_t *info, void *reserved)
+{
+    AllWinnerVLExit();
+
+    //CXBMCApp::StartBrowserActivity("org.vidonme.vidonme", "org.vidonme.vidonme");
+
+    old_sa[signal].sa_handler(signal);
+}
+}
+
 CXBMCApp::CXBMCApp(ANativeActivity *nativeActivity)
   : m_wakeLock(NULL)
 {
   m_activity = nativeActivity;
-  
+
   if (m_activity == NULL)
   {
     android_printf("CXBMCApp: invalid ANativeActivity instance");
@@ -88,6 +107,17 @@ CXBMCApp::~CXBMCApp()
   stop();
 
   pthread_mutex_destroy(&m_state.mutex);
+}
+
+ANativeActivity *CXBMCApp::GetCurrentActivity ()
+{
+  return m_activity;
+}
+
+void CXBMCApp::GetScreenDimension (int &width, int &height)
+{
+  width = ANativeWindow_getWidth (m_window);
+  height = ANativeWindow_getHeight (m_window);
 }
 
 ActivityResult CXBMCApp::onActivate()
@@ -141,6 +171,23 @@ void CXBMCApp::onStart()
 {
   android_printf("%s: %d", __PRETTY_FUNCTION__, m_state.appState);
   // wait for onCreateWindow() and onGainFocus()
+
+  struct sigaction handler;
+  memset (&handler, 0, sizeof (struct sigaction));
+
+
+  handler.sa_sigaction = android_sigaction;
+  handler.sa_flags = SA_RESETHAND;
+
+  #define CATCHSIG(X) sigaction (X, &handler, &old_sa[X])
+
+  CATCHSIG(SIGILL);
+  CATCHSIG(SIGABRT);
+  CATCHSIG(SIGBUS);
+  CATCHSIG(SIGFPE);
+  CATCHSIG(SIGSEGV);
+  CATCHSIG(SIGSTKFLT);
+  CATCHSIG(SIGPIPE);
 }
 
 void CXBMCApp::onResume()
@@ -166,6 +213,15 @@ void CXBMCApp::onDestroy()
 {
   android_printf("%s: %d", __PRETTY_FUNCTION__, m_state.appState);
   stop();
+
+  #define REMOVESIG(X) sigaction(X, &old_sa[X], NULL)
+  REMOVESIG(SIGILL);
+  REMOVESIG(SIGABRT);
+  REMOVESIG(SIGBUS);
+  REMOVESIG(SIGFPE);
+  REMOVESIG(SIGSEGV);
+  REMOVESIG(SIGSTKFLT);
+  REMOVESIG(SIGPIPE);
 }
 
 void CXBMCApp::onSaveState(void **data, size_t *size)
@@ -392,8 +448,11 @@ void CXBMCApp::XBMC_Pause(bool pause)
   android_printf("XBMC_Pause(%s)", pause ? "true" : "false");
   // Only send the PAUSE action if we are pausing XBMC and something is currently playing
   if (pause && g_application.IsPlaying() && !g_application.IsPaused())
+#if defined(__VIDONME_MEDIACENTER__)
+    CApplicationMessenger::Get().SendAction(CAction(ACTION_PAUSE, "android pause", CKey(XBMCVK_HOME)), WINDOW_INVALID, true);
+#else
     CApplicationMessenger::Get().SendAction(CAction(ACTION_PAUSE), WINDOW_INVALID, true);
-
+#endif
   g_application.m_AppActive = g_application.m_AppFocused = !pause;
 }
 
@@ -729,10 +788,88 @@ bool CXBMCApp::HasLaunchIntent(const string &package)
   return true;
 }
 
+bool CXBMCApp::StartBrowserActivity (const string &package, const string &url)
+{
+  if (!m_activity || !url.size() || !package.size() )
+    return false;
+
+  jthrowable exc;
+  JNIEnv *env = NULL;
+  AttachCurrentThread(&env);
+  jobject oActivity = m_activity->clazz;
+  jclass cActivity = env->GetObjectClass(oActivity);
+
+  // oPackageManager = new PackageManager();
+  jmethodID mgetPackageManager = env->GetMethodID(cActivity, "getPackageManager", "()Landroid/content/pm/PackageManager;");
+  jobject oPackageManager = (jobject)env->CallObjectMethod(oActivity, mgetPackageManager);
+
+  // oPackageIntent = oPackageManager.getLaunchIntentForPackage(package);
+  jclass cPackageManager = env->GetObjectClass(oPackageManager);
+  jmethodID mgetLaunchIntentForPackage = env->GetMethodID(cPackageManager, "getLaunchIntentForPackage", "(Ljava/lang/String;)Landroid/content/Intent;");
+  jstring sPackageName = env->NewStringUTF(package.c_str());
+  jobject oPackageIntent = env->CallObjectMethod(oPackageManager, mgetLaunchIntentForPackage, sPackageName);
+  env->DeleteLocalRef(cPackageManager);
+  env->DeleteLocalRef(sPackageName);
+  env->DeleteLocalRef(oPackageManager);
+
+  exc = env->ExceptionOccurred();
+  if (exc)
+  {
+    CLog::Log(LOGERROR, "CXBMCApp::StartActivity Failed to load %s. Exception follows:", package.c_str());
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    env->DeleteLocalRef(cActivity);
+    DetachCurrentThread();
+    return false;
+  }
+  if (!oPackageIntent)
+  {
+    CLog::Log(LOGERROR, "CXBMCApp::StartActivity %s has no Launch Intent", package.c_str());
+    env->DeleteLocalRef(cActivity);
+    DetachCurrentThread();
+    return false;
+  }
+  // startActivity(oIntent);
+
+  jclass cUri = env->FindClass("android/net/Uri");
+  jmethodID midUriParse = env->GetStaticMethodID(cUri, "parse", "(Ljava/lang/String;)Landroid/net/Uri;");
+  jstring sPath = env->NewStringUTF(url.c_str());
+  jobject oUri = env->CallStaticObjectMethod(cUri, midUriParse, sPath);
+  env->DeleteLocalRef(sPath);
+  env->DeleteLocalRef(cUri);
+
+  jclass cPackageIntent = env->GetObjectClass (oPackageIntent);
+
+  jmethodID mSetAction = env->GetMethodID(cPackageIntent, "setAction", "(Ljava/lang/String;)Landroid/content/Intent;");
+  jmethodID mSetData = env->GetMethodID(cPackageIntent, "setData", "(Landroid/net/Uri;)Landroid/content/Intent;");
+  env->CallObjectMethod(oPackageIntent, mSetAction, env->NewStringUTF("android.intent.action.VIEW"));
+  env->CallObjectMethod(oPackageIntent, mSetData, oUri);
+ 
+  jmethodID mStartActivity = env->GetMethodID(cActivity, "startActivity", "(Landroid/content/Intent;)V");
+  env->CallVoidMethod(oActivity, mStartActivity, oPackageIntent);
+  env->DeleteLocalRef(cActivity);
+  env->DeleteLocalRef(oPackageIntent);
+  env->DeleteLocalRef(cPackageIntent);
+  env->DeleteLocalRef(oUri);
+
+  exc = env->ExceptionOccurred();
+  if (exc)
+  {
+    CLog::Log(LOGERROR, "CXBMCApp::StartActivity Failed to load %s. Exception follows:", package.c_str());
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+    DetachCurrentThread();
+    return false;
+  }
+
+  DetachCurrentThread();
+  return true;
+}
 // Note intent, dataType, dataURI all default to ""
 bool CXBMCApp::StartActivity(const string &package, const string &intent, const string &dataType, const string &dataURI)
 {
-  if (!m_activity || !package.size())
+  CLog::Log(LOGDEBUG, "setup START==================================");
+  if (!m_activity)// || !package.size())
    return false;
 
   CLog::Log(LOGDEBUG, "CXBMCApp::StartActivity package: '%s' intent: '%s' dataType: '%s' dataURI: '%s'", package.c_str(), intent.c_str(), dataType.c_str(), dataURI.c_str());
@@ -825,16 +962,21 @@ bool CXBMCApp::StartActivity(const string &package, const string &intent, const 
   
   // Java equivalent for the following JNI
   //   oIntent.setPackage(sPackage);
-  jstring sPackage = env->NewStringUTF(package.c_str());
-  jmethodID mSetPackage = env->GetMethodID(cIntent, "setPackage", "(Ljava/lang/String;)Landroid/content/Intent;");
-  oIntent = env->CallObjectMethod(oIntent, mSetPackage, sPackage);
+      CLog::Log(LOGERROR, "CXBMCApp::StartActivity package.size = %d", package.size());
+      CLog::Log(LOGERROR, "CXBMCApp::StartActivity package.size = %s", package.c_str());
+  if (package.size() > 0){
+		jstring sPackage = env->NewStringUTF(package.c_str());
+  
+  		jmethodID mSetPackage = env->GetMethodID(cIntent, "setPackage", "(Ljava/lang/String;)Landroid/content/Intent;");
+  		oIntent = env->CallObjectMethod(oIntent, mSetPackage, sPackage);
+			env->DeleteLocalRef(sPackage);
+  	}
 
   if (oUri != NULL)
   {
     env->DeleteLocalRef(oUri);
   }
   env->DeleteLocalRef(cIntent);
-  env->DeleteLocalRef(sPackage);
  
   // Java equivalent for the following JNI
   //   startActivity(oIntent);
@@ -1055,6 +1197,192 @@ int CXBMCApp::GetMaxSystemVolume()
   }
   return maxVolume;
 }
+
+#if defined(__ANDROID_ALLWINNER__)
+
+int CXBMCApp::GetDisplayOutputType ()
+{
+  if (m_activity == NULL)
+  {
+    android_printf("  missing activity => unable to get display output type");
+    return -1;
+  }
+
+  JNIEnv *env = NULL;
+  AttachCurrentThread(&env);
+
+  if (env == NULL)
+    return false;
+
+  jobject oActivity = m_activity->clazz;
+  jclass cActivity = env->GetObjectClass(oActivity);
+  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
+  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
+  
+  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
+  jmethodID midDisplayOutputType = env->GetMethodID(cDisplayManager, "getDisplayOutputType", "(I)I");
+  int ret = (int)env->CallIntMethod(oDisplayManager, midDisplayOutputType, (jint)0);
+  
+  env->DeleteLocalRef(cDisplayManager);
+  env->DeleteLocalRef(oDisplayManager);
+  env->DeleteLocalRef(sDisplayManagerService);
+  env->DeleteLocalRef(cActivity);
+
+  DetachCurrentThread();
+
+  android_printf ("### OutputType: %d ##", ret);
+
+  return ret;
+}
+
+int CXBMCApp::GetDisplayOutputFormat ()
+{
+
+  if (m_activity == NULL)
+  {
+    android_printf("  missing activity => unable to get display output type");
+    return -1;
+  }
+
+  JNIEnv *env = NULL;
+  AttachCurrentThread(&env);
+
+  if (env == NULL)
+    return false;
+
+  jobject oActivity = m_activity->clazz;
+  jclass cActivity = env->GetObjectClass(oActivity);
+  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
+  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
+  
+  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
+  jmethodID midDisplayOutputFormat = env->GetMethodID(cDisplayManager, "getDisplayOutputFormat", "(I)I");
+  int ret = (int)env->CallIntMethod(oDisplayManager, midDisplayOutputFormat, (jint)0);
+  
+  env->DeleteLocalRef(cDisplayManager);
+  env->DeleteLocalRef(oDisplayManager);
+  env->DeleteLocalRef(sDisplayManagerService);
+  env->DeleteLocalRef(cActivity);
+
+  DetachCurrentThread();
+
+  android_printf ("### OutputFormat: %d ##", ret);
+
+  return ret;
+}
+
+typedef struct screen_para
+{
+    unsigned int width[2];//screen total width
+    unsigned int height[2];//screen total height
+    unsigned int valid_width[2];//screen width that can be seen
+    unsigned int valid_height[2];//screen height that can be seen
+    unsigned int app_width[2];//the width that app use
+    unsigned int app_height[2];//the height that app use
+    unsigned int ui_hdl[2];
+}screen_para_t;
+
+void CXBMCApp::SetDisplayOutputFormat (int mode)
+{
+  if (m_activity == NULL)
+  {
+    android_printf("  missing activity => unable to get display output type");
+    return;
+  }
+
+  JNIEnv *env = NULL;
+  AttachCurrentThread(&env);
+
+  if (env == NULL)
+    return;
+
+  jobject oActivity = m_activity->clazz;
+  jclass cActivity = env->GetObjectClass(oActivity);
+  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
+  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
+  
+  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
+/*
+  jmethodID midSetDisplayFormat = env->GetMethodID(cDisplayManager, "setDisplayOutputType", "(III)I");
+  int ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayFormat, (jint)0, (jint)3, (jint)mode);
+
+  android_printf ("### setDisplayFormat: %d ##", ret);
+
+  screen_para_t screenPara;
+
+  memset (&screenPara, 0, sizeof (screen_para_t));
+
+  screenPara.width[0] = 1920;
+  screenPara.height[0] = 1080;
+  screenPara.app_width[0] = 1280;
+  screenPara.app_height[0] = 720;
+  screenPara.ui_hdl[0] = 0;
+  screenPara.valid_width[0] = 1824;
+  screenPara.valid_height[0] = 1026; 
+*/
+  jmethodID midSetDisplayParameter = env->GetMethodID(cDisplayManager, "setDisplayParameter", "(III)I");
+  //ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayParameter, (jint)0, (jint)0x19, (jint)&screenPara);
+  int ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayParameter, (jint)0, (jint)3, (jint)mode);
+
+  
+  android_printf ("### setDisplayFormat000: %d ##", ret);
+
+  jmethodID midSetDisplayMode = env->GetMethodID(cDisplayManager, "setDisplayMode", "(I)I");
+  ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayMode, (jint)5);
+  
+  env->DeleteLocalRef(cDisplayManager);
+  env->DeleteLocalRef(oDisplayManager);
+  env->DeleteLocalRef(sDisplayManagerService);
+  env->DeleteLocalRef(cActivity);
+
+  DetachCurrentThread();
+
+  android_printf ("### setDisplayFormat<1111>: %d ##", ret);
+}
+
+bool CXBMCApp::DisplayIs3DSupported ()
+{
+  if (m_activity == NULL)
+  {
+    android_printf("  missing activity => unable to get 3d support");
+    return false;
+  }
+
+  JNIEnv *env = NULL;
+  AttachCurrentThread(&env);
+
+  if (env == NULL)
+    return false;
+
+  jobject oActivity = m_activity->clazz;
+  jclass cActivity = env->GetObjectClass(oActivity);
+  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
+  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
+  
+  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
+  jmethodID midIs3DSupport = env->GetMethodID(cDisplayManager, "isSupport3DMode", "()I");
+  int ret = (int)env->CallIntMethod(oDisplayManager, midIs3DSupport);
+  
+  env->DeleteLocalRef(cDisplayManager);
+  env->DeleteLocalRef(oDisplayManager);
+  env->DeleteLocalRef(sDisplayManagerService);
+  env->DeleteLocalRef(cActivity);
+
+  DetachCurrentThread();
+
+  if (ret == 0)
+    android_printf ("### 3D is not support");
+  else if (ret == 1)
+    android_printf ("### 3D is support");
+
+  return (ret == 1);
+}
+
+#endif
 
 int CXBMCApp::GetMaxSystemVolume(JNIEnv *env)
 {

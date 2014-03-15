@@ -81,9 +81,14 @@ public:
   static ANativeWindow* GetNativeWindow() { return m_window; };
   static int SetBuffersGeometry(int width, int height, int format);
   static int android_printf(const char *format, ...);
+
+  static void GetScreenDimension (int &width, int &height);
+
+  static ANativeActivity *GetCurrentActivity();
   
   static int GetBatteryLevel();
   static bool StartActivity(const std::string &package, const std::string &intent = std::string(), const std::string &dataType = std::string(), const std::string &dataURI = std::string());
+  static bool StartBrowserActivity(const std::string&, const std::string&);
   static bool ListApplications(std::vector <androidPackage> *applications);
   static bool GetIconSize(const std::string &packageName, int *width, int *height);
   static bool GetIcon(const std::string &packageName, void* buffer, unsigned int bufSize); 
@@ -97,6 +102,13 @@ public:
   static bool GetExternalStorage(std::string &path, const std::string &type = "");
   static bool GetStorageUsage(const std::string &path, std::string &usage);
   static int GetMaxSystemVolume();
+
+#if defined(__ANDROID_ALLWINNER__)
+  static bool DisplayIs3DSupported ();
+  static int GetDisplayOutputType ();
+  static int GetDisplayOutputFormat ();
+  static void SetDisplayOutputFormat (int mode);
+#endif
 
   static int GetDPI();
 protected:

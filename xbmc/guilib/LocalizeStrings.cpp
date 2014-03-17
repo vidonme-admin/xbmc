@@ -27,6 +27,10 @@
 #include "utils/URIUtils.h"
 #include "utils/POUtils.h"
 #include "filesystem/Directory.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "addons/Skin.h"
+#include "settings/Settings.h"
+#endif
 
 CLocalizeStrings::CLocalizeStrings(void)
 {
@@ -59,6 +63,7 @@ bool CLocalizeStrings::LoadSkinStrings(const CStdString& path, const CStdString&
   ClearSkinStrings();
   // load the skin strings in.
   CStdString encoding;
+
   if (!LoadStr2Mem(path, language, encoding))
   {
     if (language.Equals(SOURCE_LANGUAGE)) // no fallback, nothing to do
@@ -84,9 +89,23 @@ bool CLocalizeStrings::LoadStr2Mem(const CStdString &pathname_in, const CStdStri
     return false;
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  if (g_SkinInfo && g_SkinInfo->ID().CompareNoCase(DEFAULT_SKIN) == 0)
+  {
+	  if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset, false))
+		  return true;
+  }
+  else
+  {
+	  if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset,
+		  language.Equals(SOURCE_LANGUAGE)))
+		  return true;
+  }
+#else
   if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset,
-      language.Equals(SOURCE_LANGUAGE)))
-    return true;
+	  language.Equals(SOURCE_LANGUAGE)))
+	  return true;
+#endif
 
   CLog::Log(LOGDEBUG, "LocalizeStrings: no strings.po file exist at %s, fallback to strings.xml",
             pathname.c_str());

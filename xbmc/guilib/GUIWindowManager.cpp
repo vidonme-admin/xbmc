@@ -35,6 +35,10 @@
 #include "windowing/WindowingFactory.h"
 #include "utils/Variant.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
+
 using namespace std;
 
 CGUIWindowManager::CGUIWindowManager(void)
@@ -55,6 +59,16 @@ void CGUIWindowManager::Initialize()
   m_initialized = true;
 
   LoadNotOnDemandWindows();
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_XBMC)
+  {
+    m_windowHistory = m_windowHistoryXBMC;
+  }
+  else
+  {
+    m_windowHistory = m_windowHistoryVDM;
+  }
+#endif
 }
 
 bool CGUIWindowManager::SendMessage(int message, int senderID, int destID, int param1, int param2)
@@ -274,9 +288,36 @@ void CGUIWindowManager::PreviousWindow()
       ActivateWindow(pCurrentWindow->GetPreviousWindow());
     return;
   }
+#if defined(__VIDONME_MEDIACENTER__)
+  int windowHome = VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME ? VDM_WINDOW_HOME : WINDOW_HOME;
   // get the previous window in our stack
   if (m_windowHistory.size() < 2)
-  { // no previous window history yet - check if we should just activate home
+  {
+    // no previous window history yet - check if we should just activate home
+    if (GetActiveWindow() != WINDOW_INVALID && GetActiveWindow() != windowHome)
+    {
+      ClearWindowHistory();
+      ActivateWindow(windowHome);
+    }
+    return;
+  }
+  m_windowHistory.pop();
+  int previousWindow = GetActiveWindow();
+  m_windowHistory.push(currentWindow);
+
+  CGUIWindow *pNewWindow = GetWindow(previousWindow);
+  if (!pNewWindow)
+  {
+    CLog::Log(LOGERROR, "Unable to activate the previous window");
+    ClearWindowHistory();
+    ActivateWindow(windowHome);
+    return;
+  }
+#else
+  // get the previous window in our stack
+  if (m_windowHistory.size() < 2)
+  {
+    // no previous window history yet - check if we should just activate home
     if (GetActiveWindow() != WINDOW_INVALID && GetActiveWindow() != WINDOW_HOME)
     {
       ClearWindowHistory();
@@ -296,7 +337,7 @@ void CGUIWindowManager::PreviousWindow()
     ActivateWindow(WINDOW_HOME);
     return;
   }
-
+#endif
   // ok to go to the previous window now
 
   // tell our info manager which window we are going to
@@ -379,6 +420,46 @@ void CGUIWindowManager::ActivateWindow_Internal(int iWindowID, const vector<CStd
     iWindowID = g_SkinInfo->GetStartWindow();
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  
+  int windowHome = VDM_WINDOW_HOME;
+
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    if (iWindowID == WINDOW_HOME)
+    {
+#if 0
+      iWindowID = VDM_WINDOW_HOME;
+#else
+      return;
+#endif
+    }
+  }
+  else
+  {
+    if (iWindowID == VDM_WINDOW_HOME)
+    {
+#if 0
+      iWindowID = WINDOW_HOME;
+#else
+      return;
+#endif
+    }
+
+    windowHome = WINDOW_HOME;
+  }
+  
+  // debug
+  CLog::Log(LOGDEBUG, "Activating window ID: %i", iWindowID);
+
+  if (!g_passwordManager.CheckMenuLock(iWindowID))
+  {
+    CLog::Log(LOGERROR, "MasterCode is Wrong: Window with id %d will not be loaded! Enter a correct MasterCode!", iWindowID);
+    if (GetActiveWindow() == WINDOW_INVALID && iWindowID != windowHome)
+      ActivateWindow(windowHome);
+    return;
+  }
+#else
   // debug
   CLog::Log(LOGDEBUG, "Activating window ID: %i", iWindowID);
 
@@ -389,6 +470,7 @@ void CGUIWindowManager::ActivateWindow_Internal(int iWindowID, const vector<CStd
       ActivateWindow(WINDOW_HOME);
     return;
   }
+#endif//__VIDONME_MEDIACENTER__
 
   // first check existence of the window we wish to activate.
   CGUIWindow *pNewWindow = GetWindow(iWindowID);
@@ -705,6 +787,17 @@ void CGUIWindowManager::DeInitialize()
   // clear our vectors of windows
   m_vecCustomWindows.clear();
   m_activeDialogs.clear();
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_XBMC)
+  {
+    m_windowHistoryXBMC = m_windowHistory;
+  }
+  else
+  {
+    m_windowHistoryVDM = m_windowHistory;
+  }
+#endif
 
   m_initialized = false;
 }

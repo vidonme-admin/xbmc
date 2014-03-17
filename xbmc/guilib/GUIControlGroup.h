@@ -85,6 +85,11 @@ public:
 #ifdef _DEBUG
   virtual void DumpTextureUse();
 #endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+  void GetChildren(std::vector<CGUIControl*>& children) const;
+#endif
+
 protected:
   /*!
    \brief Check whether a given control is valid

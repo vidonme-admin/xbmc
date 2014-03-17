@@ -161,6 +161,10 @@ private:
   typedef std::vector<CGUIWindow*>::reverse_iterator rDialog;
   typedef std::vector<CGUIWindow*>::const_reverse_iterator crDialog;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  std::stack<int> m_windowHistoryVDM;
+  std::stack<int> m_windowHistoryXBMC;
+#endif
   std::stack<int> m_windowHistory;
 
   IWindowManagerCallback* m_pCallback;

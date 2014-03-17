@@ -85,8 +85,12 @@ public:
   virtual ~CGUIWindow(void);
 
   bool Initialize();  // loads the window
-  bool Load(const CStdString& strFileName, bool bContainsPath = false);
 
+#if defined(__VIDONME_MEDIACENTER__)
+  virtual bool Load(const CStdString& strFileName, bool bContainsPath = false);
+#else
+	bool Load(const CStdString& strFileName, bool bContainsPath = false);
+#endif
   void CenterWindow();
 
   virtual void DoProcess(unsigned int currentTime, CDirtyRegionList &dirtyregions);

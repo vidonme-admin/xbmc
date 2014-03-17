@@ -237,6 +237,10 @@ public:
   void SetParentControl(CGUIControl *control) { m_parentControl = control; };
   CGUIControl *GetParentControl(void) const { return m_parentControl; };
   virtual void SaveStates(std::vector<CControlState> &states);
+#if defined(__VIDONME_MEDIACENTER__)
+  void SetRatio(float posXRatio, float posYRatio, float widthRatio, float heightRatio);
+  void SetReferenceControl(const CGUIControl* pControl);
+#endif
 
   enum GUICONTROLTYPES {
     GUICONTROL_UNKNOWN,
@@ -252,7 +256,7 @@ public:
     GUICONTROL_RADIO,
     GUICONTROL_RSS,
     GUICONTROL_SELECTBUTTON,
-    GUICONTROL_SLIDER,
+		GUICONTROL_SLIDER,
     GUICONTROL_SETTINGS_SLIDER,
     GUICONTROL_SPIN,
     GUICONTROL_SPINEX,
@@ -274,7 +278,14 @@ public:
     GUICONTAINER_WRAPLIST,
     GUICONTAINER_FIXEDLIST,
     GUICONTAINER_EPGGRID,
-    GUICONTAINER_PANEL
+    GUICONTAINER_PANEL,
+#ifdef __VIDONME_MEDIACENTER__
+		VDMCONTROL_IMAGE,
+		VDMCONTROL_SLIDER,
+		GUICONTROL_TAB,
+    VDMCONTROL_TABBUTTON,
+		VDMCONTAINER_LIST,
+#endif
   };
   GUICONTROLTYPES GetControlType() const { return ControlType; }
 
@@ -357,6 +368,18 @@ protected:
 
   bool  m_controlIsDirty;
   CRect m_renderRegion;         // In screen coordinates
+
+#if defined(__VIDONME_MEDIACENTER__)
+  CGUIControl* m_referControl;
+  bool m_bRatioSet;
+  float m_posXRatio;
+  float m_posYRatio;
+  float m_widthRatio;
+  float m_heightRatio;
+  CRect m_orginalReferRect;
+  CRect m_lastReferRect;
+  void UpdateRect();
+#endif
 };
 
 #endif

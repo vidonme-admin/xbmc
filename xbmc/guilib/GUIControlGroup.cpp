@@ -524,6 +524,10 @@ void CGUIControlGroup::AddControl(CGUIControl *control, int position /* = -1*/)
   control->SetPushUpdates(m_pushedUpdates);
   AddLookup(control);
   SetInvalid();
+
+#if defined(__VIDONME_MEDIACENTER__)
+  control->SetReferenceControl(this);
+#endif
 }
 
 void CGUIControlGroup::AddLookup(CGUIControl *control)
@@ -667,5 +671,12 @@ void CGUIControlGroup::DumpTextureUse()
 {
   for (iControls it = m_children.begin(); it != m_children.end(); ++it)
     (*it)->DumpTextureUse();
+}
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+void CGUIControlGroup::GetChildren(std::vector<CGUIControl*>& children) const
+{
+  children = m_children;
 }
 #endif

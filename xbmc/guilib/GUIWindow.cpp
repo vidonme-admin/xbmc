@@ -137,7 +137,10 @@ bool CGUIWindow::LoadXML(const CStdString &strPath, const CStdString &strLowerPa
     if ( !xmlDoc.LoadFile(strPath) && !xmlDoc.LoadFile(CStdString(strPath).ToLower()) && !xmlDoc.LoadFile(strLowerPath))
     {
       CLog::Log(LOGERROR, "unable to load:%s, Line %d\n%s", strPath.c_str(), xmlDoc.ErrorRow(), xmlDoc.ErrorDesc());
-      SetID(WINDOW_INVALID);
+#if defined(__VIDONME_MEDIACENTER__)
+#else
+     SetID(WINDOW_INVALID);
+#endif
       return false;
     }
     m_windowXMLRootElement = (TiXmlElement*)xmlDoc.RootElement()->Clone();
@@ -636,12 +639,26 @@ bool CGUIWindow::OnMessage(CGUIMessage& message)
 
         // get the control to focus
         CGUIControl* pFocusedControl = GetFirstFocusableControl(message.GetControlId());
+#if 0
+        if (g_SkinInfo->ID() == DEFAULT_SKIN)
+        {
+          //if the control isn't focusable, then we focus the first focusable control, so we do nothing here and we do not consider the allow hidden focus situation.
+        }
+        else
+#endif
         if (!pFocusedControl) pFocusedControl = (CGUIControl *)GetControl(message.GetControlId());
 
         // and focus it
         if (pFocusedControl)
           return pFocusedControl->OnMessage(message);
       }
+#if defined(__VIDONME_MEDIACENTER__)
+      if (g_SkinInfo->ID() == DEFAULT_SKIN)
+      {
+        //CGUIControlGroup will process it: if default focus control changed actively(m_defaultControl is 0), it will select the first focusable control.
+      }
+      else
+#endif
       return true;
     }
     break;

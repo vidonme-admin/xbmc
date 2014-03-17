@@ -70,6 +70,36 @@ void CGUIListGroup::Process(unsigned int currentTime, CDirtyRegionList &dirtyreg
   for (iControls it = m_children.begin(); it != m_children.end(); ++it)
   {
     CGUIControl *control = *it;
+#if defined(__VIDONME_MEDIACENTER__)
+    if (control->GetHeight() <= 0 && control->GetWidth() <= 0)
+    {
+      m_setDynSizedControls.insert(control);
+    }
+
+    if (m_bInvalidated)
+    {
+      if (m_setDynSizedControls.find(control) != m_setDynSizedControls.end())
+      {
+        if (m_width - control->GetXPosition() > 0)
+        {
+          control->SetWidth(m_width - control->GetXPosition());
+        }
+        else
+        {
+          control->SetWidth(m_width);
+        }
+        
+        if (m_height - control->GetYPosition() > 0)
+        {
+          control->SetHeight(m_height - control->GetYPosition());
+        }
+        else
+        {
+          control->SetHeight(m_height);
+        }
+      }
+    }
+#endif
     control->UpdateVisibility(m_item);
     unsigned int oldDirty = dirtyregions.size();
     control->DoProcess(currentTime, dirtyregions);

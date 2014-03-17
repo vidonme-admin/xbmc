@@ -26,7 +26,9 @@
  */
 
 #include "GUIControlGroup.h"
-
+#if defined(__VIDONME_MEDIACENTER__)
+#include <set>
+#endif
 /*!
  \ingroup controls
  \brief a group of controls within a list/panel container
@@ -58,5 +60,8 @@ public:
 
 protected:
   const CGUIListItem *m_item;
+#if defined(__VIDONME_MEDIACENTER__)
+  std::set<CGUIControl*> m_setDynSizedControls;
+#endif
 };
 

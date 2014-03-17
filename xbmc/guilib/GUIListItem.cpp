@@ -406,6 +406,25 @@ CVariant CGUIListItem::GetProperty(const CStdString &strKey) const
   return iter->second;
 }
 
+#if defined(__VIDONME_MEDIACENTER__)
+CStdString CGUIListItem::GetPropertiesAsString() const
+{
+  CStdString strProperties;
+  
+  PropertyMap::const_iterator iter = m_mapProperties.begin();
+  for (; iter != m_mapProperties.end(); ++iter)
+  {
+    strProperties += "{";
+    strProperties += (*iter).first.c_str();
+    strProperties += ":";
+    strProperties += (*iter).second.asString();
+    strProperties += "}";
+  }
+  
+  return strProperties;
+}
+#endif
+
 bool CGUIListItem::HasProperty(const CStdString &strKey) const
 {
   PropertyMap::const_iterator iter = m_mapProperties.find(strKey);

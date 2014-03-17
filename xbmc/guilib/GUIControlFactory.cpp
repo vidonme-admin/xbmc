@@ -62,6 +62,12 @@
 #include "settings/Settings.h"
 #include "utils/StringUtils.h"
 #include "GUIAction.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "../vidonme/controls/GUITabControl.h"
+#include "../vidonme/controls/VDMSliderControl.h"
+#include "../vidonme/controls/VDMImage.h"
+#include "../vidonme/controls/VDMListContainer.h"
+#endif
 
 using namespace std;
 using namespace EPG;
@@ -108,7 +114,14 @@ static const ControlMapping controls[] =
     {"wraplist",          CGUIControl::GUICONTAINER_WRAPLIST},
     {"fixedlist",         CGUIControl::GUICONTAINER_FIXEDLIST},
     {"epggrid",           CGUIControl::GUICONTAINER_EPGGRID},
-    {"panel",             CGUIControl::GUICONTAINER_PANEL}};
+    {"panel",             CGUIControl::GUICONTAINER_PANEL},
+#if defined(__VIDONME_MEDIACENTER__)
+		{"vdmimage",					CGUIControl::VDMCONTROL_IMAGE},
+		{"vdmslider",					CGUIControl::VDMCONTROL_SLIDER},
+    {"tab",								CGUIControl::GUICONTROL_TAB},
+    {"vdmlist",           CGUIControl::VDMCONTAINER_LIST},
+#endif
+    };
 
 CGUIControl::GUICONTROLTYPES CGUIControlFactory::TranslateControlType(const CStdString &type)
 {
@@ -578,6 +591,11 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
   float width = 0, height = 0;
   float minHeight = 0, minWidth = 0;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  float posXRatio = 0, posYRatio = 0;
+  float widthRatio = 0, heightRatio = 0;
+#endif
+
   CGUIAction leftActions, rightActions, upActions, downActions, backActions, nextActions, prevActions;
 
   int pageControl = 0;
@@ -632,6 +650,7 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
   CStdString strRSSTags = "";
 
   float buttonGap = 5;
+
   int iMovementRange = 0;
   CAspectRatio aspect;
 #ifdef PRE_SKIN_VERSION_9_10_COMPATIBILITY
@@ -653,6 +672,95 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
   bool loop = true;
   bool wrapMultiLine = false;
   ORIENTATION orientation = VERTICAL;
+#if defined(__VIDONME_MEDIACENTER__)
+  CGUITabControl::TABORIENTATION tabOrientation = CGUITabControl::TOP;
+  float tabBarSize = 100;
+  float tabBarLength = 500;
+  uint32_t tabBarAlignment = XBFONT_CENTER_X;
+  uint32_t tabBarAlignmentY = XBFONT_CENTER_Y;
+  CTextureInfo tabBarTextureBackground;
+  float tabBarPadding1 = 0;
+  float tabBarPadding2 = 0;
+
+  float tabItemSize = 50;
+  float tabItemLength = 100;
+  float tabItemGap = 5;
+  uint32_t tabItemAlignment = XBFONT_CENTER_X;
+
+  CTextureInfo tabItemTextureFocus;
+  CTextureInfo tabItemTextureNoFocus;
+  CTextureInfo tabItemTextureOn;
+  CLabelInfo tabItemLabelInfo;
+  unsigned char alphaCurrentTab = 0x80;
+
+  CTextureInfo viewTextureBackground;
+
+  float barWidth = 14;
+  float barHeight = 50;  
+  CTextureInfo textureBarBackground;
+
+  TiXmlElement* pTabChildNode = pControlNode->FirstChildElement("tab");
+  if (pTabChildNode)
+  {
+    if ( XMLUtils::GetString(
+      pTabChildNode, "orientation", strTmp) )
+    {
+      if (strTmp.ToLower() == "left")
+        tabOrientation = CGUITabControl::LEFT;
+      else if (strTmp.ToLower() == "right")
+        tabOrientation = CGUITabControl::RIGHT;     
+      else if (strTmp.ToLower() == "bottom")
+        tabOrientation = CGUITabControl::BOTTOM;
+    }
+
+    XMLUtils::GetFloat(pTabChildNode, "size", tabBarSize);
+    XMLUtils::GetFloat(pTabChildNode, "length", tabBarLength);
+    GetAlignment(pTabChildNode, "align", tabBarAlignment);
+    GetAlignmentY(pTabChildNode, "aligny", tabBarAlignmentY);
+    GetTexture(pTabChildNode, "texturebackground", tabBarTextureBackground);
+    XMLUtils::GetFloat(pTabChildNode, "padding1", tabBarPadding1);
+    XMLUtils::GetFloat(pTabChildNode, "padding2", tabBarPadding2);
+
+    TiXmlElement* pTabItemChildNode = pTabChildNode->FirstChildElement("item");
+    if (pTabItemChildNode)
+    {
+      XMLUtils::GetFloat(pTabItemChildNode, "size", tabItemSize);
+      XMLUtils::GetFloat(pTabItemChildNode, "length", tabItemLength);
+      XMLUtils::GetFloat(pTabItemChildNode, "itemgap", tabItemGap);
+      GetAlignment(pTabItemChildNode, "itemalign", tabItemAlignment);
+      GetTexture(pTabItemChildNode, "texturefocus", tabItemTextureFocus);
+      GetTexture(pTabItemChildNode, "texturenofocus", tabItemTextureNoFocus);
+      GetTexture(pTabItemChildNode, "textureon", tabItemTextureOn);
+      GetInfoColor(pTabItemChildNode, "textcolor", tabItemLabelInfo.textColor, parentID);
+      GetInfoColor(pTabItemChildNode, "focusedcolor", tabItemLabelInfo.focusedColor, parentID);
+      GetInfoColor(pTabItemChildNode, "disabledcolor", tabItemLabelInfo.disabledColor, parentID);
+      GetInfoColor(pTabItemChildNode, "shadowcolor", tabItemLabelInfo.shadowColor, parentID);
+      GetInfoColor(pTabItemChildNode, "selectedcolor", tabItemLabelInfo.selectedColor, parentID);
+      XMLUtils::GetFloat(pTabItemChildNode, "textoffsetx", tabItemLabelInfo.offsetX);
+      XMLUtils::GetFloat(pTabItemChildNode, "textoffsety", tabItemLabelInfo.offsetY);
+      int angle = 0;  // use the negative angle to compensate for our vertically flipped cartesian plane
+      if (XMLUtils::GetInt(pTabItemChildNode, "angle", angle)) tabItemLabelInfo.angle = (float)-angle;
+      CStdString strFont;
+      if (XMLUtils::GetString(pTabItemChildNode, "font", strFont))
+        tabItemLabelInfo.font = g_fontManager.GetFont(strFont);
+      GetAlignment(pTabItemChildNode, "align", tabItemLabelInfo.align);
+      uint32_t alignY = 0;
+      if (GetAlignmentY(pTabItemChildNode, "aligny", alignY))
+        tabItemLabelInfo.align |= alignY;
+      if (XMLUtils::GetFloat(pTabItemChildNode, "textwidth", tabItemLabelInfo.width))
+        tabItemLabelInfo.align |= XBFONT_TRUNCATED;
+      uint32_t hexValue;
+      XMLUtils::GetHex(pTabItemChildNode, "alpha", hexValue);
+      alphaCurrentTab = hexValue & 0xFF;
+    }
+  }
+
+  GetTexture(pControlNode, "textureviewbackground", viewTextureBackground);
+
+  XMLUtils::GetFloat(pControlNode, "barwidth", barWidth);
+  XMLUtils::GetFloat(pControlNode, "barheight", barHeight);
+  GetTexture(pControlNode, "texturesliderbackground", textureBarBackground);
+#endif
   bool showOnePage = true;
   bool scrollOut = true;
   int preloadItems = 0;
@@ -724,6 +832,13 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
 
   hitRect.SetRect(posX, posY, posX + width, posY + height);
   GetHitRect(pControlNode, hitRect);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  XMLUtils::GetFloat(pControlNode, "posxratio", posXRatio);
+  XMLUtils::GetFloat(pControlNode, "posyratio", posYRatio);
+  XMLUtils::GetFloat(pControlNode, "widthratio", widthRatio);
+  XMLUtils::GetFloat(pControlNode, "heightratio", heightRatio);
+#endif
 
   GetActions(pControlNode, "onup",    upActions);
   GetActions(pControlNode, "ondown",  downActions);
@@ -931,7 +1046,11 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     viewType = VIEW_TYPE_ICON;
     viewLabel = g_localizeStrings.Get(536);
   }
-  else if (type == CGUIControl::GUICONTAINER_LIST)
+  else if (type == CGUIControl::GUICONTAINER_LIST
+#if defined(__VIDONME_MEDIACENTER__)
+					|| type == CGUIControl::GUICONTAINER_LIST
+#endif
+		)
   {
     viewType = VIEW_TYPE_LIST;
     viewLabel = g_localizeStrings.Get(535);
@@ -1169,6 +1288,18 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     ((CGUISliderControl *)control)->SetInfo(singleInfo);
     ((CGUISliderControl *)control)->SetAction(action);
   }
+
+#if defined(__VIDONME_MEDIACENTER__)
+  else if (type == CGUIControl::VDMCONTROL_SLIDER)
+  {
+	  control = new CVDMSliderControl(
+		  parentID, id, posX, posY, width, height,
+		  textureBar, textureBarFocus, textureNib, textureNibFocus, SPIN_CONTROL_TYPE_TEXT);
+
+	  ((CGUISliderControl *)control)->SetInfo(singleInfo);
+	  ((CGUISliderControl *)control)->SetAction(action);
+  }
+#endif
   else if (type == CGUIControl::GUICONTROL_SETTINGS_SLIDER)
   {
     control = new CGUISettingsSliderControl(
@@ -1208,7 +1339,18 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     ((CGUIImage *)control)->SetInfo(textureFile);
     ((CGUIImage *)control)->SetAspectRatio(aspect);
     ((CGUIImage *)control)->SetCrossFade(fadeTime);
-  }
+	}
+
+#if defined(__VIDONME_MEDIACENTER__)
+	else if (type == CGUIControl::VDMCONTROL_IMAGE)
+	{
+		control = new CVDMImage(parentID, id, posX, posY, width, height, texture, textureBackground, borderTexture);
+		((CVDMImage *)control)->SetInfo(textureFile);
+		((CVDMImage *)control)->SetAspectRatio(aspect);
+		((CVDMImage *)control)->SetCrossFade(fadeTime);
+	}
+#endif
+
   else if (type == CGUIControl::GUICONTROL_MULTI_IMAGE)
   {
     control = new CGUIMultiImage(
@@ -1228,7 +1370,22 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     ((CGUIListContainer *)control)->SetType(viewType, viewLabel);
     ((CGUIListContainer *)control)->SetPageControl(pageControl);
     ((CGUIListContainer *)control)->SetRenderOffset(offset);
-  }
+	}
+#if defined(__VIDONME_MEDIACENTER__)
+	else if (type == CGUIControl::VDMCONTAINER_LIST)
+	{
+		CScroller scroller;
+		GetScroller(pControlNode, "scrolltime", scroller);
+
+		control = new CVDMListContainer(parentID, id, posX, posY, width, height, orientation, scroller, preloadItems);
+		((CVDMListContainer *)control)->LoadLayout(pControlNode);
+		((CVDMListContainer *)control)->LoadContent(pControlNode);
+		((CVDMListContainer *)control)->SetDefaultControl(defaultControl, defaultAlways);
+		((CVDMListContainer *)control)->SetType(viewType, viewLabel);
+		((CVDMListContainer *)control)->SetPageControl(pageControl);
+		((CVDMListContainer *)control)->SetRenderOffset(offset);
+	}
+#endif
   else if (type == CGUIControl::GUICONTAINER_WRAPLIST)
   {
     CScroller scroller;
@@ -1323,6 +1480,20 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
   {
     control = new CGUIVisualisationControl(parentID, id, posX, posY, width, height);
   }
+#if defined(__VIDONME_MEDIACENTER__)
+  else if (type == CGUIControl::GUICONTROL_TAB)
+  {
+    CScroller scroller;
+    GetScroller(pControlNode, "scrolltime", scroller);
+    control = new CGUITabControl(parentID, id, posX, posY, width, height, 
+      tabOrientation, tabBarSize, tabBarLength, (tabOrientation == CGUITabControl::LEFT || tabOrientation == CGUITabControl::RIGHT) ? tabBarAlignmentY : tabBarAlignment, tabBarTextureBackground, tabBarPadding1, tabBarPadding2,
+      tabItemSize, tabItemLength, tabItemGap, tabItemAlignment, scroller, 
+      tabItemTextureFocus, tabItemTextureNoFocus, tabItemTextureOn, tabItemLabelInfo, alphaCurrentTab, viewTextureBackground,
+      barWidth, barHeight, textureBarBackground, textureBar, textureBarFocus, textureNib, textureNibFocus, showOnePage);
+
+    ((CGUITabControl *)control)->LoadContent(pControlNode);
+  }
+#endif
 
   // things that apply to all controls
   if (control)
@@ -1336,6 +1507,9 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     control->SetPulseOnSelect(bPulse);
     if (hasCamera)
       control->SetCamera(camera);
+#if defined(__VIDONME_MEDIACENTER__)
+    control->SetRatio(posXRatio, posYRatio, widthRatio, heightRatio);
+#endif
   }
   return control;
 }

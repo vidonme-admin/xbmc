@@ -48,7 +48,11 @@ public:
   virtual void SetInvalid();
   virtual void SetWidth(float width);
 
-  void SetLabel(const CStdString &label);
+#if defined(__VIDONME_MEDIACENTER__)
+	virtual void SetHeight(float height);
+#endif
+
+	void SetLabel(const CStdString &label);
   void SetSelected(bool selected);
   void SetScrolling(bool scrolling);
 

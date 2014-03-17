@@ -21,6 +21,9 @@
 #include "GUIListLabel.h"
 #include "utils/CharsetConverter.h"
 #include <limits>
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
 
 CGUIListLabel::CGUIListLabel(int parentID, int controlID, float posX, float posY, float width, float height, const CLabelInfo& labelInfo, const CGUIInfoLabel &info, bool alwaysScroll)
     : CGUIControl(parentID, controlID, posX, posY, width, height)
@@ -29,10 +32,24 @@ CGUIListLabel::CGUIListLabel(int parentID, int controlID, float posX, float posY
   m_info = info;
   m_alwaysScroll = alwaysScroll;
   // TODO: Remove this "correction"
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    //do nothing  
+  }
+  else
+  {
+    if (labelInfo.align & XBFONT_RIGHT)
+      m_label.SetMaxRect(m_posX - m_width, m_posY, m_width, m_height);
+    else if (labelInfo.align & XBFONT_CENTER_X)
+      m_label.SetMaxRect(m_posX - m_width*0.5f, m_posY, m_width, m_height);
+  }
+#else
   if (labelInfo.align & XBFONT_RIGHT)
     m_label.SetMaxRect(m_posX - m_width, m_posY, m_width, m_height);
   else if (labelInfo.align & XBFONT_CENTER_X)
     m_label.SetMaxRect(m_posX - m_width*0.5f, m_posY, m_width, m_height);
+#endif
   if (m_info.IsConstant())
     SetLabel(m_info.GetLabel(m_parentID, true));
   ControlType = GUICONTROL_LISTLABEL;
@@ -115,6 +132,15 @@ void CGUIListLabel::SetWidth(float width)
     m_label.SetMaxRect(m_posX, m_posY, m_posX + m_width, m_posY + m_height);
   CGUIControl::SetWidth(m_width);
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+void CGUIListLabel::SetHeight(float height)
+{
+	m_height = height;
+	m_label.SetMaxRect(m_posX, m_posY, m_posX + m_width, m_posY + m_height);
+	CGUIControl::SetHeight(m_height);
+}
+#endif
 
 void CGUIListLabel::SetLabel(const CStdString &label)
 {

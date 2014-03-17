@@ -79,6 +79,10 @@ void CGUIListItemLayout::Process(CGUIListItem *item, int parentID, unsigned int 
     m_isPlaying.Update(item);
     m_group.SetInvalid();
     m_group.UpdateInfo(fileItem);
+#if defined(__VIDONME_MEDIACENTER__)
+    m_group.SetWidth(m_width);
+    m_group.SetHeight(m_height);
+#endif
     // delete our temporary fileitem
     if (!item->IsFileItem())
       delete fileItem;

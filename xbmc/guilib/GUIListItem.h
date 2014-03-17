@@ -173,7 +173,9 @@ public:
   void       ClearProperty(const CStdString &strKey);
 
   CVariant   GetProperty(const CStdString &strKey) const;
-
+#if defined(__VIDONME_MEDIACENTER__)
+  CStdString GetPropertiesAsString() const;
+#endif
 protected:
   CStdString m_strLabel2;     // text of column2
   CStdString m_strIcon;      // filename of icon

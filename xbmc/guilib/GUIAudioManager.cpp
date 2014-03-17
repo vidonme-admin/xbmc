@@ -71,6 +71,8 @@ void CGUIAudioManager::Stop()
 // \brief Play a sound associated with a CAction
 void CGUIAudioManager::PlayActionSound(const CAction& action)
 {
+#if defined(__ANDROID_ALLWINNER__) && defined(__HAS_VIDONME_PLAYER__)
+#else
   CSingleLock lock(m_cs);
 
   // it's not possible to play gui sounds when passthrough is active
@@ -83,12 +85,15 @@ void CGUIAudioManager::PlayActionSound(const CAction& action)
 
   if (it->second)
     it->second->Play();
+#endif
 }
 
 // \brief Play a sound associated with a window and its event
 // Events: SOUND_INIT, SOUND_DEINIT
 void CGUIAudioManager::PlayWindowSound(int id, WINDOW_SOUND event)
 {
+#if defined(__ANDROID_ALLWINNER__) && defined(__HAS_VIDONME_PLAYER__)
+#else
   CSingleLock lock(m_cs);
 
   // it's not possible to play gui sounds when passthrough is active
@@ -115,11 +120,14 @@ void CGUIAudioManager::PlayWindowSound(int id, WINDOW_SOUND event)
     return;
 
   sound->Play();
+#endif
 }
 
 // \brief Play a sound given by filename
 void CGUIAudioManager::PlayPythonSound(const CStdString& strFileName)
 {
+#if defined(__ANDROID_ALLWINNER__) && defined(__HAS_VIDONME_PLAYER__)
+#else
   CSingleLock lock(m_cs);
 
   // it's not possible to play gui sounds when passthrough is active
@@ -141,6 +149,7 @@ void CGUIAudioManager::PlayPythonSound(const CStdString& strFileName)
 
   m_pythonSounds.insert(pair<const CStdString, IAESound*>(strFileName, sound));
   sound->Play();
+#endif
 }
 
 void CGUIAudioManager::UnLoad()

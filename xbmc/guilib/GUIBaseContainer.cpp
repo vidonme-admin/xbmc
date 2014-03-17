@@ -32,6 +32,10 @@
 #include "utils/MathUtils.h"
 #include "utils/XBMCTinyXML.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
+
 using namespace std;
 
 #define HOLD_TIME_START 100
@@ -125,7 +129,9 @@ void CGUIBaseContainer::Process(unsigned int currentTime, CDirtyRegionList &dirt
     int itemNo = CorrectOffset(current, 0);
     if (itemNo >= (int)m_items.size())
       break;
+
     bool focused = (current == GetOffset() + GetCursor());
+
     if (itemNo >= 0)
     {
       CGUIListItemPtr item = m_items[itemNo];
@@ -228,7 +234,9 @@ void CGUIBaseContainer::Render()
       int itemNo = CorrectOffset(current, 0);
       if (itemNo >= (int)m_items.size())
         break;
+
       bool focused = (current == GetOffset() + GetCursor());
+
       if (itemNo >= 0)
       {
         CGUIListItemPtr item = m_items[itemNo];
@@ -387,7 +395,14 @@ bool CGUIBaseContainer::OnAction(const CAction &action)
 
   default:
     if (action.GetID())
-    {
+		{
+#if defined(__VIDONME_MEDIACENTER__)
+			if (VidOnMe::RM_VIDONME == VidOnMe::VDMUtils::Instance().GetRunningMode() && action.GetID() != ACTION_SELECT_ITEM
+				&& action.GetID() != ACTION_MOUSE_LEFT_CLICK)
+			{
+				return true;
+			}
+#endif
       return OnClick(action.GetID());
     }
   }

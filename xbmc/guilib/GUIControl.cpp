@@ -55,6 +55,14 @@ CGUIControl::CGUIControl()
   m_pushedUpdates = false;
   m_pulseOnSelect = false;
   m_controlIsDirty = true;
+#if defined(__VIDONME_MEDIACENTER__)
+  m_referControl = NULL;
+  m_posXRatio = 0;
+  m_posYRatio = 0;
+  m_widthRatio = 0;
+  m_heightRatio = 0;
+  m_bRatioSet = false;
+#endif
 }
 
 CGUIControl::CGUIControl(int parentID, int controlID, float posX, float posY, float width, float height)
@@ -83,8 +91,15 @@ CGUIControl::CGUIControl(int parentID, int controlID, float posX, float posY, fl
   m_pushedUpdates = false;
   m_pulseOnSelect = false;
   m_controlIsDirty = false;
+#if defined(__VIDONME_MEDIACENTER__)
+  m_referControl = NULL;
+  m_posXRatio = 0;
+  m_posYRatio = 0;
+  m_widthRatio = 0;
+  m_heightRatio = 0;
+  m_bRatioSet = false;
+#endif
 }
-
 
 CGUIControl::~CGUIControl(void)
 {
@@ -127,6 +142,9 @@ void CGUIControl::DynamicResourceAlloc(bool bOnOff)
 // 3. reset the animation transform
 void CGUIControl::DoProcess(unsigned int currentTime, CDirtyRegionList &dirtyregions)
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  UpdateRect();
+#endif
   CRect dirtyRegion = m_renderRegion;
 
   bool changed = m_bInvalidated && IsVisible();
@@ -970,3 +988,80 @@ CPoint CGUIControl::GetRenderPosition() const
     point += m_parentControl->GetRenderPosition();
   return point;
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+void CGUIControl::SetRatio(float posXRatio, float posYRatio, float widthRatio, float heightRatio)
+{
+  m_posXRatio = posXRatio;
+  m_posYRatio = posYRatio;
+  m_widthRatio = widthRatio;
+  m_heightRatio = heightRatio;
+  if (!m_posXRatio && !m_posYRatio && !m_widthRatio && !m_heightRatio)
+  {
+    m_bRatioSet = false;
+  }
+  else
+  {
+    m_bRatioSet = true;
+  }
+}
+
+void CGUIControl::SetReferenceControl(const CGUIControl* pControl)
+{
+  m_referControl = (CGUIControl*)pControl;
+  if (m_referControl)
+  {
+    float left = m_referControl->GetXPosition();
+    float top = m_referControl->GetYPosition();
+    float right = left + m_referControl->GetWidth();
+    float bottom = top + m_referControl->GetHeight();
+    m_orginalReferRect.SetRect(left, top, right, bottom);
+    m_lastReferRect = m_orginalReferRect;
+  }
+}
+
+void CGUIControl::UpdateRect()
+{
+  if (!m_bRatioSet)
+  {
+    return;
+  }
+
+  if (m_referControl)
+  {    
+    float newPosX = GetXPosition();
+    float newPosY = GetYPosition();
+    float newWidth = GetWidth();
+    float newHeight = GetHeight();
+
+    float left = m_referControl->GetXPosition();
+    float top = m_referControl->GetYPosition();
+    float right = left + m_referControl->GetWidth();
+    float bottom = top + m_referControl->GetHeight();
+
+    CRect rect(left, top, right, bottom);
+    float widthChange = rect.Width() - m_lastReferRect.Width();
+    float heightChange = rect.Height() - m_lastReferRect.Height();
+
+    if (widthChange)
+    {
+      newPosX = newPosX + widthChange * m_posXRatio;
+      newWidth = newWidth + widthChange * m_widthRatio;
+    }
+
+    if (heightChange)
+    {
+      newPosY = newPosY + heightChange * m_posYRatio;
+      newHeight = newHeight + heightChange * m_heightRatio;
+    }
+
+    if (widthChange || heightChange)
+    {
+      SetPosition(newPosX, newPosY);
+      SetWidth(newWidth);
+      SetHeight(newHeight);
+      m_lastReferRect = rect;
+    }
+  }
+}
+#endif

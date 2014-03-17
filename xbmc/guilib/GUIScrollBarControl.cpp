@@ -271,6 +271,11 @@ bool CGUIScrollBar::UpdateBarSize()
     changed |= m_guiNibFocus.SetPosition(GetXPosition() + nibPos, GetYPosition());
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  //xbmc bug: backgroud doesn't move when scrollbar repositioned.
+  changed |= m_guiBackground.SetPosition(GetXPosition(), GetYPosition());
+#endif
+
   return changed;
 }
 

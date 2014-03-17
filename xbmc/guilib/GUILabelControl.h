@@ -52,7 +52,10 @@ public:
   virtual float GetWidth() const;
   virtual void SetWidth(float width);
   virtual CRect CalcRenderRegion() const;
- 
+#if defined(__VIDONME_MEDIACENTER__)
+  //xbmc's bug: recalculate text render rect when resizing.
+	virtual void SetInvalid();
+#endif
   const CLabelInfo& GetLabelInfo() const { return m_label.GetLabelInfo(); };
   void SetLabel(const std::string &strLabel);
   void ShowCursor(bool bShow = true);

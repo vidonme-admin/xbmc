@@ -200,6 +200,7 @@ typedef unsigned short  WORD;
 typedef unsigned char   BYTE;
 typedef char        CHAR;
 typedef unsigned char UCHAR;
+typedef unsigned char* PUCHAR;
 typedef wchar_t     WCHAR;
 typedef int         BOOL;
 typedef BYTE        BOOLEAN;
@@ -213,6 +214,8 @@ typedef long long     INT64;
 typedef unsigned long long    UINT64;
 typedef long        LONG;
 typedef long long     LONGLONG;
+typedef unsigned int   WPARAM;
+typedef long   LPARAM;
 #if defined(TARGET_DARWIN_OSX)
 typedef UInt32          ULONG;
 #else

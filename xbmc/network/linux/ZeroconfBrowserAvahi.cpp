@@ -56,17 +56,22 @@ CZeroconfBrowserAvahi::CZeroconfBrowserAvahi() : mp_client ( 0 ), mp_poll ( 0 ),
     return;
   }
 
+  CLog::Log ( LOGINFO, "CZeroconfAvahi::CZeroconfAvahi(): create threaded poll object successfully" );
+
   if ( !createClient() )
   {
     CLog::Log ( LOGERROR, "CZeroconfAvahi::CZeroconfAvahi(): Could not create client" );
     //yeah, what if not? but should always succeed (as client_no_fail or something is passed)
   }
 
+  CLog::Log ( LOGINFO, "CZeroconfAvahi::CZeroconfAvahi(): create client successfully" );
   //start event loop thread
   if ( avahi_threaded_poll_start ( mp_poll ) < 0 )
   {
     CLog::Log ( LOGERROR, "CZeroconfAvahi::CZeroconfAvahi(): Failed to start avahi client thread" );
   }
+
+  CLog::Log ( LOGINFO, "CZeroconfAvahi::CZeroconfAvahi(): start avahi client thread successfully" );
 }
 
 CZeroconfBrowserAvahi::~CZeroconfBrowserAvahi()
@@ -118,11 +123,13 @@ bool CZeroconfBrowserAvahi::doAddServiceType ( const CStdString& fcr_service_typ
     AvahiServiceBrowser* browser = createServiceBrowser ( fcr_service_type, mp_client, this);
     if ( !browser )
     {
+      CLog::Log ( LOGINFO, "CZeroconfBrowserAvahi::doAddServiceType create new browser failed" );
       m_browsers.erase ( it );
       return false;
     }
     else
     {
+      CLog::Log ( LOGINFO, "CZeroconfBrowserAvahi::doAddServiceType create new browser successfully" );
       it->second = browser;
       return true;
     }
@@ -396,6 +403,10 @@ AvahiServiceBrowser* CZeroconfBrowserAvahi::createServiceBrowser ( const CStdStr
   {
     CLog::Log ( LOGERROR, "CZeroconfBrowserAvahi::createServiceBrowser Failed to create service (%s) browser: %s",
                 avahi_strerror ( avahi_client_errno ( fp_client ) ), fcr_service_type.c_str() );
+  }
+  else
+  {
+    CLog::Log ( LOGINFO, "CZeroconfBrowserAvahi::createServiceBrowser successful to create service browser: %s", fcr_service_type.c_str());
   }
   return ret;
 }

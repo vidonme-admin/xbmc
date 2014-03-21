@@ -12,6 +12,7 @@ SRCS += UdpClient.cpp
 SRCS += WebServer.cpp
 SRCS += ZeroconfBrowser.cpp
 SRCS += Zeroconf.cpp
+SRCS += ProxyTCPClient.cpp
 
 ifeq (@USE_AIRPLAY@, 1)
 SRCS += AirPlayServer.cpp

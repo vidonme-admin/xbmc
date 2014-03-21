@@ -33,6 +33,10 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include <network/ZeroconfBrowser.h>
+#endif
+
 using namespace std;
 
 /* slightly modified in_ether taken from the etherboot project (http://sourceforge.net/projects/etherboot) */
@@ -299,6 +303,11 @@ void CNetwork::StartServices()
 #ifdef HAS_ZEROCONF
   g_application.StartZeroconf();
 #endif
+#ifdef __VIDONME_MEDIACENTER__
+#ifdef HAS_ZEROCONFBROWSER
+  CZeroconfBrowser::GetInstance()->Start();
+#endif
+#endif
 #ifdef HAS_AIRPLAY
   g_application.StartAirplayServer();
 #endif
@@ -316,6 +325,11 @@ void CNetwork::StopServices(bool bWait)
 #endif
 #ifdef HAS_ZEROCONF
     g_application.StopZeroconf();
+#endif
+#ifdef __VIDONME_MEDIACENTER__
+#ifdef HAS_ZEROCONFBROWSER
+    CZeroconfBrowser::GetInstance()->Stop();
+#endif
 #endif
 #ifdef HAS_WEB_SERVER
     g_application.StopWebServer();

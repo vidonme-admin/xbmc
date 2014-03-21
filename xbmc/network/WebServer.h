@@ -32,8 +32,22 @@
 #include "interfaces/json-rpc/ITransportLayer.h"
 #include "threads/CriticalSection.h"
 #include "httprequesthandler/IHTTPRequestHandler.h"
+#include "utils/Job.h"
+#include "utils/JobManager.h"
 
-class CWebServer : public JSONRPC::ITransportLayer
+class CStopWebServerJob : public CJob
+{
+public:
+	CStopWebServerJob(MHD_Daemon *pDaemon);
+	~CStopWebServerJob(){};
+protected:
+	virtual bool DoWork();
+public:
+	MHD_Daemon * m_pDaemon;
+};
+
+
+class CWebServer : public JSONRPC::ITransportLayer ,IJobCallback
 {
 public:
   CWebServer();
@@ -102,12 +116,16 @@ private:
   static int FillArgumentMultiMap(void *cls, enum MHD_ValueKind kind, const char *key, const char *value);
 
   static const char *CreateMimeTypeFromExtension(const char *ext);
-
+private:
+  virtual void OnJobComplete(unsigned int jobID, bool success, CJob* job);
+  virtual void OnJobProgress(unsigned int jobID, unsigned int progress, unsigned int total, const CJob* job);
+public:
   struct MHD_Daemon *m_daemon;
   bool m_running, m_needcredentials;
   std::string m_Credentials64Encoded;
   CCriticalSection m_critSection;
   static std::vector<IHTTPRequestHandler *> m_requestHandlers;
+  unsigned int m_nStopWebServerJobID;
 
   typedef struct ConnectionHandler
   {

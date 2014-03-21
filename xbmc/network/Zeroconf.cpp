@@ -23,7 +23,9 @@
 #include "settings/GUISettings.h"
 
 #ifdef _LINUX
-#if !defined(TARGET_DARWIN)
+#if defined(__ANDROID_ALLWINNER__)
+#include "vidonme/android/network/ZeroconfDNS.h"
+#elif !defined(TARGET_DARWIN)
 #include "linux/ZeroconfAvahi.h"
 #else
 //on osx use the native implementation
@@ -134,7 +136,9 @@ CZeroconf*  CZeroconf::GetInstance()
 #ifndef HAS_ZEROCONF
     smp_instance = new CZeroconfDummy;
 #else
-#if defined(TARGET_DARWIN)
+#if defined(__ANDROID_ALLWINNER__)
+    smp_instance = new CZeroconfDNS;
+#elif defined(TARGET_DARWIN)
     smp_instance = new CZeroconfOSX;
 #elif defined(_LINUX)
     smp_instance  = new CZeroconfAvahi;

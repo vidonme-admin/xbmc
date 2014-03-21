@@ -44,12 +44,24 @@ using namespace JSONRPC;
 
 vector<IHTTPRequestHandler *> CWebServer::m_requestHandlers;
 
+CStopWebServerJob::CStopWebServerJob(MHD_Daemon *pDaemon)
+{
+	m_pDaemon = pDaemon;
+}
+
+bool CStopWebServerJob::DoWork()
+{
+	MHD_stop_daemon(m_pDaemon);
+	return true;
+}
+
 CWebServer::CWebServer()
 {
   m_running = false;
   m_daemon = NULL;
   m_needcredentials = true;
   m_Credentials64Encoded = "eGJtYzp4Ym1j"; // xbmc:xbmc
+  m_nStopWebServerJobID = NULL;
 }
 
 int CWebServer::FillArgumentMap(void *cls, enum MHD_ValueKind kind, const char *key, const char *value) 
@@ -568,8 +580,12 @@ bool CWebServer::Start(int port, const string &username, const string &password)
   SetCredentials(username, password);
   if (!m_running)
   {
+    if(m_nStopWebServerJobID)
+    {
+      CJobManager::GetInstance().CancelJob(m_nStopWebServerJobID);
+      m_nStopWebServerJobID = 0;
+    }
     m_daemon = StartMHD(MHD_USE_SELECT_INTERNALLY, port);
-
     m_running = m_daemon != NULL;
     if (m_running)
       CLog::Log(LOGNOTICE, "WebServer: Started the webserver");
@@ -583,9 +599,14 @@ bool CWebServer::Stop()
 {
   if (m_running)
   {
-    MHD_stop_daemon(m_daemon);
-    m_running = false;
-    CLog::Log(LOGNOTICE, "WebServer: Stopped the webserver");
+    if(!m_nStopWebServerJobID)
+    {
+      m_nStopWebServerJobID = CJobManager::GetInstance().AddJob(new CStopWebServerJob(m_daemon), this);
+//    MHD_stop_daemon(m_daemon);
+    }
+    else
+    {
+    }
   } else 
     CLog::Log(LOGNOTICE, "WebServer: Stopped failed because its not running");
 
@@ -776,5 +797,27 @@ const char *CWebServer::CreateMimeTypeFromExtension(const char *ext)
   if (strcmp(ext, ".js") == 0)    return "application/javascript";
   if (strcmp(ext, ".css") == 0)   return "text/css";
   return NULL;
+}
+
+void CWebServer::OnJobComplete(unsigned int jobID, bool success, CJob* job)
+{
+  if (jobID == m_nStopWebServerJobID)
+  {
+    m_nStopWebServerJobID = 0;
+    m_running = false;
+	if(success)
+      CLog::Log(LOGNOTICE, "WebServer: Stopped the webserver");
+	else
+      CLog::Log(LOGNOTICE, "WebServer: Stopped failed");
+  }
+  else
+  {
+    assert(0);
+  }
+}
+
+void CWebServer::OnJobProgress(unsigned int jobID, unsigned int progress, unsigned int total, const CJob* job)
+{
+  
 }
 #endif

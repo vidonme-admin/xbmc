@@ -23,8 +23,10 @@
 #include <stdexcept>
 #include "utils/log.h"
 
-#ifdef _LINUX
-#if !defined(TARGET_DARWIN)
+#if defined _LINUX
+#ifdef __ANDROID_ALLWINNER__
+#include "vidonme/android/network/ZeroconfBrowserDNS.h"
+#elif !defined(TARGET_DARWIN)
 #include "linux/ZeroconfBrowserAvahi.h"
 #else
 //on osx use the native implementation
@@ -55,6 +57,13 @@ CZeroconfBrowser* CZeroconfBrowser::smp_instance = 0;
 
 CZeroconfBrowser::CZeroconfBrowser():mp_crit_sec(new CCriticalSection),m_started(false)
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  AddServiceType("_airplay._tcp.");
+  AddServiceType("_vdmserver-mediaserver._tcp.");
+  AddServiceType("_vdmserver-jsonrpc-h._tcp.");
+  AddServiceType("_vdmserver-jsonrpc._tcp.");
+  AddServiceType("_vdmserver-web._tcp.");
+#else
 #ifdef HAS_FILESYSTEM_SMB
   AddServiceType("_smb._tcp.");
 #endif
@@ -69,6 +78,7 @@ CZeroconfBrowser::CZeroconfBrowser():mp_crit_sec(new CCriticalSection),m_started
   AddServiceType("_afpovertcp._tcp.");   
 #endif
   AddServiceType("_sftp-ssh._tcp.");
+#endif
 }
 
 CZeroconfBrowser::~CZeroconfBrowser()
@@ -159,6 +169,8 @@ CZeroconfBrowser*  CZeroconfBrowser::GetInstance()
 #else
 #if defined(TARGET_DARWIN)
       smp_instance = new CZeroconfBrowserOSX;
+#elif defined(__ANDROID_ALLWINNER__)
+      smp_instance = new CZeroconfBrowserDNS;
 #elif defined(_LINUX)
       smp_instance  = new CZeroconfBrowserAvahi;
 #elif defined(TARGET_WINDOWS)

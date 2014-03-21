@@ -28,6 +28,10 @@
 #include "settings/Settings.h"
 #include "settings/AdvancedSettings.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "interfaces/Builtins.h"
+#endif
+
 using namespace MUSIC_INFO;
 
 #define START_FADE_LENGTH  2.0f // 2 seconds on startup
@@ -117,6 +121,24 @@ bool CGUIWindowVisualisation::OnAction(const CAction &action)
       return true;
     }
     break;*/
+
+#if defined(__VIDONME_MEDIACENTER__)
+	case ACTION_NEXT_ITEM:
+	case ACTION_CHANNEL_UP:
+		{
+			g_playlistPlayer.PlayNext();
+
+			return true;
+		}
+	case ACTION_PREV_ITEM:
+	case ACTION_CHANNEL_DOWN:
+		{
+			g_playlistPlayer.PlayPrevious();
+
+			return true;
+		}
+#endif
+
   }
 
   if (passToVis)

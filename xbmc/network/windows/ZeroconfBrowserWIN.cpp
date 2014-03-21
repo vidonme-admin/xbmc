@@ -89,6 +89,29 @@ void DNSSD_API CZeroconfBrowserWIN::BrowserCallback(DNSServiceRef browser,
   }
 }
 
+#if defined(__VIDONME_MEDIACENTER__)
+void DNSSD_API AddrinfoCallback(DNSServiceRef sdref, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode, const char *hostname, const struct sockaddr *address, uint32_t ttl, void *context)
+{
+  if (errorCode)
+  {
+    CLog::Log(LOGERROR, "ZeroconfBrowserWIN: AddrinfoCallback failed with error = %ld", (int) errorCode);
+    return;
+  }
+
+  DNSServiceErrorType err;
+  CStdString strIP;
+  CZeroconfBrowser::ZeroconfService* service = (CZeroconfBrowser::ZeroconfService*) context;
+  char addr[256] = "";
+  if (address && address->sa_family == AF_INET)
+  {
+    const unsigned char *b = (const unsigned char *) &((struct sockaddr_in *)address)->sin_addr;
+    snprintf(addr, sizeof(addr), "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+  }
+  strIP = addr;
+  service->SetIP(strIP);
+}
+#endif
+
 void DNSSD_API CZeroconfBrowserWIN::ResolveCallback(DNSServiceRef                       sdRef,
                                                     DNSServiceFlags                     flags,
                                                     uint32_t                            interfaceIndex,
@@ -113,12 +136,36 @@ void DNSSD_API CZeroconfBrowserWIN::ResolveCallback(DNSServiceRef               
   CStdString strIP;
   CZeroconfBrowser::ZeroconfService* service = (CZeroconfBrowser::ZeroconfService*) context;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  {
+    DNSServiceErrorType err;
+    DNSServiceRef sdRef = NULL;
+
+    err = DNSServiceGetAddrInfo(&sdRef, kDNSServiceFlagsReturnIntermediates, kDNSServiceInterfaceIndexAny,kDNSServiceProtocol_IPv4, hosttarget, AddrinfoCallback, service);
+    if( err != kDNSServiceErr_NoError )
+    {
+      if (sdRef)
+        DNSServiceRefDeallocate(sdRef);
+
+      CLog::Log(LOGERROR, "ZeroconfBrowserWIN: DNSServiceGetAddrInfo returned (error = %ld)", (int) err);
+      return;
+    }
+    err = DNSServiceProcessResult(sdRef);
+
+    if (err != kDNSServiceErr_NoError)
+      CLog::Log(LOGERROR, "ZeroconfBrowserWIN::doGetAddrInfoService DNSServiceProcessResult returned (error = %ld)", (int) err);
+
+    if (sdRef)
+      DNSServiceRefDeallocate(sdRef);
+  }
+#else
   if(!CDNSNameCache::Lookup(hosttarget, strIP))
   {
     CLog::Log(LOGERROR, "ZeroconfBrowserWIN: Could not resolve hostname %s",hosttarget);
     return;
   }
   service->SetIP(strIP);
+#endif
 
   for(uint16_t i = 0; i < TXTRecordGetCount(txtLen, txtRecord); ++i)
   {
@@ -291,7 +338,84 @@ bool CZeroconfBrowserWIN::doResolveService(CZeroconfBrowser::ZeroconfService& fr
     return false;
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  //don't block in DNSServiceProcessResult, timeout is 0.
+  int dns_sd_fd  = sdRef ? DNSServiceRefSockFD(sdRef) : -1;
+  int nfds = dns_sd_fd + 1;
+  fd_set readfds;
+  struct timeval tv;
+  int result;
+#if 0
+  while (!stopNow)
+  {
+    // 1. Set up the fd_set as usual here.
+    // This example client has no file descriptors of its own,
+    // but a real application would call FD_SET to add them to the set here
+    FD_ZERO(&readfds);
+
+    // 2. Add the fd for our client(s) to the fd_set
+    if (sdRef) FD_SET(dns_sd_fd , &readfds);
+
+    // 3. Set up the timeout.
+    tv.tv_sec  = 0;
+    tv.tv_usec = 0;
+
+    result = select(nfds, &readfds, (fd_set*)NULL, (fd_set*)NULL, &tv);
+
+    if (result > 0)
+    {
+      DNSServiceErrorType err = kDNSServiceErr_NoError;
+      if (sdRef && FD_ISSET(dns_sd_fd , &readfds))
+        err = DNSServiceProcessResult(sdRef);
+      if (err)
+      { 
+        fprintf(stderr, "DNSServiceProcessResult returned %d\n", err); 
+        stopNow = 1; 
+      }
+    }
+    else
+    {
+      printf("select() returned %d errno %d %s\n", result, errno, strerror(errno));
+      if (errno != EINTR) stopNow = 1;
+    }
+  }
+#else
+  // 1. Set up the fd_set as usual here.
+  // This example client has no file descriptors of its own,
+  // but a real application would call FD_SET to add them to the set here
+  FD_ZERO(&readfds);
+
+  // 2. Add the fd for our client(s) to the fd_set
+  if (sdRef) FD_SET(dns_sd_fd , &readfds);
+
+  // 3. Set up the timeout.
+  tv.tv_sec  = 1;
+  tv.tv_usec = 0;
+
+  result = select(nfds, &readfds, (fd_set*)NULL, (fd_set*)NULL, &tv);
+
+  if (result > 0)
+  {
+    DNSServiceErrorType err = kDNSServiceErr_NoError;
+    if (sdRef && FD_ISSET(dns_sd_fd , &readfds))
+      err = DNSServiceProcessResult(sdRef);
+    if (err)
+    { 
+      fprintf(stderr, "DNSServiceProcessResult returned %d\n", err); 
+    }
+  }
+  else
+  {
+    printf("select() returned %d errno %d %s\n", result, errno, strerror(errno));
+    if (errno != EINTR)
+    {
+      //stopNow = 1;
+    }
+  }
+#endif
+#else
   err = DNSServiceProcessResult(sdRef);
+#endif//__VIDONME_MEDIACENTER__
 
   if (err != kDNSServiceErr_NoError)
       CLog::Log(LOGERROR, "ZeroconfBrowserWIN::doResolveService DNSServiceProcessResult returned (error = %ld)", (int) err);

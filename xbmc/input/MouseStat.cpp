@@ -152,6 +152,25 @@ void CMouseStat::HandleEvent(XBMC_Event& newEvent)
     SetState(MOUSE_STATE_NORMAL);
   else
     SetActive();
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (m_Action == ACTION_MOUSE_LEFT_CLICK || m_Action == ACTION_MOUSE_RIGHT_CLICK || m_Action == ACTION_MOUSE_MIDDLE_CLICK || m_Action == ACTION_MOUSE_DOUBLE_CLICK)
+  {
+    SetState(MOUSE_STATE_CLICK);
+  }
+  else if ( m_Action == ACTION_MOUSE_WHEEL_UP || m_Action == ACTION_MOUSE_WHEEL_DOWN)
+  {
+    SetState(MOUSE_STATE_FOCUS);
+  }
+  else if (m_Action == ACTION_MOUSE_DRAG)
+  {
+    SetState(MOUSE_STATE_DRAG);
+  }
+  else
+  {
+    SetState(MOUSE_STATE_NORMAL);
+  }
+#endif
 }
 
 void CMouseStat::SetResolution(int maxX, int maxY, float speedX, float speedY)

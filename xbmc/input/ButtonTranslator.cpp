@@ -352,7 +352,15 @@ static const ActionMapping windows[] =
         {"peripherals"              , WINDOW_DIALOG_PERIPHERAL_MANAGER},
         {"peripheralsettings"       , WINDOW_DIALOG_PERIPHERAL_SETTINGS},
         {"extendedprogressdialog"   , WINDOW_DIALOG_EXT_PROGRESS},
-        {"mediafilter"              , WINDOW_DIALOG_MEDIA_FILTER}};
+        {"mediafilter"              , WINDOW_DIALOG_MEDIA_FILTER},
+#if defined(__VIDONME_MEDIACENTER__)
+        {"vdmhome"                  , VDM_WINDOW_HOME},
+        {"vdmosdkey"                , VDM_WINDOW_MOVIE_OSD_KEY},
+		{"vdmmoviesfilter"          , VDM_WINDOW_MOVIES_FILTER},
+		{"VDMInformation"           , VDM_WINDOW_INFORMATION},
+        {"vdmfilesetting"           , VDM_WINDOW_FILES_SETTING},
+#endif
+};
 
 static const ActionMapping mousecommands[] =
 {

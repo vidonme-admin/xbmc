@@ -34,6 +34,15 @@ typedef enum {
   XBMCVK_BACK           = 0x08,
   XBMCVK_TAB            = 0x09,
   XBMCVK_RETURN         = 0x0D,
+#if defined(__VIDONME_MEDIACENTER__) && defined(__ANDROID_ALLWINNER__)
+  XBMCVK_AUDIO          = 0x14,
+  XBMCVK_SUBTITLE       = 0x12,
+  XBMCVK_INFO           = 0x15,
+  XBMCVK_ZOOMIN         = 0x18,
+  XBMCVK_ZOOMOUT        = 0x19,
+  XBMCVK_FASTFORWARD    = 0x0A,
+  XBMCVK_REWIND         = 0x0B,
+#endif
   XBMCVK_ESCAPE         = 0x1B,
 
   XBMCVK_SPACE          = 0x20,

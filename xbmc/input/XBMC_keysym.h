@@ -43,6 +43,15 @@ typedef enum {
   XBMCK_CLEAR       = 0x0C,
   XBMCK_RETURN      = 0x0D,
   XBMCK_PAUSE       = 0x13,
+#if defined(__VIDONME_MEDIACENTER__)
+#if defined(TARGET_ANDROID)
+#if defined(__ANDROID_ALLWINNER__)
+	XBMCK_AUDIO							= 0x14,
+	XBMCK_SUBTITLE					= 0x12,
+	XBMCK_INFO							= 0x15,
+#endif
+#endif
+#endif
   XBMCK_ESCAPE      = 0x1B,
   XBMCK_SPACE       = 0x20,
   XBMCK_EXCLAIM     = 0x21,
@@ -227,6 +236,7 @@ typedef enum {
   XBMCK_PLAY              = 341,
   XBMCK_SHUFFLE           = 342,
   XBMCK_FASTFORWARD       = 343,
+
 
   XBMCK_LAST
 } XBMCKey;

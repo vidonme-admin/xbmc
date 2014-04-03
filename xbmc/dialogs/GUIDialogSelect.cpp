@@ -22,6 +22,10 @@
 #include "guilib/GUIWindowManager.h"
 #include "FileItem.h"
 #include "guilib/LocalizeStrings.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "guilib/GUILabelControl.h"
+#include "video/windows/GUIWindowFullScreen.h"
+#endif
 
 #define CONTROL_HEADING       1
 #define CONTROL_LIST          3
@@ -47,6 +51,32 @@ CGUIDialogSelect::~CGUIDialogSelect(void)
   delete m_vecList;
   delete m_selectedItems;
 }
+#if defined(__VIDONME_MEDIACENTER__)
+bool CGUIDialogSelect::OnAction(const CAction &action)
+{
+  switch (action.GetID())
+  {
+  case ACTION_NEXT_ITEM:
+  case ACTION_PREV_ITEM:
+    {
+      CGUILabelControl *pHeading = (CGUILabelControl *)GetControl(CONTROL_HEADING);
+      if(pHeading->GetDescription() == g_localizeStrings.Get(24012))
+      {
+        CGUIWindowFullScreen* pfullscreen = (CGUIWindowFullScreen*)g_windowManager.GetWindow(WINDOW_FULLSCREEN_VIDEO);
+        if (pfullscreen)
+        {
+          pfullscreen->OnAction(action);
+        }
+        return true;
+      }
+      break;
+    }
+  default:
+    break;
+  }
+  return CGUIDialog::OnAction(action);
+}
+#endif
 
 bool CGUIDialogSelect::OnMessage(CGUIMessage& message)
 {

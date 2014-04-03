@@ -22,6 +22,10 @@
 #include "GUIUserMessages.h"
 #include "settings/Settings.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "Application.h"
+#endif
+
 // the MuteBug is a true modeless dialog
 
 CGUIDialogMuteBug::CGUIDialogMuteBug(void)
@@ -35,7 +39,11 @@ CGUIDialogMuteBug::~CGUIDialogMuteBug(void)
 
 void CGUIDialogMuteBug::UpdateVisibility()
 {
+#if defined(__VIDONME_MEDIACENTER__)
+	if ((g_settings.m_bMute && g_application.IsDolbyAndDTSValible()) || g_settings.m_fVolumeLevel == VOLUME_MINIMUM)
+#else
   if (g_settings.m_bMute || g_settings.m_fVolumeLevel == VOLUME_MINIMUM)
+#endif
     Show();
   else
     Close();

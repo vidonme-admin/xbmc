@@ -35,6 +35,9 @@ public:
   virtual ~CGUIDialogSelect(void);
   virtual bool OnMessage(CGUIMessage& message);
   virtual bool OnBack(int actionID);
+#if defined(__VIDONME_MEDIACENTER__)
+  virtual bool OnAction(const CAction &action);
+#endif
 
   void Reset();
   void Add(const CStdString& strLabel);

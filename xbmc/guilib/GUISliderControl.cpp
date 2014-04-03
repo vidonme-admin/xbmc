@@ -169,12 +169,24 @@ bool CGUISliderControl::OnAction(const CAction &action)
 
   case ACTION_MOVE_RIGHT:
     //case ACTION_OSD_SHOW_VALUE_PLUS:
-    Move(1);
+#if defined(__VIDONME_MEDIACENTER__)
+		Move(2);
+#else
+		Move(1);
+#endif
+
     return true;
 
   case ACTION_SELECT_ITEM:
     // switch between the two sliders
+#if defined(__VIDONME_MEDIACENTER__)
+    if(m_rangeSelection)
+    {
+      SwitchRangeSelector();
+    }
+#else
     SwitchRangeSelector();
+#endif
     return true;
 
   default:

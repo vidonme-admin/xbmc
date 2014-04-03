@@ -1080,9 +1080,22 @@ void CGUIWindowManager::ClearWindowHistory()
 
 void CGUIWindowManager::CloseWindowSync(CGUIWindow *window, int nextWindowID /*= 0*/)
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  if (!g_application.IsCurrentThread())
+  {
+    g_graphicsContext.Unlock();
+  }
+#endif
   window->Close(false, nextWindowID);
   while (window->IsAnimating(ANIM_TYPE_WINDOW_CLOSE))
     ProcessRenderLoop(true);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (!g_application.IsCurrentThread())
+  {
+    g_graphicsContext.Lock();
+  }
+#endif
 }
 
 #ifdef _DEBUG

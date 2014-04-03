@@ -89,23 +89,9 @@ bool CLocalizeStrings::LoadStr2Mem(const CStdString &pathname_in, const CStdStri
     return false;
   }
 
-#if defined(__VIDONME_MEDIACENTER__)
-  if (g_SkinInfo && g_SkinInfo->ID().CompareNoCase(DEFAULT_SKIN) == 0)
-  {
-	  if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset, false))
-		  return true;
-  }
-  else
-  {
-	  if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset,
-		  language.Equals(SOURCE_LANGUAGE)))
-		  return true;
-  }
-#else
   if (LoadPO(URIUtils::AddFileToFolder(pathname, "strings.po"), encoding, offset,
 	  language.Equals(SOURCE_LANGUAGE)))
 	  return true;
-#endif
 
   CLog::Log(LOGDEBUG, "LocalizeStrings: no strings.po file exist at %s, fallback to strings.xml",
             pathname.c_str());

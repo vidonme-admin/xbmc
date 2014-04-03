@@ -301,7 +301,11 @@ int CSMBDirectory::OpenDir(const CURL& url, CStdString& strAuth)
 
 #else
 
+#if defined(__VIDONME_MEDIACENTER__) && defined(TARGET_ANDROID)
+    if (errno == EPERM || errno == EACCES)
+#else
     if (errno == EACCES)
+#endif
     {
       if (m_flags & DIR_FLAG_ALLOW_PROMPT)
         RequireAuthentication(urlIn.Get());

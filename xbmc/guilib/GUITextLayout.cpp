@@ -157,7 +157,7 @@ void CGUITextLayout::RenderOutline(float x, float y, color_t color, color_t outl
     y -= m_font->GetTextHeight(m_lines.size()) * 0.5f;;
     alignment &= ~XBFONT_CENTER_Y;
   }
-  if (m_borderFont)
+  if (m_borderFont && 0)
   {
     // adjust so the baselines of the fonts align
     float by = y + m_font->GetTextBaseLine() - m_borderFont->GetTextBaseLine();

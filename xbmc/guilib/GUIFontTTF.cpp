@@ -251,7 +251,7 @@ bool CGUIFontTTFBase::Load(const CStdString& strFilename, float height, float as
   int cellDescender = std::min<int>(m_face->bbox.yMin, m_face->descender);
   int cellAscender  = std::max<int>(m_face->bbox.yMax, m_face->ascender);
 
-  if (border)
+  if (border && 0)
   {
     /*
      add on the strength of any border - the non-bordered font needs

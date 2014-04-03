@@ -320,7 +320,7 @@ CGUIFont* GUIFontManager::GetDefaultFont(bool border)
     font13index = 0;
   }
 
-  if (border)
+  if (border && 0)
   {
     if (!font13border)
     { // create it

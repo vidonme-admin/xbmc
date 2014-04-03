@@ -29,7 +29,10 @@
 #include "input/XBMC_vkeys.h"
 #include "threads/SingleLock.h"
 #include "utils/CharsetConverter.h"
-
+#if defined(__VIDONME_MEDIACENTER__)
+#include "input/MouseStat.h"
+#include "vidonme/VDMUtils.h"
+#endif
 using namespace JSONRPC;
 
 //TODO the breakage of the screensaver should be refactored
@@ -51,6 +54,9 @@ JSONRPC_STATUS CInputOperations::SendAction(int actionID, bool wakeScreensaver /
     g_application.ResetSystemIdleTimer();
     g_audioManager.PlayActionSound(actionID);
     CApplicationMessenger::Get().SendAction(CAction(actionID), WINDOW_INVALID, waitResult);
+#if defined(__VIDONME_MEDIACENTER__)
+    g_Mouse.SetActive(false);
+#endif
   }
   return ACK;
 }
@@ -87,27 +93,122 @@ JSONRPC_STATUS CInputOperations::ExecuteAction(const CStdString &method, ITransp
 
 JSONRPC_STATUS CInputOperations::Left(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  return SendAction(ACTION_MOVE_LEFT);
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CKey key(XBMCVK_LEFT | KEY_VKEY);
+
+	int iWin = g_windowManager.GetActiveWindow() & WINDOW_ID_MASK;
+
+	if (g_windowManager.HasModalDialog())
+	{
+		iWin = g_windowManager.GetTopMostModalDialogID() & WINDOW_ID_MASK;
+	}
+
+	CAction action = CButtonTranslator::GetInstance().GetAction(iWin, key);
+
+	return SendActionEx(action);
+
+#else
+
+	return SendAction(ACTION_MOVE_LEFT);
+
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::Right(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CKey key(XBMCVK_RIGHT | KEY_VKEY);
+
+	int iWin = g_windowManager.GetActiveWindow() & WINDOW_ID_MASK;
+
+	if (g_windowManager.HasModalDialog())
+	{
+		iWin = g_windowManager.GetTopMostModalDialogID() & WINDOW_ID_MASK;
+	}
+
+	CAction action = CButtonTranslator::GetInstance().GetAction(iWin, key);
+
+	return SendActionEx(action);
+
+#else
+
   return SendAction(ACTION_MOVE_RIGHT);
+
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::Down(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  return SendAction(ACTION_MOVE_DOWN);
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CKey key(XBMCVK_DOWN | KEY_VKEY);
+
+	int iWin = g_windowManager.GetActiveWindow() & WINDOW_ID_MASK;
+
+	if (g_windowManager.HasModalDialog())
+	{
+		iWin = g_windowManager.GetTopMostModalDialogID() & WINDOW_ID_MASK;
+	}
+
+	CAction action = CButtonTranslator::GetInstance().GetAction(iWin, key);
+
+	return SendActionEx(action);
+
+#else
+
+	return SendAction(ACTION_MOVE_DOWN);
+
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::Up(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  return SendAction(ACTION_MOVE_UP);
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CKey key(XBMCVK_UP | KEY_VKEY);
+
+	int iWin = g_windowManager.GetActiveWindow() & WINDOW_ID_MASK;
+
+	if (g_windowManager.HasModalDialog())
+	{
+		iWin = g_windowManager.GetTopMostModalDialogID() & WINDOW_ID_MASK;
+	}
+
+	CAction action = CButtonTranslator::GetInstance().GetAction(iWin, key);
+
+	return SendActionEx(action);
+
+#else
+
+	return SendAction(ACTION_MOVE_UP);
+
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::Select(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  return SendAction(ACTION_SELECT_ITEM);
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CKey key(XBMCVK_RETURN | KEY_VKEY);
+
+	int iWin = g_windowManager.GetActiveWindow() & WINDOW_ID_MASK;
+
+	if (g_windowManager.HasModalDialog())
+	{
+		iWin = g_windowManager.GetTopMostModalDialogID() & WINDOW_ID_MASK;
+	}
+
+	CAction action = CButtonTranslator::GetInstance().GetAction(iWin, key);
+
+	return SendActionEx(action);
+
+#else
+
+		return SendAction(ACTION_SELECT_ITEM);
+
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::Back(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
@@ -127,7 +228,26 @@ JSONRPC_STATUS CInputOperations::Info(const CStdString &method, ITransportLayer 
 
 JSONRPC_STATUS CInputOperations::Home(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
 {
-  return activateWindow(WINDOW_HOME);
+#if defined(__VIDONME_MEDIACENTER__)
+	if (VidOnMe::RM_VIDONME == VidOnMe::VDMUtils::Instance().GetRunningMode())
+	{
+		int i = 0;
+		while (!g_windowManager.IsWindowTopMost(VDM_WINDOW_HOME) && i < 10)
+		{
+			SendAction(ACTION_NAV_BACK);
+			++i;
+		}
+
+		return activateWindow(VDM_WINDOW_HOME);
+	}
+	else
+	{
+		return activateWindow(WINDOW_HOME);
+	}
+	return activateWindow(VDM_WINDOW_HOME);
+#else
+	return activateWindow(WINDOW_HOME);
+#endif
 }
 
 JSONRPC_STATUS CInputOperations::ShowCodec(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
@@ -139,3 +259,66 @@ JSONRPC_STATUS CInputOperations::ShowOSD(const CStdString &method, ITransportLay
 {
   return SendAction(ACTION_SHOW_OSD);
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+
+JSONRPC_STATUS CInputOperations::TopMenu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendActionEx(CAction(ACTION_SHOW_VIDEOMENU, 1.0f));
+}
+
+JSONRPC_STATUS CInputOperations::PopMenu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendActionEx(CAction(ACTION_SHOW_VIDEOMENU, 0.0f));
+}
+
+JSONRPC_STATUS CInputOperations::Menu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	CKey key(XBMCVK_M|KEY_VKEY);
+	return SendActionEx(CAction(ACTION_SHOW_OSD, "", key));
+}
+
+JSONRPC_STATUS CInputOperations::VolumeUp(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendAction(ACTION_VOLUME_UP);
+}
+
+JSONRPC_STATUS CInputOperations::VolumeDown(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendAction(ACTION_VOLUME_DOWN);
+}
+
+JSONRPC_STATUS CInputOperations::Audio(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendAction(ACTION_AUDIO_NEXT_LANGUAGE);
+}
+
+JSONRPC_STATUS CInputOperations::Subtitle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendAction(ACTION_NEXT_SUBTITLE);
+}
+
+JSONRPC_STATUS CInputOperations::Angle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	//return SendAction(ACTION_BIG_STEP_BACK);
+	return ACK;
+}
+
+JSONRPC_STATUS CInputOperations::SetMute(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return SendAction(ACTION_MUTE);
+}
+
+JSONRPC_STATUS CInputOperations::SendActionEx(CAction action, bool wakeScreensaver /* = true */, bool waitResult /* = false */)
+{
+	if(!wakeScreensaver || !handleScreenSaver())
+	{
+		g_application.ResetSystemIdleTimer();
+		g_audioManager.PlayActionSound(action.GetID());
+		CApplicationMessenger::Get().SendAction(action, WINDOW_INVALID, waitResult);
+		g_Mouse.SetActive(false);
+	}
+	return ACK;
+}
+
+#endif

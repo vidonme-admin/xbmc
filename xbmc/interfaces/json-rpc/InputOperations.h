@@ -46,6 +46,20 @@ namespace JSONRPC
     static JSONRPC_STATUS ShowCodec(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
     static JSONRPC_STATUS ShowOSD(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
 
+#if defined(__VIDONME_MEDIACENTER__)
+		static JSONRPC_STATUS TopMenu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS PopMenu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Menu(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS VolumeUp(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS VolumeDown(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Audio(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Subtitle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Angle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS SetMute(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		
+		static JSONRPC_STATUS SendActionEx(CAction action, bool wakeScreensaver = true, bool waitResult = false);
+#endif
+
     static JSONRPC_STATUS SendAction(int actionID, bool wakeScreensaver = true, bool waitResult = false);
 
   private:

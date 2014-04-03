@@ -15,7 +15,7 @@ SRCS  = AddonsOperations.cpp \
 	ProxyJSONRPC.cpp \
 	VideoLibrary.cpp 
 
-LIB=json-rpc.a
+LIB = json-rpc.a
 
-include ../../../Makefile.include
+include @abs_top_srcdir@/Makefile.include
 -include $(patsubst %.cpp,%.P,$(patsubst %.c,%.P,$(SRCS)))

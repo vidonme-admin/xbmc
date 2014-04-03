@@ -42,6 +42,10 @@
 #include "pvr/channels/PVRChannel.h"
 #include "pvr/channels/PVRChannelGroupsContainer.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "input/XBMC_vkeys.h"
+#endif
+
 using namespace JSONRPC;
 using namespace PLAYLIST;
 using namespace PVR;
@@ -882,6 +886,65 @@ JSONRPC_STATUS CPlayerOperations::SetSubtitle(const CStdString &method, ITranspo
 
   return ACK;
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+
+JSONRPC_STATUS CPlayerOperations::Step(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::FastForward(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	CKey key(XBMCVK_F | KEY_VKEY);
+	g_application.OnKey(key);
+
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::FastRewind(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	CKey key(XBMCVK_R | KEY_VKEY);
+	g_application.OnKey(key);
+
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::Play(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	if (g_application.m_pPlayer && g_application.IsPlaying() && (g_application.IsPaused() || g_application.GetPlaySpeed() != 1))
+	{
+		g_application.m_pPlayer->Pause();
+	}
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::Pause(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	if (g_application.m_pPlayer && g_application.IsPlaying() && (!g_application.IsPaused() && g_application.GetPlaySpeed() == 1))
+	{
+		g_application.m_pPlayer->Pause();
+	}
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::Next(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	CKey key(XBMCVK_PAGEUP | KEY_VKEY);
+	g_application.OnKey(key);
+
+	return ACK;
+}
+
+JSONRPC_STATUS CPlayerOperations::Previous(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result)
+{
+	CKey key(XBMCVK_PAGEDOWN | KEY_VKEY);
+	g_application.OnKey(key);
+
+	return ACK;
+}
+
+#endif
 
 int CPlayerOperations::GetActivePlayers()
 {

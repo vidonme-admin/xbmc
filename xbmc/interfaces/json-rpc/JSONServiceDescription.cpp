@@ -67,7 +67,16 @@ JsonRpcMethodMap CJSONServiceDescription::m_methodMaps[] = {
   { "Player.Move",                                  CPlayerOperations::Move },
   { "Player.Zoom",                                  CPlayerOperations::Zoom },
   { "Player.Rotate",                                CPlayerOperations::Rotate },
-  
+#if defined(__VIDONME_MEDIACENTER__)
+	{ "Player.Step",																	CPlayerOperations::Step },
+	{ "Player.FastForward",                           CPlayerOperations::FastForward },
+	{ "Player.FastRewind",                            CPlayerOperations::FastRewind },
+	{ "Player.Play",																	CPlayerOperations::Play },
+	{ "Player.Pause",																	CPlayerOperations::Pause },
+	{ "Player.Next",																	CPlayerOperations::Next },
+	{ "Player.Previous",                              CPlayerOperations::Previous },
+#endif
+
   { "Player.Open",                                  CPlayerOperations::Open },
   { "Player.GoTo",                                  CPlayerOperations::GoTo },
   { "Player.SetShuffle",                            CPlayerOperations::SetShuffle },
@@ -184,6 +193,17 @@ JsonRpcMethodMap CJSONServiceDescription::m_methodMaps[] = {
   { "Input.Home",                                   CInputOperations::Home },
   { "Input.ShowCodec",                              CInputOperations::ShowCodec },
   { "Input.ShowOSD",                                CInputOperations::ShowOSD },
+#if defined(__VIDONME_MEDIACENTER__)
+	{ "Input.TopMenu",                                CInputOperations::TopMenu },
+	{ "Input.PopMenu",                                CInputOperations::PopMenu },
+	{ "Input.Menu",																		CInputOperations::Menu },
+	{ "Input.VolumeUp",																CInputOperations::VolumeUp },
+	{ "Input.VolumeDown",															CInputOperations::VolumeDown },
+	{ "Input.Audio",																	CInputOperations::Audio },
+	{ "Input.Subtitle",																CInputOperations::Subtitle },
+	{ "Input.Angle",																	CInputOperations::Angle },
+	{ "Input.SetMute",																CInputOperations::SetMute },
+#endif
 
 // Application operations
   { "Application.GetProperties",                    CApplicationOperations::GetProperties },

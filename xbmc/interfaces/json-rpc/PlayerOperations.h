@@ -63,8 +63,19 @@ namespace JSONRPC
     static JSONRPC_STATUS SetPartymode(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
     
     static JSONRPC_STATUS SetAudioStream(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
-    static JSONRPC_STATUS SetSubtitle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
-  private:
+		static JSONRPC_STATUS SetSubtitle(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+
+#if defined(__VIDONME_MEDIACENTER__)
+		static JSONRPC_STATUS Step(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS FastForward(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS FastRewind(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Play(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Pause(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Next(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+		static JSONRPC_STATUS Previous(const CStdString &method, ITransportLayer *transport, IClient *client, const CVariant &parameterObject, CVariant &result);
+#endif
+
+	private:
     static int GetActivePlayers();
     static PlayerType GetPlayer(const CVariant &player);
     static int GetPlaylist(PlayerType player);

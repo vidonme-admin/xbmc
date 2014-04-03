@@ -82,6 +82,12 @@
 #include "osx/CocoaInterface.h"
 #endif
 
+#if defined(__VIDONME_MEDIACENTER__)
+#if defined(TARGET_ANDROID)
+#include "android/activity/XBMCApp.h"
+#endif
+#endif
+
 #ifdef HAS_CDDA_RIPPER
 #include "cdrip/CDDARipper.h"
 #endif
@@ -211,6 +217,11 @@ const BUILT_IN commands[] = {
   { "ToggleDebug",                false,  "Enables/disables debug mode" },
   { "StartPVRManager",            false,  "(Re)Starts the PVR manager" },
   { "StopPVRManager",             false,  "Stops the PVR manager" },
+#if defined(__VIDONME_MEDIACENTER__)
+  { "VDMOpenURL",                 true,   "open a website"},
+  { "VDMSwitchToXBMC",            false,  "switch to XBMC"},
+  { "VDMSwitchToVidOnXBMC",         false,  "switch to VidOn XBMC"},
+#endif
 };
 
 bool CBuiltins::HasCommand(const CStdString& execString)
@@ -1624,6 +1635,36 @@ int CBuiltins::Execute(const CStdString& execString)
   {
     g_application.StopPVRManager();
   }
+#if defined(__VIDONME_MEDIACENTER__)
+  else if (execute.Equals("vdmopenurl") && params.size())
+  {
+#if defined(TARGET_WINDOWS)
+    ::ShellExecute(0, _T("open"), params[0].c_str(), 0, 0, SW_SHOWNORMAL);
+#elif defined(TARGET_ANDROID)
+    CXBMCApp::StartBrowserActivity("com.android.browser", params[0].c_str());
+#else
+    CStdString cmd;
+    cmd.Format("open %s", params[0].c_str());
+
+    FILE* pOPen = NULL;      
+    if( (pOPen = popen(cmd.c_str(),"r")) == NULL )
+    {
+      printf("popen error! \n");
+      return -1;
+    }
+#endif//TARGET_WINDOWS
+  }
+  else if (execute.Equals("vdmswitchtoxbmc"))
+  {
+     g_application.SwitchToXBMC();
+  }
+  else if (execute.Equals("vdmswitchtovidon.me"))
+  {
+    g_application.StopPlaying();
+    g_guiSettings.SetString("lookandfeel.skin", DEFAULT_SKIN);
+    g_application.ReloadSkin();
+  }
+#endif//__VIDONME_MEDIACENTER__
   else
     return -1;
   return 0;

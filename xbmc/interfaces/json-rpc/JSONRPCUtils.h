@@ -28,6 +28,10 @@
 #include "utils/StdString.h"
 #include "utils/Variant.h"
 
+#if !defined(TARGET_ANDROID)
+#include "SResult.h"
+#endif
+
 namespace JSONRPC
 {
   /*!
@@ -39,6 +43,7 @@ namespace JSONRPC
   {
     OK = 0,
     ACK = -1,
+    UserError = -2,
     InvalidRequest = -32600,
     MethodNotFound = -32601,
     InvalidParams = -32602,
@@ -49,6 +54,65 @@ namespace JSONRPC
     FailedToExecute = -32100
   };
 
+#if !defined(TARGET_ANDROID)
+  enum JsonRpcResult
+  {
+      jsrUnknown = kUnknown,
+      jsrOk = kOk,
+      jsrError = JsonRpcError,
+      jsrInvalidRequest,
+      jsrMethodNotFound,
+      jsrInvalidParams,
+      jsrInternalError,
+      jsrParseError,
+      //-32099..-32000 Reserved for implementation-defined server-errors.
+      jsrBadPermission,
+      jsrFailedToExecute,
+      jsrMaximum,
+  };
+
+  inline JsonRpcResult ToJsonRpcResult(const JSONRPC_STATUS status)
+  {
+      switch (status)
+      {
+      case OK: return jsrOk;
+      //case ACK: return jsrUnknown;
+      //case UserError: return jsrUnknown;
+      case InvalidRequest: return jsrInvalidRequest;
+      case MethodNotFound : return jsrMethodNotFound;
+      case InvalidParams : return jsrInvalidParams;
+      case InternalError : return jsrInternalError;
+      case ParseError: return jsrParseError;
+      //-32099..-32000 Reserved for implementation-defined server-errors.
+      case BadPermission: return jsrBadPermission;
+      case FailedToExecute: return jsrFailedToExecute;
+      default: return jsrUnknown;
+      }
+  }
+  inline CStdString GetDescription(const JsonRpcResult result)
+  {
+      switch(result)
+      {
+      case jsrUnknown: return "jsrOk";
+      case jsrOk: return "jsrOk";
+      case jsrError: return "jsrError";
+      case jsrInvalidRequest: return "jsrInvalidRequest";
+      case jsrMethodNotFound: return "jsrMethodNotFound";
+      case jsrInvalidParams: return "jsrInvalidParams";
+      case jsrInternalError: return "jsrInternalError";
+      case jsrParseError: return "jsrParseError";
+      //-32099..-32000 Reserved for implementation-defined server-errors.
+      case jsrBadPermission: return "jsrBadPermission";
+      case jsrFailedToExecute: return "jsrFailedToExecute";
+      case jsrMaximum: return "jsrMaximum";
+      default: return " no description ";
+      }
+  }
+  inline bool ErrorInJsonRpcError(const SResult sResult)
+  {
+      return SResultInRange(sResult, JsonRpcError, jsrMaximum);
+  }
+#endif
   /*!
    \brief Function pointer for JSON-RPC methods
    */

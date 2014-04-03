@@ -24,6 +24,9 @@
 #include "Util.h"
 #include "utils/URIUtils.h"
 #include "video/VideoDatabase.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
 
 using namespace JSONRPC;
 
@@ -472,7 +475,21 @@ JSONRPC_STATUS CVideoLibrary::SetMovieDetails(const CStdString &method, ITranspo
   int playcount = infos.m_playCount;
   CDateTime lastPlayed = infos.m_lastPlayed;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  const double timeInSeconds = infos.m_resumePoint.timeInSeconds;
+#endif
+
   UpdateVideoTag(parameterObject, infos, artwork);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    if (timeInSeconds != infos.m_resumePoint.timeInSeconds)
+    {
+      videodatabase.AddBookMarkToFile(infos.m_strFileNameAndPath, infos.m_resumePoint, CBookmark::RESUME);
+    }
+  }
+#endif
 
   // we need to manually remove tags/taglinks for now because they aren't replaced
   // due to scrapers not supporting them
@@ -937,4 +954,14 @@ void CVideoLibrary::UpdateVideoTag(const CVariant &parameterObject, CVideoInfoTa
         artwork[artIt->first] = CTextureCache::UnwrapImageURL(artIt->second.asString());
     }
   }
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (VidOnMe::VDMUtils::Instance().GetRunningMode() == VidOnMe::RM_VIDONME)
+  {
+    if (ParameterNotNull(parameterObject, "resume"))
+    {
+      details.m_resumePoint.timeInSeconds = parameterObject["resume"].asDouble();
+    }
+  }
+#endif
 }

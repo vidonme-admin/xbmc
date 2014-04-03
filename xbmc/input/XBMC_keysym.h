@@ -49,6 +49,7 @@ typedef enum {
 	XBMCK_AUDIO							= 0x14,
 	XBMCK_SUBTITLE					= 0x12,
 	XBMCK_INFO							= 0x15,
+	XBMCK_BLUE							  = 0x16,
 #endif
 #endif
 #endif

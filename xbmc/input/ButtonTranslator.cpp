@@ -359,6 +359,7 @@ static const ActionMapping windows[] =
 		{"vdmmoviesfilter"          , VDM_WINDOW_MOVIES_FILTER},
 		{"VDMInformation"           , VDM_WINDOW_INFORMATION},
         {"vdmfilesetting"           , VDM_WINDOW_FILES_SETTING},
+        {"vdmsendlog"           , VDM_WINDOW_LOG_SEND},
 #endif
 };
 

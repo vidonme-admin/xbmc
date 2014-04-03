@@ -42,6 +42,7 @@ typedef enum {
   XBMCVK_ZOOMOUT        = 0x19,
   XBMCVK_FASTFORWARD    = 0x0A,
   XBMCVK_REWIND         = 0x0B,
+  XBMCVK_BLUE            = 0x16,
 #endif
   XBMCVK_ESCAPE         = 0x1B,
 

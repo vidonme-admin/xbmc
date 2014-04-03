@@ -231,6 +231,7 @@ static const XBMCKEYTABLE XBMCKeyTable[] =
 , { XBMCK_INFO,                   0,    0, XBMCVK_INFO,           "info"}
 , { XBMCK_FASTFORWARD,            0,    0, XBMCVK_FASTFORWARD,    "fastforward"}
 , { XBMCK_REWIND,                 0,    0, XBMCVK_REWIND,         "rewind"}
+, { XBMCK_BLUE,                 0,    0, XBMCVK_BLUE,         "bluebutton"}
 #endif
 #endif
 #endif

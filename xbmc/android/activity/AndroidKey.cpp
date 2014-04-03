@@ -50,6 +50,11 @@
 #endif
 #define AKEYCODE_REWIND 0x59
 
+#if defined AKEYCODE_BLUE
+#undef AKEYCODE_BLUE
+#endif
+#define AKEYCODE_BLUE 0xba
+
 #endif
 
 static KeyMap keyMap[] = {
@@ -153,6 +158,7 @@ static KeyMap keyMap[] = {
 	{ AKEYCODE_INFO            , XBMCK_INFO },
 	{ AKEYCODE_FASTFORWARD     , XBMCK_FASTFORWARD},
 	{ AKEYCODE_REWIND          , XBMCK_REWIND},
+	{ AKEYCODE_BLUE             , XBMCK_BLUE},
 #endif
   { AKEYCODE_PICTSYMBOLS     , XBMCK_LAST },
   { AKEYCODE_SWITCH_CHARSET  , XBMCK_LAST },

@@ -24,7 +24,11 @@
 class CAndroidStorageProvider : public IStorageProvider
 {
 public:
+#if !defined(__ANDROID_ALLWINNER__)
   CAndroidStorageProvider() { }
+#else //!defined(__ANDROID_ALLWINNER__)
+    CAndroidStorageProvider();
+#endif //!defined(__ANDROID_ALLWINNER__)
   virtual ~CAndroidStorageProvider() { }
 
   virtual void Initialize() { }
@@ -38,4 +42,15 @@ public:
   virtual std::vector<CStdString> GetDiskUsage();
 
   virtual bool PumpDriveChangeEvents(IStorageEventsCallback *callback);
+
+#if defined(__ANDROID_ALLWINNER__)
+private:
+    void innerGetRemovableDrives(VECSOURCES &removableDrives);
+    std::vector<CStdString> innerGetDiskUsage();
+    
+    unsigned int m_last_tick;
+
+    VECSOURCES m_removableDrives;
+    unsigned int m_removableLength;
+#endif //defined(__ANDROID_ALLWINNER__)
 };

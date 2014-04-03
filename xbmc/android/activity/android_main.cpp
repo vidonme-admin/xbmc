@@ -28,6 +28,26 @@
 #include "EventLoop.h"
 #include "XBMCApp.h"
 
+//add for breakpad
+#include <stdio.h>
+
+#include "client/linux/handler/exception_handler.h"
+#include "client/linux/handler/minidump_descriptor.h"
+
+namespace {
+
+bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor,
+                  void* context,
+                  bool succeeded) {
+  printf("Dump path: %s\n", descriptor.path());
+  return succeeded;
+}
+
+
+}//namespace
+//add end
+
+
 void setup_env(struct android_app* state)
 {
   JavaVM* vm  = state->activity->vm;
@@ -129,7 +149,7 @@ void setup_env(struct android_app* state)
   {
     // Get the path to the internal storage
     // For more details see the comment on getting the path to the external storage
-    jstring sXbmcName = env->NewStringUTF("org.xbmc.xbmc");
+    jstring sXbmcName = env->NewStringUTF("org.vidonme.vidonme");
     jmethodID midActivityGetDir = env->GetMethodID(cActivity, "getDir", "(Ljava/lang/String;I)Ljava/io/File;");
     jobject oInternalDir = env->CallObjectMethod(oActivity, midActivityGetDir, sXbmcName, 1 /* MODE_WORLD_READABLE */);
     env->DeleteLocalRef(sXbmcName);
@@ -157,7 +177,16 @@ extern void android_main(struct android_app* state)
 {
   // make sure that the linker doesn't strip out our glue
   app_dummy();
-
+#if defined(__VIDONME_MEDIACENTER__)
+#if defined(_DEBUG)
+#else
+//add for breakpad
+  google_breakpad::MinidumpDescriptor descriptor("/data/data/org.vidonme.vidonme/cache/temp");
+  google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback,
+                                       NULL, true, -1);
+//add end
+#endif
+#endif
   setup_env(state);
   CEventLoop eventLoop(state);
   CXBMCApp xbmcApp(state->activity);

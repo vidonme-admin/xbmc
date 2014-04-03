@@ -2,11 +2,12 @@ include @abs_top_srcdir@/tools/android/depends/Makefile.include
 
 GLUEPATH   = $(NDKROOT)/sources/android/native_app_glue
 APP_GLUE   = android_native_app_glue.o
+GOOGLE_BREAKPAD_PATH = $(XBMCPREFIX)/$(PLATFORM)/include
 
 CPUPATH    = $(NDKROOT)/sources/android/cpufeatures
 CPU_OBJ    = cpu-features.o
 
-INCLUDES += -I$(GLUEPATH) -I$(CPUPATH)
+INCLUDES += -I$(GLUEPATH) -I$(CPUPATH) -I$(GOOGLE_BREAKPAD_PATH)/src -I$(GOOGLE_BREAKPAD_PATH)/src/common/android/include
 
 SRCS       = android_main.cpp
 SRCS      += AndroidFeatures.cpp

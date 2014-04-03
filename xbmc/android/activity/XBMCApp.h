@@ -30,6 +30,9 @@
 #include "IInputHandler.h"
 
 #include "xbmc.h"
+#include "android/jni/Context.h"
+#include "android/jni/BroadcastReceiver.h"
+#include "threads/Event.h"
 
 
 // forward delares
@@ -50,11 +53,13 @@ struct androidPackage
 };
 
 
-class CXBMCApp : public IActivityHandler
+class CXBMCApp : public IActivityHandler, public CJNIContext//, public CJNIBroadcastReceiver
 {
 public:
   CXBMCApp(ANativeActivity *nativeActivity);
   virtual ~CXBMCApp();
+  virtual void onReceive(CJNIIntent intent);
+  virtual void onNewIntent(CJNIIntent intent);
 
   bool isValid() { return m_activity != NULL; }
 
@@ -78,6 +83,7 @@ public:
   void onLostFocus();
 
 
+  static bool InvokedByFileManager ();
   static ANativeWindow* GetNativeWindow() { return m_window; };
   static int SetBuffersGeometry(int width, int height, int format);
   static int android_printf(const char *format, ...);
@@ -103,12 +109,10 @@ public:
   static bool GetStorageUsage(const std::string &path, std::string &usage);
   static int GetMaxSystemVolume();
 
-#if defined(__ANDROID_ALLWINNER__)
-  static bool DisplayIs3DSupported ();
-  static int GetDisplayOutputType ();
-  static int GetDisplayOutputFormat ();
-  static void SetDisplayOutputFormat (int mode);
-#endif
+  static void SetActiveAudioDevices (const std::string& strDev);
+  static void GetActiveAudioDevices (std::string& strDev);
+  static bool GetAudioPassthroughValue ();
+  static void EnableAudioPassthrough (bool enable);
 
   static int GetDPI();
 protected:
@@ -125,6 +129,7 @@ protected:
 
 private:
   static bool HasLaunchIntent(const std::string &package);
+  std::string GetFilenameFromIntent(const CJNIIntent &intent);
   bool getWakeLock(JNIEnv *env);
   void acquireWakeLock();
   void releaseWakeLock();
@@ -170,4 +175,5 @@ private:
   void XBMC_Stop();
   bool XBMC_DestroyDisplay();
   bool XBMC_SetupDisplay();
+  static bool m_InvokedByFileManager;
 };

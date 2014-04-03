@@ -39,11 +39,37 @@
 
 #include "Application.h"
 #include "settings/AdvancedSettings.h"
+#include "settings/AppParamParser.h"
 #include "xbmc.h"
 #include "windowing/WinEvents.h"
 #include "guilib/GUIWindowManager.h"
 #include "utils/log.h"
 #include "ApplicationMessenger.h"
+#include "utils/StringUtils.h"
+#include <android/bitmap.h>
+#include "android/jni/JNIThreading.h"
+#include "android/jni/BroadcastReceiver.h"
+#include "android/jni/Intent.h"
+#include "android/jni/PackageManager.h"
+#include "android/jni/Context.h"
+#include "android/jni/AudioManager.h"
+#include "android/jni/PowerManager.h"
+#include "android/jni/WakeLock.h"
+#include "android/jni/Environment.h"
+#include "android/jni/File.h"
+#include "android/jni/IntentFilter.h"
+#include "android/jni/NetworkInfo.h"
+#include "android/jni/ConnectivityManager.h"
+#include "android/jni/System.h"
+#include "android/jni/ApplicationInfo.h"
+#include "android/jni/StatFs.h"
+#include "android/jni/BitmapDrawable.h"
+#include "android/jni/Bitmap.h"
+#include "android/jni/CharSequence.h"
+#include "android/jni/URI.h"
+#include "android/jni/Cursor.h"
+#include "android/jni/ContentResolver.h"
+#include "android/jni/MediaStore.h"
 
 #if defined(__VIDONME_MEDIACENTER__)
 #include "input/XBMC_vkeys.h"
@@ -64,6 +90,7 @@ void* thread_run(void* obj)
 
 ANativeActivity *CXBMCApp::m_activity = NULL;
 ANativeWindow* CXBMCApp::m_window = NULL;
+bool CXBMCApp::m_InvokedByFileManager = NULL;
 
 extern "C" {
 static struct sigaction old_sa[NSIG];
@@ -79,7 +106,9 @@ void android_sigaction(int signal, siginfo_t *info, void *reserved)
 }
 
 CXBMCApp::CXBMCApp(ANativeActivity *nativeActivity)
-  : m_wakeLock(NULL)
+  : CJNIContext(nativeActivity)
+  //, CJNIBroadcastReceiver("org/vidonme/vidonme/XBMCBroadcastReceiver")
+  , m_wakeLock(NULL)
 {
   m_activity = nativeActivity;
 
@@ -317,7 +346,7 @@ bool CXBMCApp::getWakeLock(JNIEnv *env)
 
     jclass cPowerManager = env->GetObjectClass(oPowerManager);
     jmethodID midNewWakeLock = env->GetMethodID(cPowerManager, "newWakeLock", "(ILjava/lang/String;)Landroid/os/PowerManager$WakeLock;");
-    jstring sXbmcPackage = env->NewStringUTF("org.xbmc.xbmc");
+    jstring sXbmcPackage = env->NewStringUTF("org.vidonme.vidonme");
     jobject oWakeLock = env->CallObjectMethod(oPowerManager, midNewWakeLock, (jint)0x1a /* FULL_WAKE_LOCK */, sXbmcPackage);
     m_wakeLock = env->NewGlobalRef(oWakeLock);
 
@@ -376,12 +405,103 @@ void CXBMCApp::releaseWakeLock()
   DetachCurrentThread();
 }
 
+void CXBMCApp::onReceive(CJNIIntent intent)
+{
+  std::string action = intent.getAction();
+  android_printf("CXBMCApp::onReceive Got intent. Action: %s", action.c_str());
+/*
+  if (action == "android.intent.action.BATTERY_CHANGED")
+    m_batteryLevel = intent.getIntExtra("level",-1);
+*/
+}
+
+void CXBMCApp::onNewIntent(CJNIIntent intent)
+{
+android_printf ("### onNewIntent ###");
+  std::string action = intent.getAction();
+  if (action == "android.intent.action.VIEW")
+  {
+    std::string playFile = GetFilenameFromIntent(intent);
+    CApplicationMessenger::Get().MediaPlay(playFile);
+  }
+}
+
+std::string CXBMCApp::GetFilenameFromIntent(const CJNIIntent &intent)
+{
+    std::string ret;
+    if (!intent)
+      return ret;
+    CJNIURI data = intent.getData();
+    if (!data)
+      return ret;
+    std::string scheme = data.getScheme();
+    StringUtils::ToLower(scheme);
+    if (scheme == "content")
+    {
+      std::vector<std::string> filePathColumn;
+      filePathColumn.push_back(CJNIMediaStoreMediaColumns::DATA);
+      CJNICursor cursor = getContentResolver().query(data, filePathColumn, std::string(), std::vector<std::string>(), std::string());
+      if(cursor.moveToFirst())
+      {
+        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+        ret = cursor.getString(columnIndex);
+      }
+      cursor.close();
+    }
+    else if(scheme == "file")
+      ret = data.getPath();
+    else
+      ret = data.toString();
+  return ret;
+}
+
+bool CXBMCApp::InvokedByFileManager ()
+{
+  return m_InvokedByFileManager;
+}
+
 void CXBMCApp::run()
 {
     int status = 0;
     setAppState(Initialized);
+ CJNIIntent startIntent = getIntent();
 
-    android_printf(" => running XBMC_Run...");
+  std::string locale = startIntent.getStringExtra ("localestring");
+  std::string language = startIntent.getStringExtra ("language");
+  android_printf ("### locale: %s / language: %s ###", locale.c_str (), language.c_str ());
+
+#if defined(__VIDONME_MEDIACENTER__) && defined(__ANDROID_ALLWINNER__)
+	if (!locale.empty())
+	{
+		g_application.m_strAndroidLanguage = locale.c_str();
+	}
+	else if (!language.empty())
+	{
+		g_application.m_strAndroidLanguage = language.c_str();
+	}
+#endif
+
+  m_InvokedByFileManager = false;
+
+  std::string filenameToPlay = GetFilenameFromIntent(startIntent);
+  if (!filenameToPlay.empty())
+  {
+    int argc = 2;
+    const char** argv = (const char**) malloc(argc*sizeof(char*));
+
+    std::string exe_name("XBMC");
+    argv[0] = exe_name.c_str();
+    argv[1] = filenameToPlay.c_str();
+
+    CAppParamParser appParamParser;
+    appParamParser.Parse((const char **)argv, argc);
+
+    free(argv);
+
+    m_InvokedByFileManager = true;
+  }
+
+    android_printf(" => running XBMC_Run invoked by (%s)...", m_InvokedByFileManager ? "FileManager" : "Self");
     try
     {
       setAppState(Rendering);
@@ -449,7 +569,11 @@ void CXBMCApp::XBMC_Pause(bool pause)
   // Only send the PAUSE action if we are pausing XBMC and something is currently playing
   if (pause && g_application.IsPlaying() && !g_application.IsPaused())
 #if defined(__VIDONME_MEDIACENTER__)
+#if defined(__ANDROID_ALLWINNER__)
+    CApplicationMessenger::Get().SendAction(CAction(ACTION_STOP), WINDOW_INVALID, true);
+#else
     CApplicationMessenger::Get().SendAction(CAction(ACTION_PAUSE, "android pause", CKey(XBMCVK_HOME)), WINDOW_INVALID, true);
+#endif
 #else
     CApplicationMessenger::Get().SendAction(CAction(ACTION_PAUSE), WINDOW_INVALID, true);
 #endif
@@ -1198,191 +1322,207 @@ int CXBMCApp::GetMaxSystemVolume()
   return maxVolume;
 }
 
-#if defined(__ANDROID_ALLWINNER__)
-
-int CXBMCApp::GetDisplayOutputType ()
-{
-  if (m_activity == NULL)
+static char* jstringTostr (JNIEnv* env, jstring jstr)
+{       
+  char* pStr = NULL;
+  
+  jclass     jstrObj   = env->FindClass ("java/lang/String");
+  jstring    encode    = env->NewStringUTF ("utf-8");
+  jmethodID  methodId  = env->GetMethodID (jstrObj, "getBytes", "(Ljava/lang/String;)[B");
+  jbyteArray byteArray = (jbyteArray)env->CallObjectMethod (jstr, methodId, encode);
+  jsize      strLen    = env->GetArrayLength (byteArray);
+  jbyte      *jBuf     = env->GetByteArrayElements (byteArray, JNI_FALSE);
+  
+  if (jBuf > 0)
   {
-    android_printf("  missing activity => unable to get display output type");
-    return -1;
+    pStr = (char*)malloc (strLen + 1);
+    
+    if (!pStr)
+    {
+        return NULL;
+    }
+    
+    memcpy (pStr, jBuf, strLen);
+    
+    pStr[strLen] = 0;
   }
+  
+  env->ReleaseByteArrayElements (byteArray, jBuf, 0);
+  
+  return pStr;
+}
 
+void CXBMCApp::EnableAudioPassthrough (bool enable)
+{
   JNIEnv *env = NULL;
   AttachCurrentThread(&env);
 
-  if (env == NULL)
-    return false;
-
   jobject oActivity = m_activity->clazz;
   jclass cActivity = env->GetObjectClass(oActivity);
-  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
-  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
-  
-  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
-  jmethodID midDisplayOutputType = env->GetMethodID(cDisplayManager, "getDisplayOutputType", "(I)I");
-  int ret = (int)env->CallIntMethod(oDisplayManager, midDisplayOutputType, (jint)0);
-  
-  env->DeleteLocalRef(cDisplayManager);
-  env->DeleteLocalRef(oDisplayManager);
-  env->DeleteLocalRef(sDisplayManagerService);
-  env->DeleteLocalRef(cActivity);
 
-  DetachCurrentThread();
-
-  android_printf ("### OutputType: %d ##", ret);
-
-  return ret;
-}
-
-int CXBMCApp::GetDisplayOutputFormat ()
-{
-
-  if (m_activity == NULL)
-  {
-    android_printf("  missing activity => unable to get display output type");
-    return -1;
+  jclass resCls = env->FindClass("android/content/Context");
+  jmethodID getMethod = env->GetMethodID(cActivity, "getContentResolver", "()Landroid/content/ContentResolver;");
+  jobject resolver = env->CallObjectMethod(oActivity, getMethod);
+  if (resolver == NULL) {
+    CLog::Log (LOGDEBUG, "Invalid resolver!");
   }
 
+  jclass cls_context = env->FindClass("android/provider/Settings$System");
+  if (cls_context == NULL) {
+    CLog::Log (LOGDEBUG, "Invalid passthrough cls_context!");
+  }
+
+  jmethodID putIntMethod = env->GetStaticMethodID(cls_context, "putInt", "(Landroid/content/ContentResolver;Ljava/lang/String;I)Z");
+  if (putIntMethod == NULL) {
+    CLog::Log(LOGDEBUG, "Invalid putIntMethod!");
+  }
+  
+  jstring audioPassthrough = env->NewStringUTF("enable_pass_through");
+  
+  env->CallStaticObjectMethod (cls_context, putIntMethod, resolver, audioPassthrough, enable ? 1 : 0);
+  
+  DetachCurrentThread();
+}
+
+bool CXBMCApp::GetAudioPassthroughValue ()
+{
   JNIEnv *env = NULL;
   AttachCurrentThread(&env);
 
-  if (env == NULL)
-    return false;
-
   jobject oActivity = m_activity->clazz;
   jclass cActivity = env->GetObjectClass(oActivity);
-  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
-  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
+
+  jclass resCls = env->FindClass("android/content/Context");
+  jmethodID getMethod = env->GetMethodID(cActivity, "getContentResolver", "()Landroid/content/ContentResolver;");
+  jobject resolver = env->CallObjectMethod(oActivity, getMethod);
+  if (resolver == NULL) {
+    CLog::Log (LOGDEBUG, "Invalid resolver!");
+  }
+
+  jclass cls_context = env->FindClass("android/provider/Settings$System");
+  if (cls_context == NULL) {
+    CLog::Log (LOGDEBUG, "Invalid passthrough cls_context!");
+  }
+
+  jmethodID getIntMethod = env->GetStaticMethodID(cls_context, "getInt", "(Landroid/content/ContentResolver;Ljava/lang/String;)I");
+  if (getIntMethod == NULL) {
+    CLog::Log(LOGDEBUG, "Invalid getIntMethod!");
+  }
   
-  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
-  jmethodID midDisplayOutputFormat = env->GetMethodID(cDisplayManager, "getDisplayOutputFormat", "(I)I");
-  int ret = (int)env->CallIntMethod(oDisplayManager, midDisplayOutputFormat, (jint)0);
+  jstring audioPassthrough = env->NewStringUTF("enable_pass_through");
   
-  env->DeleteLocalRef(cDisplayManager);
-  env->DeleteLocalRef(oDisplayManager);
-  env->DeleteLocalRef(sDisplayManagerService);
-  env->DeleteLocalRef(cActivity);
+  jint value = (jint)env->CallStaticObjectMethod (cls_context, getIntMethod, resolver, audioPassthrough);
+  
+  CLog::Log (LOGDEBUG, "###value: %d ##", value);
 
   DetachCurrentThread();
 
-  android_printf ("### OutputFormat: %d ##", ret);
-
-  return ret;
+  return value;
 }
 
-typedef struct screen_para
+void CXBMCApp::SetActiveAudioDevices (const std::string& strDev)
 {
-    unsigned int width[2];//screen total width
-    unsigned int height[2];//screen total height
-    unsigned int valid_width[2];//screen width that can be seen
-    unsigned int valid_height[2];//screen height that can be seen
-    unsigned int app_width[2];//the width that app use
-    unsigned int app_height[2];//the height that app use
-    unsigned int ui_hdl[2];
-}screen_para_t;
-
-void CXBMCApp::SetDisplayOutputFormat (int mode)
-{
-  if (m_activity == NULL)
-  {
-    android_printf("  missing activity => unable to get display output type");
-    return;
-  }
-
   JNIEnv *env = NULL;
   AttachCurrentThread(&env);
 
-  if (env == NULL)
-    return;
-
   jobject oActivity = m_activity->clazz;
   jclass cActivity = env->GetObjectClass(oActivity);
-  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
-  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
-  
-  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
-/*
-  jmethodID midSetDisplayFormat = env->GetMethodID(cDisplayManager, "setDisplayOutputType", "(III)I");
-  int ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayFormat, (jint)0, (jint)3, (jint)mode);
 
-  android_printf ("### setDisplayFormat: %d ##", ret);
-
-  screen_para_t screenPara;
-
-  memset (&screenPara, 0, sizeof (screen_para_t));
-
-  screenPara.width[0] = 1920;
-  screenPara.height[0] = 1080;
-  screenPara.app_width[0] = 1280;
-  screenPara.app_height[0] = 720;
-  screenPara.ui_hdl[0] = 0;
-  screenPara.valid_width[0] = 1824;
-  screenPara.valid_height[0] = 1026; 
-*/
-  jmethodID midSetDisplayParameter = env->GetMethodID(cDisplayManager, "setDisplayParameter", "(III)I");
-  //ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayParameter, (jint)0, (jint)0x19, (jint)&screenPara);
-  int ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayParameter, (jint)0, (jint)3, (jint)mode);
-
-  
-  android_printf ("### setDisplayFormat000: %d ##", ret);
-
-  jmethodID midSetDisplayMode = env->GetMethodID(cDisplayManager, "setDisplayMode", "(I)I");
-  ret = (int)env->CallIntMethod(oDisplayManager, midSetDisplayMode, (jint)5);
-  
-  env->DeleteLocalRef(cDisplayManager);
-  env->DeleteLocalRef(oDisplayManager);
-  env->DeleteLocalRef(sDisplayManagerService);
+  // Get Audio manager
+  //  (AudioManager)getSystemService(Context.AUDIO_SERVICE)
+  jmethodID mgetSystemService = env->GetMethodID(cActivity, "getSystemService","(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sAudioService = env->NewStringUTF("audio");
+  jobject oAudioManager = env->CallObjectMethod(oActivity, mgetSystemService, sAudioService);
+  env->DeleteLocalRef(sAudioService);
   env->DeleteLocalRef(cActivity);
 
-  DetachCurrentThread();
+  jclass cAudioManager = env->GetObjectClass(oAudioManager);
 
-  android_printf ("### setDisplayFormat<1111>: %d ##", ret);
+  //////////////////////////////////////////////////////////////////TODO
+  jclass cls_ArrayList = env->FindClass("java/util/ArrayList");  
+  jmethodID construct = env->GetMethodID(cls_ArrayList,"<init>","()V");  
+  jobject obj_ArrayList = env->NewObject(cls_ArrayList,construct,"");  
+  jmethodID arrayList_add = env->GetMethodID(cls_ArrayList,"add","(Ljava/lang/Object;)Z"); 
+
+	if (strDev == "AUDIO_CODEC")
+	{
+		jstring audioCodec = env->NewStringUTF("AUDIO_CODEC");
+		env->CallObjectMethod(obj_ArrayList, arrayList_add, audioCodec);
+		env->DeleteLocalRef(audioCodec);
+	}
+	else if (strDev == "AUDIO_HDMI")
+	{
+		jstring audioHDMI = env->NewStringUTF("AUDIO_HDMI");
+		env->CallObjectMethod(obj_ArrayList, arrayList_add, audioHDMI);
+		env->DeleteLocalRef(audioHDMI);
+	}
+	else if (strDev == "AUDIO_SPDIF")
+	{
+		jstring audioSPDIF = env->NewStringUTF("AUDIO_SPDIF");
+		env->CallObjectMethod(obj_ArrayList, arrayList_add, audioSPDIF);
+		env->DeleteLocalRef(audioSPDIF);
+	}
+
+  //////////////////////////////////////////////////////////////////
+
+  jmethodID setDeviceActive = env->GetMethodID(cAudioManager, "setAudioDeviceActive", "(Ljava/util/ArrayList;Ljava/lang/String;)V");
+  jstring sAudioActive = env->NewStringUTF("audio_devices_out_active");
+  env->CallObjectMethod(oAudioManager, setDeviceActive, obj_ArrayList, sAudioActive);
+
+  env->DeleteLocalRef(obj_ArrayList);
+  env->DeleteLocalRef(sAudioActive);
+  env->DeleteLocalRef(cls_ArrayList);
+
+  env->DeleteLocalRef(oAudioManager);
+  env->DeleteLocalRef(cAudioManager);
+
+  DetachCurrentThread();
 }
 
-bool CXBMCApp::DisplayIs3DSupported ()
+void CXBMCApp::GetActiveAudioDevices (std::string& strDev)
 {
-  if (m_activity == NULL)
-  {
-    android_printf("  missing activity => unable to get 3d support");
-    return false;
-  }
-
   JNIEnv *env = NULL;
   AttachCurrentThread(&env);
 
-  if (env == NULL)
-    return false;
-
   jobject oActivity = m_activity->clazz;
   jclass cActivity = env->GetObjectClass(oActivity);
-  jmethodID midActivityGetSystemService = env->GetMethodID(cActivity, "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;");
-  jstring sDisplayManagerService = env->NewStringUTF("display"); // Display_Manager
-  jobject oDisplayManager = env->CallObjectMethod(oActivity, midActivityGetSystemService, sDisplayManagerService);
-  
-  jclass cDisplayManager = env->GetObjectClass(oDisplayManager);
-  jmethodID midIs3DSupport = env->GetMethodID(cDisplayManager, "isSupport3DMode", "()I");
-  int ret = (int)env->CallIntMethod(oDisplayManager, midIs3DSupport);
-  
-  env->DeleteLocalRef(cDisplayManager);
-  env->DeleteLocalRef(oDisplayManager);
-  env->DeleteLocalRef(sDisplayManagerService);
+
+  // Get Audio manager
+  //  (AudioManager)getSystemService(Context.AUDIO_SERVICE)
+  jmethodID mgetSystemService = env->GetMethodID(cActivity, "getSystemService","(Ljava/lang/String;)Ljava/lang/Object;");
+  jstring sAudioService = env->NewStringUTF("audio");
+  jobject oAudioManager = env->CallObjectMethod(oActivity, mgetSystemService, sAudioService);
+  env->DeleteLocalRef(sAudioService);
   env->DeleteLocalRef(cActivity);
 
+  jclass cAudioManager = env->GetObjectClass(oAudioManager);
+
+  jmethodID getDeviceActive = env->GetMethodID(cAudioManager, "getActiveAudioDevices", "(Ljava/lang/String;)Ljava/util/ArrayList;");
+  jstring sAudioActive = env->NewStringUTF("audio_devices_out_active");
+  jobject deviceList = env->CallObjectMethod(oAudioManager, getDeviceActive, sAudioActive);
+
+  jclass cls_ArrayList = env->FindClass("java/util/ArrayList");
+  jmethodID arraylist_get = env->GetMethodID(cls_ArrayList,"get","(I)Ljava/lang/Object;");
+  jmethodID arraylist_size = env->GetMethodID(cls_ArrayList,"size","()I");
+  jint len = env->CallIntMethod(deviceList, arraylist_size);
+
+  CLog::Log (LOGDEBUG, "### GetActiveAudioDevices len:%d ###", len);
+  for (int i = 0; i < len; i++)  
+  {
+    jstring deviceName = (jstring)env->CallObjectMethod (deviceList, arraylist_get, i);
+    CLog::Log (LOGDEBUG, "##GetActiveAudioDevices device:%s ##", jstringTostr (env, deviceName));
+		strDev = jstringTostr(env, deviceName);
+  }
+
+  env->DeleteLocalRef(sAudioActive);
+  env->DeleteLocalRef(deviceList);
+  env->DeleteLocalRef(cls_ArrayList);
+
+  env->DeleteLocalRef(oAudioManager);
+  env->DeleteLocalRef(cAudioManager);
+
   DetachCurrentThread();
-
-  if (ret == 0)
-    android_printf ("### 3D is not support");
-  else if (ret == 1)
-    android_printf ("### 3D is support");
-
-  return (ret == 1);
 }
-
-#endif
 
 int CXBMCApp::GetMaxSystemVolume(JNIEnv *env)
 {
@@ -1400,6 +1540,7 @@ int CXBMCApp::GetMaxSystemVolume(JNIEnv *env)
   // Get max volume
   //  int max_volume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
   jclass cAudioManager = env->GetObjectClass(oAudioManager);
+
   jmethodID mgetStreamMaxVolume = env->GetMethodID(cAudioManager, "getStreamMaxVolume", "(I)I");
   jfieldID fstreamMusic = env->GetStaticFieldID(cAudioManager, "STREAM_MUSIC", "I");
   jint stream_music = env->GetStaticIntField(cAudioManager, fstreamMusic);

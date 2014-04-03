@@ -1658,10 +1658,10 @@ int CBuiltins::Execute(const CStdString& execString)
   {
      g_application.SwitchToXBMC();
   }
-  else if (execute.Equals("vdmswitchtovidon.me"))
+  else if (execute.Equals("vdmswitchtovidonxbmc"))
   {
     g_application.StopPlaying();
-    g_guiSettings.SetString("lookandfeel.skin", DEFAULT_SKIN);
+    g_guiSettings.SetString("lookandfeel.skin", "skin.vidonme");
     g_application.ReloadSkin();
   }
 #endif//__VIDONME_MEDIACENTER__

@@ -26,11 +26,19 @@
 
 using namespace std;
 
-CGUIButtonControl::CGUIButtonControl(int parentID, int controlID, float posX, float posY, float width, float height, const CTextureInfo& textureFocus, const CTextureInfo& textureNoFocus, const CLabelInfo& labelInfo)
+CGUIButtonControl::CGUIButtonControl(int parentID, int controlID, float posX, float posY, float width, float height, const CTextureInfo& textureFocus, const CTextureInfo& textureNoFocus, const CLabelInfo& labelInfo
+#if defined(__VIDONME_MEDIACENTER__)
+	,bool wrapMultiLine
+#endif
+	)
     : CGUIControl(parentID, controlID, posX, posY, width, height)
     , m_imgFocus(posX, posY, width, height, textureFocus)
     , m_imgNoFocus(posX, posY, width, height, textureNoFocus)
-    , m_label(posX, posY, width, height, labelInfo)
+#if defined(__VIDONME_MEDIACENTER__)
+		, m_label(posX, posY, width, height, labelInfo, wrapMultiLine ? CGUILabel::OVER_FLOW_WRAP : CGUILabel::OVER_FLOW_SCROLL)
+#else
+		, m_label(posX, posY, width, height, labelInfo)
+#endif
     , m_label2(posX, posY, width, height, labelInfo)
 {
   m_bSelected = false;

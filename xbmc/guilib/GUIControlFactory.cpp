@@ -1197,7 +1197,11 @@ CGUIControl* CGUIControlFactory::Create(int parentID, const CRect &rect, TiXmlEl
     control = new CGUIButtonControl(
       parentID, id, posX, posY, width, height,
       textureFocus, textureNoFocus,
-      labelInfo);
+      labelInfo
+#if defined(__VIDONME_MEDIACENTER__)
+			,wrapMultiLine
+#endif
+			);
 
     ((CGUIButtonControl *)control)->SetLabel(strLabel);
     ((CGUIButtonControl *)control)->SetLabel2(strLabel2);

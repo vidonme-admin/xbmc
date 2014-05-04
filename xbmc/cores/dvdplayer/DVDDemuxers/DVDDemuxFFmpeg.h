@@ -41,6 +41,10 @@ public:
     , m_stream(stream)
   {}
   virtual void GetStreamInfo(std::string& strInfo);
+
+#ifdef __ANDROID_ALLWINNER__
+  virtual void SetDiscard (AVDiscard discard) {};
+#endif
 };
 
 
@@ -58,6 +62,10 @@ public:
 
   virtual void GetStreamInfo(std::string& strInfo);
   virtual void GetStreamName(std::string& strInfo);
+
+#ifdef __ANDROID_ALLWINNER__
+  virtual void SetDiscard (AVDiscard discard);
+#endif
 };
 
 class CDemuxStreamSubtitleFFmpeg

@@ -36,11 +36,27 @@ extern "C" {
 #endif
 }
 
+#ifdef __ANDROID_ALLWINNER__
+#include "DllAvCodec.h"
+#endif
+
 void CDVDDemuxUtils::FreeDemuxPacket(DemuxPacket* pPacket)
 {
   if (pPacket)
   {
     try {
+#ifdef __ANDROID_ALLWINNER__
+      if (pPacket->pData && pPacket->m_dllAvCodec && pPacket->destruct)
+      {
+        AVPacket pkt;
+        pPacket->m_dllAvCodec->av_init_packet(&pkt);
+        pkt.data = pPacket->pData;
+        pkt.destruct = pPacket->destruct;
+        pPacket->m_dllAvCodec->av_free_packet(&pkt);
+        pPacket->pData = NULL;
+      }
+      else
+#endif
       if (pPacket->pData) _aligned_free(pPacket->pData);
       delete pPacket;
     }

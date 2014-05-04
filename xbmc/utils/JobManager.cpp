@@ -25,6 +25,9 @@
 
 #include "system.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "utils/Stopwatch.h"
+#endif
 
 using namespace std;
 
@@ -185,6 +188,21 @@ void CJobManager::CancelJobs()
   // cancel any callbacks on jobs still processing
   for_each(m_processing.begin(), m_processing.end(), mem_fun_ref(&CWorkItem::Cancel));
 
+#if defined(__VIDONME_MEDIACENTER__)
+  // add timeout for cancel jobs
+  CStopWatch watch;
+  watch.StartZero();
+  // tell our workers to finish
+  while (m_workers.size() && watch.GetElapsedSeconds() < 5)
+  {
+    lock.Leave();
+    m_jobEvent.Set();
+    Sleep(0); // yield after setting the event to give the workers some time to die
+    lock.Enter();
+  }
+
+  watch.Stop();
+#else
   // tell our workers to finish
   while (m_workers.size())
   {
@@ -193,6 +211,7 @@ void CJobManager::CancelJobs()
     Sleep(0); // yield after setting the event to give the workers some time to die
     lock.Enter();
   }
+#endif
 }
 
 CJobManager::~CJobManager()
@@ -244,9 +263,26 @@ void CJobManager::StartWorkers(CJob::PRIORITY priority)
 {
   CSingleLock lock(m_section);
 
+#if defined(__VIDONME_MEDIACENTER__)
+  unsigned int nActiveCnt = 0;
+  Workers::iterator iter = m_workers.begin();
+  for (; iter != m_workers.end(); ++iter)
+  {
+    if ((*iter)->IsRunning())
+    {
+      nActiveCnt++;
+    }
+  }
+
+  if (nActiveCnt >= GetMaxWorkers(priority))
+  {
+    return;
+  }
+#else
   // check how many free threads we have
   if (m_processing.size() >= GetMaxWorkers(priority))
     return;
+#endif
 
   // do we have any sleeping threads?
   if (m_processing.size() < m_workers.size())
@@ -427,6 +463,12 @@ void CJobManager::RemoveWorker(const CJobWorker *worker)
 
 unsigned int CJobManager::GetMaxWorkers(CJob::PRIORITY priority) const
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  static const unsigned int max_workers = 10;
+  return max_workers - (CJob::PRIORITY_HIGH - priority);
+#else
   static const unsigned int max_workers = 5;
   return max_workers - (CJob::PRIORITY_HIGH - priority);
+#endif
 }
+

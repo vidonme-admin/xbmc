@@ -60,9 +60,22 @@ FIXME'S
 >strings are not centered
 */
 
-#define WEATHER_BASE_PATH "special://temp/weather/"
-#define WEATHER_ICON_PATH "special://temp/weather/"
-#define WEATHER_SOURCE_FILE "special://xbmc/media/weather.zip"
+#define WEATHER_BASE_PATH						"special://temp/weather/"
+#define WEATHER_SOURCE_FILE					"special://xbmc/media/weather.zip"
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "Application.h"
+#define WEATHER_BASE_PATH_VDM				"special://temp/vdmweather/"
+#define WEATHER_SOURCE_FILE_VDM			"special://xbmc/addons/skin.vidonme/media/weather.zip"
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#define WEATHER_ICON_PATH						g_application.m_strWeatherIconPath
+#else
+#define WEATHER_ICON_PATH						"special://temp/weather/"
+#endif
+
 
 bool CWeatherJob::m_imagesOkay = false;
 
@@ -104,6 +117,12 @@ bool CWeatherJob::DoWork()
     {
       CDirectory::Create(WEATHER_BASE_PATH);
       g_ZipManager.ExtractArchive(WEATHER_SOURCE_FILE, WEATHER_BASE_PATH);
+
+#if defined(__VIDONME_MEDIACENTER__)
+			CDirectory::Create(WEATHER_BASE_PATH_VDM);
+			g_ZipManager.ExtractArchive(WEATHER_SOURCE_FILE_VDM, WEATHER_BASE_PATH_VDM);
+#endif
+
       m_imagesOkay = true;
     }
 

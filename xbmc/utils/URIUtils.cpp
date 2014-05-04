@@ -174,11 +174,18 @@ void URIUtils::Split(const CStdString& strFileNameAndPath,
   strFileName = "";
   strPath = "";
   int i = strFileNameAndPath.size() - 1;
+#if defined(__VIDONME_MEDIACENTER__)
+  int mark = strFileNameAndPath.size() - 1;
+#endif
   while (i > 0)
   {
     char ch = strFileNameAndPath[i];
     // Only break on ':' if it's a drive separator for DOS (ie d:foo)
+#if defined(__VIDONME_MEDIACENTER__)
+    if ((ch == '/'  && i != mark ) || (ch == '\\'&& i != mark)  || (ch == ':' && i == 1)) break;
+#else
     if (ch == '/' || ch == '\\' || (ch == ':' && i == 1)) break;
+#endif
     else i--;
   }
   if (i == 0)

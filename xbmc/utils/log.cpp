@@ -64,9 +64,12 @@ void CLog::Log(int loglevel, const char *format, ... )
 {
   static const char* prefixFormat = "%02.2d:%02.2d:%02.2d T:%"PRIu64" %7s: ";
   CSingleLock waitLock(critSec);
+#if defined(__VIDONME_MEDIACENTER__)
+#else
 #if !(defined(_DEBUG) || defined(PROFILE))
   if (m_logLevel > LOG_LEVEL_NORMAL ||
      (m_logLevel > LOG_LEVEL_NONE && loglevel >= LOGNOTICE))
+#endif
 #endif
   {
     if (!m_file)
@@ -143,8 +146,8 @@ bool CLog::Init(const char* path)
     // and changed in CApplication::Create()
     CStdString strLogFile, strLogFileOld;
 
-    strLogFile.Format("%sxbmc.log", path);
-    strLogFileOld.Format("%sxbmc.old.log", path);
+    strLogFile.Format("%sVDMMediaCenter.log", path);
+    strLogFileOld.Format("%sVDMMediaCenter.old.log", path);
 
 #if defined(TARGET_WINDOWS)
     // the appdata folder might be redirected to an unc share

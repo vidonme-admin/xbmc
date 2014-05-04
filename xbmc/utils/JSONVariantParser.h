@@ -99,4 +99,9 @@ private:
     ParseVariable = 0
   };
   PARSE_STATUS m_status;
+
+#if defined(__VIDONME_MEDIACENTER__)
+public:
+  static CVariant ParseStr(const std::string json);
+#endif
 };

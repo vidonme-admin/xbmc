@@ -234,3 +234,11 @@ void CJSONVariantParser::PopObject()
     m_status = ParseVariable;
   }
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+CVariant CJSONVariantParser::ParseStr(const std::string json)
+{
+	return Parse((const unsigned char*)json.c_str(), json.length());
+}
+
+#endif

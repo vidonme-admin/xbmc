@@ -41,6 +41,10 @@
 #include "utils/log.h"
 #include "settings/GUISettings.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "filesystem/Directory.h"
+#endif
+
 using namespace std;
 using namespace XFILE;
 
@@ -222,6 +226,12 @@ void CScreenShot::TakeScreenshot()
 
   if (!strDir.IsEmpty())
   {
+#if defined(__VIDONME_MEDIACENTER__)
+    if (!CDirectory::Exists(strDir))
+    {
+      CDirectory::Create(strDir);
+    }
+#endif
     CStdString file = CUtil::GetNextFilename(URIUtils::AddFileToFolder(strDir, "screenshot%03d.png"), 999);
 
     if (!file.IsEmpty())

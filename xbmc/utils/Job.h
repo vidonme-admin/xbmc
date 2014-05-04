@@ -21,6 +21,13 @@
 
 class CJob;
 
+#if defined(__VIDONME_MEDIACENTER__)
+namespace VidOnMe
+{
+  class CLongJob;
+}
+#endif
+
 #include <stddef.h>
 
 /*!
@@ -161,5 +168,8 @@ public:
   bool ShouldCancel(unsigned int progress, unsigned int total) const;
 private:
   friend class CJobManager;
+#if defined(__VIDONME_MEDIACENTER__)
+  friend class VidOnMe::CLongJob;
+#endif
   CJobManager *m_callback;
 };

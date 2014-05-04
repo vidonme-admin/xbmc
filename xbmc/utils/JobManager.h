@@ -260,7 +260,9 @@ public:
 protected:
   friend class CJobWorker;
   friend class CJob;
-
+#if defined(__VIDONME_MEDIACENTER__)
+  friend class VidOnMe::CLongJob;
+#endif
   /*!
    \brief Get a new job to process. Blocks until a new job is available, or a timeout has occurred.
    \param worker a pointer to the current CJobWorker instance requesting a job.

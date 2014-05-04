@@ -386,6 +386,9 @@ void CSelectionStreams::Update(CDVDInputStream* input, CDVDDemux* demuxer)
           s.name += type;
         }
         s.channels = ((CDemuxStreamAudio*)stream)->iChannels;
+                //if stream is trueHD and channel = 8, the a10 playing have some problem, disable it
+        if( (CODEC_ID_TRUEHD == stream->codec) && ((s.channels == 8) || (s.channels == 6)))
+          continue;
       }
       Update(s);
     }
@@ -2817,8 +2820,37 @@ bool CDVDPlayer::OpenAudioStream(int iStream, int source, bool reset)
 
   if (!m_pDemuxer)
     return false;
+#ifdef __ANDROID_ALLWINNER__
+   //add begin by chengjg, 20130308
+  SelectionStreams streams;
 
+  // open audio stream
+  if(m_PlayerOptions.video_only)
+    streams.clear();
+  else
+    streams = m_SelectionStreams.Get(STREAM_AUDIO, PredicateAudioPriority);
+
+  CDemuxStream* pStream = NULL;
+
+  for(SelectionStreams::iterator it = streams.begin(); it != streams.end(); ++it)
+  {
+    pStream = m_pDemuxer->GetStream(it->id);
+
+    if (pStream)
+    {
+      if(it->id != iStream)
+        pStream->SetDiscard(AVDISCARD_ALL);
+      else
+        pStream->SetDiscard(AVDISCARD_NONE);
+    }
+  }
+  //add end by chengjg, 20130308
+
+  pStream = m_pDemuxer->GetStream(iStream);
+#else
   CDemuxStream* pStream = m_pDemuxer->GetStream(iStream);
+#endif
+
   if (!pStream || pStream->disabled)
     return false;
 
@@ -2876,7 +2908,37 @@ bool CDVDPlayer::OpenVideoStream(int iStream, int source, bool reset)
   if (!m_pDemuxer)
     return false;
 
+#ifdef __ANDROID_ALLWINNER__
+  //add begin by chengjg, 20130308
+  SelectionStreams streams;
+
+  // open Video stream
+  if(m_PlayerOptions.video_only)
+    streams.clear();
+  else
+    streams = m_SelectionStreams.Get(STREAM_VIDEO, PredicateAudioPriority);
+
+  CDemuxStream* pStream = NULL;
+
+  for(SelectionStreams::iterator it = streams.begin(); it != streams.end(); ++it)
+  {
+    pStream = m_pDemuxer->GetStream(it->id);
+
+    if (pStream)
+    {
+      if(it->id != iStream)
+        pStream->SetDiscard(AVDISCARD_ALL);
+      else
+        pStream->SetDiscard(AVDISCARD_NONE);
+    }
+  }
+  //add end by chengjg, 20130308
+
+  pStream = m_pDemuxer->GetStream(iStream);
+#else
   CDemuxStream* pStream = m_pDemuxer->GetStream(iStream);
+#endif
+
   if(!pStream || pStream->disabled)
     return false;
   pStream->SetDiscard(AVDISCARD_NONE);
@@ -2892,8 +2954,7 @@ bool CDVDPlayer::OpenVideoStream(int iStream, int source, bool reset)
       hint.aspect = aspect;
       hint.forced_aspect = true;
     }
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-	//DVD always using a10 codec 
+#if defined(__ANDROID_ALLWINNER__)
 	hint.software = false;
 #else
 	hint.software = true;
@@ -4136,9 +4197,12 @@ bool CDVDPlayer::CachePVRStream(void) const
       !g_PVRManager.IsPlayingRecording() &&
       g_advancedSettings.m_bPVRCacheInDvdPlayer;
 }
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-void CDVDPlayer::OnA10Created()
+
+#if defined(__ANDROID_ALLWINNER__)
+
+void CDVDPlayer::OnAllWinnerCodecCreated ()
 {
 	m_ready.Set();
 }
+
 #endif 

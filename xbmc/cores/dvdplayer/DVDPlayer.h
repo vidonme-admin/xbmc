@@ -267,8 +267,8 @@ public:
   virtual int GetCacheLevel() const ;
 
   virtual int OnDVDNavResult(void* pData, int iMessage);
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-  virtual void OnA10Created();
+#if defined(__ANDROID_ALLWINNER__)
+  virtual void OnAllWinnerCodecCreated();
 #endif 
 protected:
   friend class CSelectionStreams;

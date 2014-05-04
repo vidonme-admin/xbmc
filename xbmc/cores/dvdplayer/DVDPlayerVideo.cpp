@@ -45,6 +45,10 @@
 #include <iterator>
 #include "utils/log.h"
 
+#ifdef __ANDROID_ALLWINNER__
+void AllWinnerVLFreeQueueItem(void *pItem);
+#endif
+
 using namespace std;
 
 class CPulldownCorrection
@@ -194,7 +198,7 @@ bool CDVDPlayerVideo::OpenStream( CDVDStreamInfo &hint )
   formats  = g_renderManager.SupportedFormats();
 #endif
 
-#if defined(__DVDFAB_FUNC_A10CODEC__)
+#if defined(__ANDROID_ALLWINNER__)
   CDVDVideoCodec* codec = NULL;
   if( m_messageQueue.IsInited() )
   {
@@ -272,8 +276,11 @@ void CDVDPlayerVideo::OpenStream(CDVDStreamInfo &hint, CDVDVideoCodec* codec)
     m_fForcedAspectRatio = 0.0;
 
   if (m_pVideoCodec)
+  {
     delete m_pVideoCodec;
-#if defined(__DVDFAB_FUNC_A10CODEC__)
+    m_pVideoCodec = NULL;
+  }
+#if defined(__ANDROID_ALLWINNER__)
   if( !codec )
   {
 	  unsigned int surfaces = 0;
@@ -1171,9 +1178,9 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
       case RENDER_FMT_CVBREF:
         formatstr = "BGRA";
         break;
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-	  case RENDER_FMT_A10BUF:
-        formatstr = "A10BUF";
+#if defined(__ANDROID_ALLWINNER__)
+	  case RENDER_FMT_ALLWINNER:
+        formatstr = "ABUF";
         break;
 #endif 
       case RENDER_FMT_BYPASS:
@@ -1266,8 +1273,13 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   }
 
   // dropping to a very low framerate is not correct (it should not happen at all)
+#ifdef __ANDROID_ALLWINNER__
+  iClockSleep = min(iClockSleep, DVD_MSEC_TO_TIME(100));
+  iFrameSleep = min(iFrameSleep, DVD_MSEC_TO_TIME(100));
+#else
   iClockSleep = min(iClockSleep, DVD_MSEC_TO_TIME(500));
   iFrameSleep = min(iFrameSleep, DVD_MSEC_TO_TIME(500));
+#endif
 
   if( m_stalled )
     iSleepTime = iFrameSleep;
@@ -1312,6 +1324,10 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
       //this keeps a/v sync if the decoder can't drop, or we're still calculating the framerate
       if (m_iDroppedRequest > 5)
       {
+#ifdef __ANDROID_ALLWINNER__
+        if (pPicture->format == RENDER_FMT_ALLWINNER && pPicture->allWinnerBuffer)
+          AllWinnerVLFreeQueueItem (pPicture->allWinnerBuffer); 
+#endif
         m_iDroppedRequest--; //decrease so we only drop half the frames
         return result | EOS_DROPPED;
       }
@@ -1327,11 +1343,27 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
   {
     if( iClockSleep < -DVD_MSEC_TO_TIME(200)
     && !(pPicture->iFlags & DVP_FLAG_NOSKIP) )
+#ifdef __ANDROID_ALLWINNER__
+    {
+      if (pPicture->format == RENDER_FMT_ALLWINNER && pPicture->allWinnerBuffer)
+        AllWinnerVLFreeQueueItem (pPicture->allWinnerBuffer); 
+#endif
       return result | EOS_DROPPED;
+#ifdef __ANDROID_ALLWINNER__
+    }
+#endif
   }
 
   if( (pPicture->iFlags & DVP_FLAG_DROPPED) )
+#ifdef __ANDROID_ALLWINNER__
+  {
+    if (pPicture->format == RENDER_FMT_ALLWINNER && pPicture->allWinnerBuffer)
+      AllWinnerVLFreeQueueItem (pPicture->allWinnerBuffer); 
+#endif
     return result | EOS_DROPPED;
+#ifdef __ANDROID_ALLWINNER__
+  }
+#endif
 
   if( m_speed != DVD_PLAYSPEED_NORMAL && limited )
   {
@@ -1345,7 +1377,15 @@ int CDVDPlayerVideo::OutputPicture(const DVDVideoPicture* src, double pts)
     m_droptime += iFrameDuration;
 #ifndef PROFILE
     if( next < current && !(pPicture->iFlags & DVP_FLAG_NOSKIP) )
+#ifdef __ANDROID_ALLWINNER__
+    {
+      if (pPicture->format == RENDER_FMT_ALLWINNER && pPicture->allWinnerBuffer)
+        AllWinnerVLFreeQueueItem (pPicture->allWinnerBuffer); 
+#endif
       return result | EOS_DROPPED;
+#ifdef __ANDROID_ALLWINNER__
+    }
+#endif
 #endif
 
     while(!m_bStop && m_dropbase < m_droptime)             m_dropbase += frametime;

@@ -59,6 +59,10 @@ using namespace std;
 using namespace ADDON;
 using namespace PVR;
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
+
 // String id's of the masks
 #define MASK_DAYS   17999
 #define MASK_HOURS  17998
@@ -84,6 +88,17 @@ using namespace PVR;
 #else
 #define DEFAULT_VISUALISATION "visualization.glspectrum"
 #endif
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "utils/URIUtils.h"
+#ifdef _WIN32
+#include <shlobj.h>
+#endif
+#endif
+
+#if defined(__ANDROID_ALLWINNER__)
+#include "android/activity/XBMCApp.h"
 #endif
 
 struct sortsettings
@@ -469,6 +484,33 @@ void CGUISettings::Initialize()
   for(int layout = AE_CH_LAYOUT_2_0; layout < AE_CH_LAYOUT_MAX; ++layout)
     channelLayout.insert(make_pair(34100+layout, layout));
   AddInt(ao, "audiooutput.channels", 34100, AE_CH_LAYOUT_2_0, channelLayout, SPIN_CONTROL_TEXT);
+
+#if defined(__ANDROID_ALLWINNER__)
+
+	CStdString strMode;
+	CXBMCApp::GetActiveAudioDevices(strMode);
+	if (strMode.Equals("AUDIO_HDMI"))
+	{
+		SetInt("audiooutput.mode", AUDIO_HDMI);
+	}
+	else if (strMode.Equals("AUDIO_SPDIF"))
+	{
+		SetInt("audiooutput.mode", AUDIO_IEC958);
+	}
+	else
+	{
+		SetInt("audiooutput.mode", AUDIO_ANALOG);
+	}
+
+	int nPassThrough = CXBMCApp::GetAudioPassthroughValue() ? 1 : 0;
+	map<int,int> mapPassThrough;
+	mapPassThrough.insert(make_pair(351, 0));
+	mapPassThrough.insert(make_pair(16041, 1));
+	AddInt(ao, "audiooutput.passthrough", 70040, nPassThrough, mapPassThrough, SPIN_CONTROL_TEXT);
+	AddInt(NULL, "vdm_audiooutput.passthroughenablehdmi", 70040, nPassThrough, mapPassThrough, SPIN_CONTROL_TEXT);
+	AddInt(NULL, "vdm_audiooutput.passthroughenableoptical", 70040, nPassThrough, mapPassThrough, SPIN_CONTROL_TEXT);
+#endif
+
   AddBool(ao, "audiooutput.normalizelevels", 346, true);
   AddBool(ao, "audiooutput.stereoupmix", 252, false);
 
@@ -485,13 +527,41 @@ void CGUISettings::Initialize()
 #if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
   AddBool(aocat, "audiooutput.passthroughaac"   , 299, false);
 #endif
+
+#if defined(__ANDROID_ALLWINNER__)
+
+  if(VidOnMe::VDMUtils::GetCPUType() == VidOnMe::CT_ALLWINNER_A20)
+  {
+    #if !defined(TARGET_DARWIN_IOS) && !defined(TARGET_RASPBERRY_PI)
+      AddBool(NULL, "audiooutput.multichannellpcm" , 348, true );
+    #endif
+    #if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
+      AddBool(NULL, "audiooutput.truehdpassthrough", 349, true );
+      AddBool(NULL, "audiooutput.dtshdpassthrough" , 347, true );
+    #endif
+  }
+  else if(VidOnMe::VDMUtils::GetCPUType() == VidOnMe::CT_ALLWINNER_A31)
+  {
+    #if !defined(TARGET_DARWIN_IOS) && !defined(TARGET_RASPBERRY_PI)
+      AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
+    #endif
+    #if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
+      AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
+      AddBool(aocat, "audiooutput.dtshdpassthrough" , 347, true );
+    #endif
+  }
+#else
+
 #if !defined(TARGET_DARWIN_IOS) && !defined(TARGET_RASPBERRY_PI)
-  AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
+	AddBool(aocat, "audiooutput.multichannellpcm" , 348, true );
 #endif
 #if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
-  AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
-  AddBool(aocat, "audiooutput.dtshdpassthrough" , 347, true );
+	AddBool(aocat, "audiooutput.truehdpassthrough", 349, true );
+	AddBool(aocat, "audiooutput.dtshdpassthrough" , 347, true );
 #endif
+
+#endif
+
 
 #if !defined(TARGET_RASPBERRY_PI)
 #if defined(TARGET_DARWIN)
@@ -506,9 +576,23 @@ void CGUISettings::Initialize()
 #else
   AddSeparator(ao, "audiooutput.sep1");
   AddString   (ao, "audiooutput.audiodevice"      , 545, CStdString(CAEFactory::GetDefaultDevice(false)), SPIN_CONTROL_TEXT);
-  AddString   (ao, "audiooutput.passthroughdevice", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
+	AddString   (ao, "audiooutput.passthroughdevice", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
   AddSeparator(ao, "audiooutput.sep2");
 #endif
+#endif
+
+#if defined(__ANDROID_ALLWINNER__)
+  map<int,int> passthroughmode;
+  passthroughmode.insert(make_pair(70001, PASSTHROUGH_OUTPUT_MODE_ONE  ));
+  passthroughmode.insert(make_pair(70002, PASSTHROUGH_OUTPUT_MODE_TWO));
+  if(VidOnMe::VDMUtils::GetCPUType() == VidOnMe::CT_ALLWINNER_A20)
+  {
+    AddInt(NULL, "audiooutput.passthroughmode", 70000, PASSTHROUGH_OUTPUT_MODE_ONE, passthroughmode, SPIN_CONTROL_TEXT);
+  }
+  else if(VidOnMe::VDMUtils::GetCPUType() == VidOnMe::CT_ALLWINNER_A31)
+  {
+    AddInt(ao, "audiooutput.passthroughmode", 70000, PASSTHROUGH_OUTPUT_MODE_ONE, passthroughmode, SPIN_CONTROL_TEXT);
+  }
 #endif
 
 #if !defined(TARGET_RASPBERRY_PI)
@@ -516,7 +600,96 @@ void CGUISettings::Initialize()
   guimode.insert(make_pair(34121, AE_SOUND_IDLE  ));
   guimode.insert(make_pair(34122, AE_SOUND_ALWAYS));
   guimode.insert(make_pair(34123, AE_SOUND_OFF   ));
-  AddInt(ao, "audiooutput.guisoundmode", 34120, AE_SOUND_IDLE, guimode, SPIN_CONTROL_TEXT);
+	AddInt(ao, "audiooutput.guisoundmode", 34120, AE_SOUND_IDLE, guimode, SPIN_CONTROL_TEXT);
+#endif
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+
+	map<int,int> vdm_audiomode;
+	vdm_audiomode.insert(make_pair(338,AUDIO_ANALOG));
+#if !defined(TARGET_RASPBERRY_PI)
+	vdm_audiomode.insert(make_pair(339,AUDIO_IEC958));
+#endif
+	vdm_audiomode.insert(make_pair(420,AUDIO_HDMI  ));
+#if defined(TARGET_RASPBERRY_PI)
+	AddInt(NULL, "vdm_audiooutput.mode", 337, AUDIO_HDMI, vdm_audiomode, SPIN_CONTROL_TEXT);
+#else
+	AddInt(NULL, "vdm_audiooutput.mode", 337, AUDIO_ANALOG, vdm_audiomode, SPIN_CONTROL_TEXT);
+#endif
+
+	map<int,int> vdm_channelLayout;
+	for(int layout = AE_CH_LAYOUT_2_0; layout < AE_CH_LAYOUT_MAX; ++layout)
+		vdm_channelLayout.insert(make_pair(34100+layout, layout));
+	AddInt(NULL, "vdm_audiooutput.channels", 34100, AE_CH_LAYOUT_2_0, vdm_channelLayout, SPIN_CONTROL_TEXT);
+
+  AddInt(NULL, "vdm_audiooutput.channelanalog", 34100, AE_CH_LAYOUT_2_0, vdm_channelLayout, SPIN_CONTROL_TEXT);
+
+  AddInt(NULL, "vdm_audiooutput.channeloptical", 34100, AE_CH_LAYOUT_2_0, vdm_channelLayout, SPIN_CONTROL_TEXT);
+  AddInt(NULL, "vdm_audiooutput.channelhdmi", 34100, AE_CH_LAYOUT_2_0, vdm_channelLayout, SPIN_CONTROL_TEXT);
+	
+	AddBool(NULL, "vdm_audiooutput.ac3passthrough"   , 364, true);
+	AddBool(NULL, "vdm_audiooutput.dtspassthrough"   , 254, true);
+
+  AddBool(NULL, "vdm_audiooutput.ac3analog"   , 364, true);
+  AddBool(NULL, "vdm_audiooutput.dtsanalog"   , 254, true);
+
+  AddBool(NULL, "vdm_audiooutput.ac3optical"   , 364, true);
+  AddBool(NULL, "vdm_audiooutput.dtsoptical"   , 254, true);
+
+  AddBool(NULL, "vdm_audiooutput.ac3hdmi"   , 364, true);
+  AddBool(NULL, "vdm_audiooutput.dtshdmi"   , 254, true);
+
+#if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
+	AddBool(NULL, "vdm_audiooutput.passthroughaac"   , 299, false);
+	AddBool(NULL, "vdm_audiooutput.aacanalog"   , 299, false);
+	AddBool(NULL, "vdm_audiooutput.aacoptical"   , 299, false);
+	AddBool(NULL, "vdm_audiooutput.aachdmi"   , 299, false);
+#endif
+#if !defined(TARGET_DARWIN_IOS) && !defined(TARGET_RASPBERRY_PI)
+	AddBool(NULL, "vdm_audiooutput.multichannellpcm" , 348, true );
+	AddBool(NULL, "vdm_audiooutput.lpcmanalog" , 348, true );
+	AddBool(NULL, "vdm_audiooutput.lpcmhdmi" , 348, true );
+#endif
+#if !defined(TARGET_DARWIN) && !defined(TARGET_RASPBERRY_PI)
+	AddBool(NULL, "vdm_audiooutput.truehdpassthrough", 349, true );
+	AddBool(NULL, "vdm_audiooutput.dtshdpassthrough" , 347, true );
+
+  AddBool(NULL, "vdm_audiooutput.truehdanalog", 349, true );
+  AddBool(NULL, "vdm_audiooutput.dtshdanalog" , 347, true );
+
+  AddBool(NULL, "vdm_audiooutput.truehdhdmi", 349, true );
+  AddBool(NULL, "vdm_audiooutput.dtshdhdmi" , 347, true );
+#endif
+
+#if !defined(TARGET_RASPBERRY_PI)
+#if defined(TARGET_DARWIN)
+#if defined(TARGET_DARWIN_IOS)
+	CStdString defaultDeviceName = "Default";
+#else
+	CStdString defaultDeviceName;
+	CCoreAudioHardware::GetOutputDeviceName(defaultDeviceName);
+#endif
+	AddString(NULL, "vdm_audiooutput.audiodevice", 545, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+	AddString(NULL, "vdm_audiooutput.passthroughdevice", 546, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodeviceanalog", 545, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughanalog", 546, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodeviceoptical", 545, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughoptical", 546, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodevicehdmi", 545, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughhdmi", 546, defaultDeviceName.c_str(), SPIN_CONTROL_TEXT);
+#else
+	AddString(NULL, "vdm_audiooutput.audiodevice"      , 545, CStdString(CAEFactory::GetDefaultDevice(false)), SPIN_CONTROL_TEXT);
+	AddString(NULL, "vdm_audiooutput.passthroughdevice", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodeviceanalog"      , 545, CStdString(CAEFactory::GetDefaultDevice(false)), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughanalog", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodeviceoptical"      , 545, CStdString(CAEFactory::GetDefaultDevice(false)), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughoptical", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.audiodevicehdmi"      , 545, CStdString(CAEFactory::GetDefaultDevice(false)), SPIN_CONTROL_TEXT);
+  AddString(NULL, "vdm_audiooutput.passthroughhdmi", 546, CStdString(CAEFactory::GetDefaultDevice(true )), SPIN_CONTROL_TEXT);
+#endif
+#endif
+
 #endif
 
   CSettingsCategory* in = AddCategory(SETTINGS_SYSTEM, "input", 14094);
@@ -621,6 +794,19 @@ void CGUISettings::Initialize()
   CSettingsCategory* dbg = AddCategory(SETTINGS_SYSTEM, "debug", 14092);
   AddBool(dbg, "debug.showloginfo", 20191, false);
   AddPath(dbg, "debug.screenshotpath",20004,"select writable folder",BUTTON_CONTROL_PATH_INPUT,false,657);
+#if defined(__VIDONME_MEDIACENTER__)
+	AddString(dbg, "debug.sendlog", 70020, "", BUTTON_CONTROL_PATH_INPUT);
+  AddString(dbg, "debug.showlog", 70026, "", BUTTON_CONTROL_PATH_INPUT);
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#ifdef _WIN32
+  CStdString strShotPath = URIUtils::AddFileToFolder(CWIN32Util::GetSpecialFolder(CSIDL_MYPICTURES|CSIDL_FLAG_CREATE), "VidOn.me Media Center");
+#else
+  CStdString strShotPath;
+#endif
+	SetString("debug.screenshotpath", strShotPath.c_str());
+#endif
 
   CSettingsCategory* mst = AddCategory(SETTINGS_SYSTEM, "masterlock", 12360);
   AddString(mst, "masterlock.lockcode"       , 20100, "-", BUTTON_CONTROL_STANDARD);
@@ -643,6 +829,16 @@ void CGUISettings::Initialize()
   AddInt(NULL, "cachedvd.lan", 14035, 2048, 0, 256, 16384, SPIN_CONTROL_INT_PLUS, MASK_KB, TEXT_OFF);
   AddSeparator(NULL, "cache.sep4");
   AddInt(NULL, "cacheunknown.internet", 14060, 4096, 0, 256, 16384, SPIN_CONTROL_INT_PLUS, MASK_KB, TEXT_OFF);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  CSettingsCategory* about = AddCategory(SETTINGS_SYSTEM, "vidonme", 60329);
+  AddString(about, "vidonme.version", 19114, "1.0.0.0", BUTTON_CONTROL_PATH_INPUT);
+  AddString(about, "vidonme.id", 560, "", BUTTON_CONTROL_PATH_INPUT);
+  AddString(about, "vidonme.website", 60330, "http://www.vidon.me", BUTTON_CONTROL_PATH_INPUT);
+  AddString(about, "vidonme.forum", 60331, "http://forum.vidon.me", BUTTON_CONTROL_PATH_INPUT);
+  AddString(about, "vidonme.update", 70043, "", BUTTON_CONTROL_STANDARD);
+  AddString(NULL, "vidonme.ignoreversion", 19114, "1.0.0.0", BUTTON_CONTROL_PATH_INPUT);
+#endif
 
   // video settings
   AddGroup(SETTINGS_VIDEOS, 3);
@@ -796,7 +992,10 @@ void CGUISettings::Initialize()
   fontStyles.insert(make_pair(738, FONT_STYLE_NORMAL));
   fontStyles.insert(make_pair(739, FONT_STYLE_BOLD));
   fontStyles.insert(make_pair(740, FONT_STYLE_ITALICS));
+#if defined(__VIDONME_MEDIACENTER__)
+#else
   fontStyles.insert(make_pair(741, FONT_STYLE_BOLD | FONT_STYLE_ITALICS));
+#endif
 
   AddInt(sub, "subtitles.style", 736, FONT_STYLE_BOLD, fontStyles, SPIN_CONTROL_TEXT);
   AddInt(sub, "subtitles.color", 737, SUBTITLE_COLOR_START + 1, SUBTITLE_COLOR_START, 1, SUBTITLE_COLOR_END, SPIN_CONTROL_TEXT);
@@ -818,6 +1017,28 @@ void CGUISettings::Initialize()
   AddInt(dvd, "dvds.playerregion", 21372, 0, 0, 1, 8, SPIN_CONTROL_INT_PLUS, -1, TEXT_OFF);
   AddBool(dvd, "dvds.automenu", 21882, false);
 
+#if defined(__VIDONME_MEDIACENTER__)
+
+  CSettingsCategory* bd = AddCategory(SETTINGS_VIDEOS, "bds", 70035);
+#if defined(__ANDROID_ALLWINNER__)
+  if(VidOnMe::VDMUtils::GetCPUType() != VidOnMe::CT_ALLWINNER_A20)
+  {
+    map<int, int> bdPlayMode;
+    bdPlayMode.insert(make_pair(70037, VS_2D_DISPLAY_THE_ORIGINAL));
+    bdPlayMode.insert(make_pair(70038, VS_3D_INTERLACING));
+    AddInt(bd, "bd.playmode", 70036, VS_2D_DISPLAY_THE_ORIGINAL, bdPlayMode, SPIN_CONTROL_TEXT);
+  }
+#endif
+
+  map<int, int> bdReginCode;
+  bdReginCode.insert(make_pair(70046, VS_REGIONCODE_A));
+  bdReginCode.insert(make_pair(70047, VS_REGIONCODE_B));
+  bdReginCode.insert(make_pair(70048, VS_REGIONCODE_C));
+
+#endif
+
+  AddInt(bd, "bd.regincode", 70045, VS_REGIONCODE_A, bdReginCode, SPIN_CONTROL_TEXT);
+
   AddDefaultAddon(NULL, "scrapers.moviesdefault", 21413, "metadata.themoviedb.org", ADDON_SCRAPER_MOVIES);
   AddDefaultAddon(NULL, "scrapers.tvshowsdefault", 21414, "metadata.tvdb.com", ADDON_SCRAPER_TVSHOWS);
   AddDefaultAddon(NULL, "scrapers.musicvideosdefault", 21415, "metadata.musicvideos.theaudiodb.com", ADDON_SCRAPER_MUSICVIDEOS);
@@ -832,12 +1053,24 @@ void CGUISettings::Initialize()
   AddBool(srvUpnp, "services.upnpserver", 21360, false);
   AddBool(srvUpnp, "services.upnpannounce", 20188, true);
   AddBool(srvUpnp, "services.upnprenderer", 21881, false);
+#if defined(__VIDONME_MEDIACENTER__)
+  AddBool(NULL, "services.upnpcontroller", 21361, false);
+#else
   AddBool(srvUpnp, "services.upnpcontroller", 21361, false);
+#endif
 
 #ifdef HAS_WEB_SERVER
   CSettingsCategory* srvWeb = AddCategory(SETTINGS_SERVICE, "webserver", 33101);
+#if defined(__VIDONME_MEDIACENTER__)
+  AddBool(srvWeb,  "services.webserver",        263, true);
+#else
   AddBool(srvWeb,  "services.webserver",        263, false);
+#endif
+#if defined(__VIDONME_MEDIACENTER__)
+  AddString(srvWeb,"services.webserverport",    730, "32080", EDIT_CONTROL_NUMBER_INPUT, false, 730);
+#else
   AddString(srvWeb,"services.webserverport",    730, CUtil::CanBindPrivileged()?"80":"8080", EDIT_CONTROL_NUMBER_INPUT, false, 730);
+#endif
   AddString(srvWeb,"services.webserverusername",1048, "xbmc", EDIT_CONTROL_INPUT);
   AddString(srvWeb,"services.webserverpassword",733, "", EDIT_CONTROL_HIDDEN_INPUT, true, 733);
   AddDefaultAddon(srvWeb, "services.webskin",199, DEFAULT_WEB_INTERFACE, ADDON_WEB_INTERFACE);
@@ -855,7 +1088,11 @@ void CGUISettings::Initialize()
 #ifdef HAS_ZEROCONF
   CSettingsCategory* srvZeroconf = AddCategory(SETTINGS_SERVICE, "zeroconf", 1259);
 #ifdef TARGET_WINDOWS
+#if defined(__VIDONME_MEDIACENTER__)
+  AddBool(srvZeroconf, "services.zeroconf", 1260, true);
+#else
   AddBool(srvZeroconf, "services.zeroconf", 1260, false);
+#endif //__VIDONME_MEDIACENTER__
 #else
   AddBool(srvZeroconf, "services.zeroconf", 1260, true);
 #endif
@@ -876,12 +1113,20 @@ void CGUISettings::Initialize()
 
   // appearance settings
   AddGroup(SETTINGS_APPEARANCE, 480);
-  CSettingsCategory* laf = AddCategory(SETTINGS_APPEARANCE,"lookandfeel", 166);
-  AddDefaultAddon(laf, "lookandfeel.skin",166,DEFAULT_SKIN, ADDON_SKIN);
+	CSettingsCategory* laf = AddCategory(SETTINGS_APPEARANCE,"lookandfeel", 166);
+#if defined(TARGET_ANDROID)
+  AddDefaultAddon(laf, "lookandfeel.skin",166,"skin.confluence", ADDON_SKIN);
+#else
+	AddDefaultAddon(laf, "lookandfeel.skin",166,DEFAULT_SKIN, ADDON_SKIN);
+#endif
   AddString(laf, "lookandfeel.skinsettings", 21417, "", BUTTON_CONTROL_STANDARD);
   AddString(laf, "lookandfeel.skintheme",15111,"SKINDEFAULT", SPIN_CONTROL_TEXT);
   AddString(laf, "lookandfeel.skincolors",14078, "SKINDEFAULT", SPIN_CONTROL_TEXT);
+#if defined(__VIDONME_MEDIACENTER__)
+  AddString(laf, "lookandfeel.font",13303,"Arial", SPIN_CONTROL_TEXT);
+#else
   AddString(laf, "lookandfeel.font",13303,"Default", SPIN_CONTROL_TEXT);
+#endif
   AddInt(laf, "lookandfeel.skinzoom",20109, 0, -20, 2, 20, SPIN_CONTROL_INT, MASK_PERCENT);
   AddInt(laf, "lookandfeel.startupwindow",512,1, WINDOW_HOME, 1, WINDOW_PYTHON_END, SPIN_CONTROL_TEXT);
   AddString(laf, "lookandfeel.soundskin",15108,"SKINDEFAULT", SPIN_CONTROL_TEXT);
@@ -913,7 +1158,11 @@ void CGUISettings::Initialize()
 #endif
   AddSeparator(loc, "locale.sep3");
   AddString(loc, "locale.audiolanguage", 285, "original", SPIN_CONTROL_TEXT);
+#if defined(__VIDONME_MEDIACENTER__)
+  AddString(loc, "locale.subtitlelanguage", 286, "none", SPIN_CONTROL_TEXT);
+#else
   AddString(loc, "locale.subtitlelanguage", 286, "original", SPIN_CONTROL_TEXT);
+#endif
 
   CSettingsCategory* fl = AddCategory(SETTINGS_APPEARANCE, "filelists", 14081);
   AddBool(fl, "filelists.showparentdiritems", 13306, true);
@@ -1008,6 +1257,16 @@ void CGUISettings::Initialize()
 
   CSettingsCategory* pvrc = AddCategory(SETTINGS_PVR, "pvrclient", 19279);
   AddString(pvrc, "pvrclient.menuhook", 19280, "", BUTTON_CONTROL_STANDARD);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  AddString(NULL, "vdmserver.name", -1, "");
+  AddString(NULL, "vdmserver.ip", -1, "");
+  AddInt(NULL, "vdmserver.mediaport", -1, 40050, 1024, 1, 65535, SPIN_CONTROL_INT);
+  AddInt(NULL, "vdmserver.jsonrpcport", -1, 8080, 1024, 1, 65535, SPIN_CONTROL_INT);
+	AddInt(NULL, "vdmserver.eventport", -1, 9090, 1024, 1, 65535, SPIN_CONTROL_INT);
+  AddInt(NULL, "vdmserver.webport", -1, 8080, 1024, 1, 65535, SPIN_CONTROL_INT);
+  AddBool(NULL, "vdmserver.local", -1, false);
+#endif
 }
 
 CGUISettings::~CGUISettings(void)
@@ -1269,6 +1528,7 @@ const CStdString &CGUISettings::GetString(const char *strSetting, bool bPrompt /
       {
         VECSOURCES shares;
         g_mediaManager.GetLocalDrives(shares);
+
         if (CGUIDialogFileBrowser::ShowAndGetDirectory(shares,g_localizeStrings.Get(result->GetLabel()),strData,result->GetData() == "select writable folder"))
         {
           result->SetData(strData);
@@ -1383,6 +1643,31 @@ void CGUISettings::LoadXML(TiXmlElement *pRootElement, bool hideSettings /* = fa
     }
   }
 
+
+#if defined(__VIDONME_MEDIACENTER__)
+	TiXmlNode *vdmAudio = pRootElement->FirstChild("vdm_audiooutput");
+	if (vdmAudio != NULL)
+	{
+		vdmAudio = vdmAudio->FirstChild("channellayout");
+		CSettingInt* channels = (CSettingInt*)GetSetting("vdm_audiooutput.channels");
+		if (vdmAudio != NULL && vdmAudio->FirstChild() != NULL && channels != NULL)
+		{
+			channels->FromString(vdmAudio->FirstChild()->ValueStr());
+			if (channels->GetData() < AE_CH_LAYOUT_MAX - 1)
+				channels->SetData(channels->GetData() + 1);
+
+			// let's just reset the audiodevice settings as well
+			std::string audiodevice = GetString("vdm_audiooutput.audiodevice");
+			CAEFactory::VerifyOutputDevice(audiodevice, false);
+			SetString("vdm_audiooutput.audiodevice", audiodevice.c_str());
+
+			updated = true;
+		}
+	}
+
+  SetString("vidonme.version", VidOnMe::VDMUtils::Instance().GetCurrentVersionString().c_str());
+#endif
+
   // and fix the videoscreen.screenmode if necessary
   std::string screenmode = GetString("videoscreen.screenmode");
   // in Eden there was no character ("i" or "p") indicating interlaced/progressive
@@ -1450,7 +1735,11 @@ void CGUISettings::LoadXML(TiXmlElement *pRootElement, bool hideSettings /* = fa
     g_langInfo.SetAudioLanguage("");
 
   streamLanguage = GetString("locale.subtitlelanguage");
+#if defined(__VIDONME_MEDIACENTER__)
+  if (!streamLanguage.Equals("original") && !streamLanguage.Equals("default") && !streamLanguage.Equals("none"))
+#else
   if (!streamLanguage.Equals("original") && !streamLanguage.Equals("default"))
+#endif
     g_langInfo.SetSubtitleLanguage(streamLanguage);
   else
     g_langInfo.SetSubtitleLanguage("");

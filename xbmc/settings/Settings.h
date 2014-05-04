@@ -32,6 +32,7 @@
 #else
 #define DEFAULT_SKIN          "skin.confluence"
 #endif
+
 #define DEFAULT_WEB_INTERFACE "webinterface.default"
 #ifdef MID
 #define DEFAULT_VSYNC       VSYNC_DISABLED
@@ -95,6 +96,17 @@ public:
   bool value;
 };
 
+#if defined(__VIDONME_MEDIACENTER__)
+
+enum PlayMode3D
+{
+	Play_Ask = 0,
+	Play_3D,
+	Play_2D
+};
+
+#endif
+
 class CGUISettings;
 class TiXmlElement;
 class TiXmlNode;
@@ -156,6 +168,15 @@ public:
 
   void ResetSkinSetting(const CStdString &setting);
   void ResetSkinSettings();
+
+#if defined(__VIDONME_MEDIACENTER__)
+	bool m_bMouseClickPause;
+	bool m_bResume;
+	bool m_bBDKeyboard;
+	PlayMode3D m_ePlayMode3D;
+	bool m_bNavigating;
+	bool m_bIntroduction;
+#endif
 
   CStdString m_pictureExtensions;
   CStdString m_musicExtensions;

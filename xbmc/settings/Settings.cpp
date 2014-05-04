@@ -76,6 +76,15 @@ void CSettings::Initialize()
     g_graphicsContext.ResetOverscan((RESOLUTION)i, m_ResInfo[i].Overscan);
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  m_bMouseClickPause = true;
+  m_bResume = true;
+  m_bBDKeyboard = true;
+	m_ePlayMode3D = Play_Ask;
+	m_bNavigating = true;
+	m_bIntroduction = true;
+#endif
+
   m_videoStacking = false;
 
   m_bMyMusicSongInfoInVis = true;    // UNUSED - depreciated.
@@ -100,12 +109,15 @@ void CSettings::Initialize()
 
   m_pictureExtensions = ".png|.jpg|.jpeg|.bmp|.gif|.ico|.tif|.tiff|.tga|.pcx|.cbz|.zip|.cbr|.rar|.m3u|.dng|.nef|.cr2|.crw|.orf|.arw|.erf|.3fr|.dcr|.x3f|.mef|.raf|.mrw|.pef|.sr2|.rss";
   m_musicExtensions = ".nsv|.m4a|.flac|.aac|.strm|.pls|.rm|.rma|.mpa|.wav|.wma|.ogg|.mp3|.mp2|.m3u|.mod|.amf|.669|.dmf|.dsm|.far|.gdm|.imf|.it|.m15|.med|.okt|.s3m|.stm|.sfx|.ult|.uni|.xm|.sid|.ac3|.dts|.cue|.aif|.aiff|.wpl|.ape|.mac|.mpc|.mp+|.mpp|.shn|.zip|.rar|.wv|.nsf|.spc|.gym|.adx|.dsp|.adp|.ymf|.ast|.afc|.hps|.xsp|.xwav|.waa|.wvs|.wam|.gcm|.idsp|.mpdsp|.mss|.spt|.rsd|.mid|.kar|.sap|.cmc|.cmr|.dmc|.mpt|.mpd|.rmt|.tmc|.tm8|.tm2|.oga|.url|.pxml|.tta|.rss|.cm3|.cms|.dlt|.brstm|.wtv|.mka";
-  m_videoExtensions = ".m4v|.3g2|.3gp|.nsv|.tp|.ts|.ty|.strm|.pls|.rm|.rmvb|.m3u|.m3u8|.ifo|.mov|.qt|.divx|.xvid|.bivx|.vob|.nrg|.img|.iso|.pva|.wmv|.asf|.asx|.ogm|.m2v|.avi|.bin|.dat|.mpg|.mpeg|.mp4|.mkv|.avc|.vp3|.svq3|.nuv|.viv|.dv|.fli|.flv|.rar|.001|.wpl|.zip|.vdr|.dvr-ms|.xsp|.mts|.m2t|.m2ts|.evo|.ogv|.sdp|.avs|.rec|.url|.pxml|.vc1|.h264|.rcv|.rss|.mpls|.webm|.bdmv|.wtv";
+  m_videoExtensions = ".m4v|.3g2|.3gp|.nsv|.tp|.ts|.ty|.strm|.pls|.rm|.rmvb|.m3u|.m3u8|.ifo|.mov|.qt|.divx|.xvid|.bivx|.vob|.nrg|.img|.iso|.pva|.wmv|.asf|.asx|.ogm|.m2v|.avi|.bin|.dat|.mpg|.mpeg|.mp4|.mkv|.avc|.vp3|.svq3|.nuv|.viv|.dv|.fli|.flv|.rar|.001|.wpl|.zip|.vdr|.dvr-ms|.xsp|.mts|.m2t|.m2ts|.evo|.ogv|.sdp|.avs|.rec|.url|.pxml|.vc1|.h264|.rcv|.rss|.mpls|.webm|.bdmv|.wtv|.ssif";
   m_discStubExtensions = ".disc";
   // internal music extensions
   m_musicExtensions += "|.sidstream|.oggstream|.nsfstream|.asapstream|.cdda";
   // internal video extensions
   m_videoExtensions += "|.pvr";
+#if defined(__VIDONME_MEDIACENTER__)
+  m_videoExtensions += "|.title";
+#endif
 
   #if defined(TARGET_DARWIN)
     CStdString logDir = getenv("HOME");
@@ -655,6 +667,30 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
     return false;
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+	TiXmlElement *pElementVDM = pRootElement->FirstChildElement("VidOnme");
+	if (pElementVDM)
+	{
+		TiXmlElement *pChildPlay = pElementVDM->FirstChildElement("Play");
+		if (pChildPlay)
+		{
+			int nMode = 0;
+			XMLUtils::GetBoolean(pChildPlay, "MouseClickPause", m_bMouseClickPause);
+			XMLUtils::GetBoolean(pChildPlay, "Resume", m_bResume);
+			XMLUtils::GetInt(pChildPlay, "PlayMode3D", nMode);
+			XMLUtils::GetBoolean(pChildPlay, "Navigation", m_bNavigating);
+			XMLUtils::GetBoolean(pChildPlay, "Introduction", m_bIntroduction);
+			m_ePlayMode3D = (PlayMode3D)nMode;
+		}
+
+		TiXmlElement *pChildBD = pElementVDM->FirstChildElement("Bluray");
+		if (pChildBD)
+		{
+			XMLUtils::GetBoolean(pChildBD, "BDKeyboard", m_bBDKeyboard);
+		}
+	}
+#endif
+
   // mymusic settings
   TiXmlElement *pElement = pRootElement->FirstChildElement("mymusic");
   if (pElement)
@@ -773,6 +809,12 @@ bool CSettings::LoadSettings(const CStdString& strSettingsFile)
     GetFloat(pElement, "subtitledelay", m_defaultVideoSettings.m_SubtitleDelay, 0.0f, -10.0f, 10.0f);
     XMLUtils::GetBoolean(pElement, "autocrop", m_defaultVideoSettings.m_Crop);
     XMLUtils::GetBoolean(pElement, "nonlinstretch", m_defaultVideoSettings.m_CustomNonLinStretch);
+#if defined(__VIDONME_MEDIACENTER__)
+    int DimensionMode;
+    GetInteger(pElement, "DimensionMode", DimensionMode,VS_2D_DISPLAY_THE_ORIGINAL,VS_2D_DISPLAY_THE_ORIGINAL,VS_2D3D_MAX);
+    m_defaultVideoSettings.m_DimensionMode = (DIMENSIONMODE)DimensionMode;
+    m_defaultVideoSettings.m_VideoSettingChange = false;
+#endif
 
     m_defaultVideoSettings.m_SubtitleCached = false;
   }
@@ -845,6 +887,27 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   TiXmlNode *pRoot = xmlDoc.InsertEndChild(xmlRootElement);
   if (!pRoot) return false;
   // write our tags one by one - just a big list for now (can be flashed up later)
+
+#if defined(__VIDONME_MEDIACENTER__)
+	TiXmlElement VDMNode("VidOnme");
+	TiXmlNode *pNodeVDM = pRoot->InsertEndChild(VDMNode);
+	if (!pNodeVDM) return false;
+	{
+		TiXmlElement childNodePlay("Play");
+		TiXmlNode *pChildPlay = pNodeVDM->InsertEndChild(childNodePlay);
+		if (!pChildPlay) return false;
+		XMLUtils::SetBoolean(pChildPlay, "MouseClickPause", m_bMouseClickPause);
+		XMLUtils::SetBoolean(pChildPlay, "Resume", m_bResume);
+		XMLUtils::SetInt(pChildPlay, "PlayMode3D", m_ePlayMode3D);
+		XMLUtils::SetBoolean(pChildPlay, "Navigation", m_bNavigating);
+		XMLUtils::SetBoolean(pChildPlay, "Introduction", m_bIntroduction);
+
+		TiXmlElement childNodeBD("Bluray");
+		TiXmlNode *pChildBD = pNodeVDM->InsertEndChild(childNodeBD);
+		if (!pChildBD) return false;
+		XMLUtils::SetBoolean(pChildBD, "BDKeyboard", m_bBDKeyboard);
+	}
+#endif
 
   // mymusic settings
   TiXmlElement musicNode("mymusic");
@@ -944,7 +1007,9 @@ bool CSettings::SaveSettings(const CStdString& strSettingsFile, CGUISettings *lo
   XMLUtils::SetFloat(pNode, "subtitledelay", m_defaultVideoSettings.m_SubtitleDelay);
   XMLUtils::SetBoolean(pNode, "autocrop", m_defaultVideoSettings.m_Crop); 
   XMLUtils::SetBoolean(pNode, "nonlinstretch", m_defaultVideoSettings.m_CustomNonLinStretch);
-
+#if defined(__VIDONME_MEDIACENTER__)
+  XMLUtils::SetInt(pNode, "DimensionMode", m_defaultVideoSettings.m_DimensionMode);
+#endif
 
   // audio settings
   TiXmlElement volumeNode("audio");

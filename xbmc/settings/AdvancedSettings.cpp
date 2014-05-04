@@ -244,7 +244,11 @@ void CAdvancedSettings::Initialize()
   m_iEdlCommBreakAutowait = 0;             // Off by default
   m_iEdlCommBreakAutowind = 0;             // Off by default
 
+#if defined(__VIDONME_MEDIACENTER__)
+  m_curlconnecttimeout = 7;
+#else
   m_curlconnecttimeout = 10;
+#endif
   m_curllowspeedtime = 20;
   m_curlretries = 2;
   m_curlDisableIPV6 = false;      //Certain hardware/OS combinations have trouble
@@ -300,7 +304,11 @@ void CAdvancedSettings::Initialize()
   m_addonPackageFolderSize = 200;
 
   m_jsonOutputCompact = true;
+#if defined(__VIDONME_MEDIACENTER__)
+  m_jsonTcpPort = 39090;
+#else
   m_jsonTcpPort = 9090;
+#endif
 
   m_enableMultimediaKeys = false;
 

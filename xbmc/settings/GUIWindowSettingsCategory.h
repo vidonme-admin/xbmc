@@ -68,7 +68,11 @@ protected:
   void NetworkInterfaceChanged(void);
 
   void FillInAudioDevices(CSetting* pSetting, bool Passthrough = false);
-
+#if defined(__VIDONME_MEDIACENTER__)
+  void UpdateSpeakerConfiguration(CSetting* pSetting);
+  void SetAudioBackups(CStdString strSetting);
+  void UpdateAudioBackups(CStdString strSetting, BaseSettingControlPtr pSettingControl);
+#endif
   virtual void SetupControls();
   CGUIControl* AddIntBasedSpinControl(CSetting *pSetting, float groupWidth, int &iControlID);
   void CreateSettings();

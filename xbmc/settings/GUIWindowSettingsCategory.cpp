@@ -117,6 +117,18 @@
 #include "network/WebServer.h"
 #endif
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#include "vidonme/VDMFeatureLimitNoteDlg.h"
+#include "vidonme/VDMWindowLogSend.h"
+#include "vidonme/VDMSystemUpdate.h"
+#endif
+
+#if defined(__ANDROID_ALLWINNER__)
+#include "android/activity/XBMCApp.h"
+#endif
+
+
 using namespace std;
 using namespace XFILE;
 using namespace ADDON;
@@ -323,6 +335,7 @@ void CGUIWindowSettingsCategory::SetupControls()
   // get a list of different sections
   CSettingsGroup *pSettingsGroup = g_guiSettings.GetGroup(m_iScreen);
   if (!pSettingsGroup) return ;
+
   // update the screen string
   SET_CONTROL_LABEL(CONTROL_SETTINGS_LABEL, pSettingsGroup->GetLabelID());
   // get the categories we need
@@ -471,6 +484,35 @@ void CGUIWindowSettingsCategory::CreateSettings()
       FillInLanguages(pSetting);
       continue;
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (strSetting.Equals("locale.audiolanguage"))
+    {
+      AddSetting(pSetting, group->GetWidth(), iControlID);
+      vector<CStdString> languages;
+      languages.push_back(g_localizeStrings.Get(308));
+      languages.push_back(g_localizeStrings.Get(309));
+      vector<CStdString> languageKeys;
+      languageKeys.push_back("original");
+      languageKeys.push_back("default");
+      FillInLanguages(pSetting, languages, languageKeys);
+      continue;
+    }
+    else if (strSetting.Equals("locale.subtitlelanguage"))
+    {
+      AddSetting(pSetting, group->GetWidth(), iControlID);
+      vector<CStdString> languages;
+      languages.push_back(g_localizeStrings.Get(351));
+      languages.push_back(g_localizeStrings.Get(308));
+      languages.push_back(g_localizeStrings.Get(309));
+      vector<CStdString> languageKeys;
+      languageKeys.push_back("none");
+      languageKeys.push_back("original");
+      languageKeys.push_back("default");
+      FillInLanguages(pSetting, languages, languageKeys);
+      continue;
+    }
+
+#else
     else if (strSetting.Equals("locale.audiolanguage") || strSetting.Equals("locale.subtitlelanguage"))
     {
       AddSetting(pSetting, group->GetWidth(), iControlID);
@@ -483,6 +525,7 @@ void CGUIWindowSettingsCategory::CreateSettings()
       FillInLanguages(pSetting, languages, languageKeys);
       continue;
     }
+#endif
 #ifdef _LINUX
     else if (strSetting.Equals("locale.timezonecountry"))
     {
@@ -567,6 +610,16 @@ void CGUIWindowSettingsCategory::CreateSettings()
       FillInAudioDevices(pSetting,true);
       continue;
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (strSetting.Equals("vidonme.id"))
+    {
+#if defined(TARGET_ANDROID) && defined(__ANDROID_ALLWINNER__)
+      AddSetting(pSetting, group->GetWidth(), iControlID);
+#endif
+      continue;
+    }
+#endif
+
     AddSetting(pSetting, group->GetWidth(), iControlID);
   }
 
@@ -595,12 +648,27 @@ void CGUIWindowSettingsCategory::UpdateSettings()
     }
     else
 #endif
+#if defined(__ANDROID_ALLWINNER__)
+    if (strSetting.Equals("videoscreen.resolution"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl)
+         pControl->SetVisible(false);
+    }
+    else if(strSetting.Equals("videoscreen.screen"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl)
+         pControl->SetVisible(false);
+    }
+#else
     if (strSetting.Equals("videoscreen.resolution"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl)
         pControl->SetEnabled(g_guiSettings.GetInt("videoscreen.screen") != DM_WINDOWED);
     }
+#endif
     else if (strSetting.Equals("videoscreen.screenmode"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
@@ -757,29 +825,108 @@ void CGUIWindowSettingsCategory::UpdateSettings()
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
       if (pControl) pControl->SetEnabled(g_guiSettings.GetInt("audiocds.encoder") == CDDARIP_ENCODER_FLAC);
     }
+#if defined(__ANDROID_ALLWINNER__)
+    else if (
+             strSetting.Equals("audiooutput.ac3passthrough") ||
+             strSetting.Equals("audiooutput.dtspassthrough") ||
+             strSetting.Equals("audiooutput.passthroughaac"))
+    { // only visible if we are in digital mode
+#if defined(__VIDONME_MEDIACENTER__)
+      UpdateAudioBackups(strSetting, pSettingControl);
+#endif
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+			if (pControl) pControl->SetEnabled(AUDIO_IS_BITSTREAM(g_guiSettings.GetInt("audiooutput.mode"))
+#if defined(__ANDROID_ALLWINNER__)
+				&& g_guiSettings.GetInt("audiooutput.passthrough") > 0
+#endif
+				);
+    }
+    else if (strSetting.Equals("audiooutput.audiodevice" ))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl)
+      {
+        pControl->SetVisible(false);
+      }
+    }
+    else if (strSetting.Equals("audiooutput.passthroughdevice"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if (pControl)
+      {
+        pControl->SetVisible(false);
+      }
+    }
+    else if (strSetting.Equals("audiooutput.passthroughmode"))
+    {
+      CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+      if(pControl)
+      {
+         pControl->SetEnabled((g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI) || 
+           (g_guiSettings.GetInt("audiooutput.mode") == AUDIO_IEC958));
+      }
+    }
+#else
     else if (
              strSetting.Equals("audiooutput.passthroughdevice") ||
              strSetting.Equals("audiooutput.ac3passthrough") ||
              strSetting.Equals("audiooutput.dtspassthrough") ||
              strSetting.Equals("audiooutput.passthroughaac"))
     { // only visible if we are in digital mode
+#if defined(__VIDONME_MEDIACENTER__)
+      UpdateAudioBackups(strSetting, pSettingControl);
+#endif
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
-      if (pControl) pControl->SetEnabled(AUDIO_IS_BITSTREAM(g_guiSettings.GetInt("audiooutput.mode")));
+			if (pControl) pControl->SetEnabled(AUDIO_IS_BITSTREAM(g_guiSettings.GetInt("audiooutput.mode"))
+#if defined(__ANDROID_ALLWINNER__)
+				&& g_guiSettings.GetInt("audiooutput.passthrough") > 0
+#endif
+				);
     }
+#endif
     else if (
              strSetting.Equals("audiooutput.multichannellpcm" ) ||
              strSetting.Equals("audiooutput.truehdpassthrough") ||
              strSetting.Equals("audiooutput.dtshdpassthrough" ))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
+#if defined(__VIDONME_MEDIACENTER__)
+      UpdateAudioBackups(strSetting, pSettingControl);
+#endif
       if (pControl)
       {
         if (strSetting.Equals("audiooutput.dtshdpassthrough") && !g_guiSettings.GetBool("audiooutput.dtspassthrough"))
           pControl->SetEnabled(false);
         else
-          pControl->SetEnabled(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI);
+          pControl->SetEnabled(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI 
+#if defined(__ANDROID_ALLWINNER__)
+					&& g_guiSettings.GetInt("audiooutput.passthrough") > 0
+#endif
+					);
       }
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (strSetting.Equals("audiooutput.channels"))
+    {
+      UpdateSpeakerConfiguration(pSettingControl->GetSetting());
+    }
+#endif
+
+#if defined(__ANDROID_ALLWINNER__)
+		else if (strSetting.Equals("audiooutput.passthrough"))
+		{
+			CGUIControl*	pControl = (CGUIControl*)GetControl(pSettingControl->GetID());
+			if (pControl)
+			{
+				pControl->SetEnabled( (g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI) ||
+          (g_guiSettings.GetInt("audiooutput.mode") == AUDIO_IEC958) );
+				((CGUISpinControlEx*)pControl)->SetValue(g_guiSettings.GetInt("audiooutput.passthrough"));
+			}
+
+			pSettingControl->Update();
+		}
+#endif
+
     else if (strSetting.Equals("musicplayer.crossfadealbumtracks"))
     {
       CGUIControl *pControl = (CGUIControl *)GetControl(pSettingControl->GetID());
@@ -1497,6 +1644,18 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
     CSettingString *pSettingString = (CSettingString *)pSettingControl->GetSetting();
     CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
     int iLanguage = pControl->GetValue();
+#if defined(__VIDONME_MEDIACENTER__)
+    if (iLanguage < 3)
+    {
+      if (iLanguage == 0)
+        g_guiSettings.SetString(strSetting, "none");
+      else if (iLanguage == 1)
+        g_guiSettings.SetString(strSetting, "original");
+      else if(iLanguage == 2)
+        g_guiSettings.SetString(strSetting, "default");
+      g_langInfo.SetSubtitleLanguage("");
+    }
+#else
     if (iLanguage < 2)
     {
       if (iLanguage < 1)
@@ -1505,6 +1664,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
         g_guiSettings.SetString(strSetting, "default");
       g_langInfo.SetSubtitleLanguage("");
     }
+#endif
     else
     {
       CStdString strLanguage = pControl->GetCurrentLabel();
@@ -1609,7 +1769,10 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
     else if (strSetting.Equals("subtitles.custompath"))
     {
       bWriteOnly = false;
+#if defined(__VIDONME_MEDIACENTER__)
+#else
       shares = g_settings.m_videoSources;
+#endif
     }
 
     g_mediaManager.GetNetworkLocations(shares);
@@ -1943,7 +2106,7 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
     g_PVRManager.Get().Clients()->ProcessMenuHooks(-1, PVR_MENUHOOK_SETTING);
   }
   else if (strSetting.compare(0, 12, "audiooutput.") == 0)
-  {
+	{
     if (strSetting.Equals("audiooutput.audiodevice"))
     {
       CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
@@ -1958,6 +2121,49 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
       g_guiSettings.SetString("audiooutput.audiodevice", m_AnalogAudioSinkMap[pControl->GetCurrentLabel()]);
 #endif
     }
+
+#if defined(__ANDROID_ALLWINNER__)
+		else if (strSetting.Equals("audiooutput.mode"))
+		{
+			int nPassThrough		= 0;
+			CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(pSettingControl->GetID());
+			if (pControl && pControl->GetValue() == AUDIO_ANALOG)
+			{
+				CXBMCApp::SetActiveAudioDevices("AUDIO_CODEC");
+				nPassThrough = 0;
+			}
+			if (pControl && pControl->GetValue() == AUDIO_IEC958)
+			{
+				CXBMCApp::SetActiveAudioDevices("AUDIO_SPDIF");
+				nPassThrough = g_guiSettings.GetInt("vdm_audiooutput.passthroughenableoptical");;
+			}
+			if (pControl && pControl->GetValue() == AUDIO_HDMI)
+			{
+				CXBMCApp::SetActiveAudioDevices("AUDIO_HDMI");
+				nPassThrough	= g_guiSettings.GetInt("vdm_audiooutput.passthroughenablehdmi");
+			}
+
+			g_guiSettings.SetInt("audiooutput.passthrough", nPassThrough);
+			bool bPassThroughEnable = nPassThrough > 0;
+			CXBMCApp::EnableAudioPassthrough(bPassThroughEnable);
+		}
+		else if (strSetting.Equals("audiooutput.passthrough"))
+		{
+			CGUISpinControlEx* pControl = (CGUISpinControlEx*)GetControl(pSettingControl->GetID());
+			bool bPassThroughEnable = pControl->GetValue() > 0;
+			CXBMCApp::EnableAudioPassthrough(bPassThroughEnable);
+			g_guiSettings.SetInt("audiooutput.passthrough", pControl->GetValue());
+      if(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI)
+      {
+        g_guiSettings.SetInt("vdm_audiooutput.passthroughenablehdmi", pControl->GetValue());
+      }
+      else if(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_IEC958)
+      {
+        g_guiSettings.SetInt("vdm_audiooutput.passthroughenableoptical", pControl->GetValue());
+      }
+		}
+#endif
+
 #if !defined(TARGET_DARWIN)
     else if (strSetting.Equals("audiooutput.passthroughdevice"))
     {
@@ -1969,7 +2175,18 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
     {
       CAEFactory::SetSoundMode(g_guiSettings.GetInt("audiooutput.guisoundmode"));
     }
-
+#if defined(__VIDONME_MEDIACENTER__)
+    else if (strSetting.Equals("audiooutput.channels") ||
+      strSetting.Equals("audiooutput.ac3passthrough") || 
+      strSetting.Equals("audiooutput.dtspassthrough") ||
+      strSetting.Equals("audiooutput.passthroughaac") || 
+      strSetting.Equals("audiooutput.multichannellpcm") ||
+      strSetting.Equals("audiooutput.truehdpassthrough") ||
+      strSetting.Equals("audiooutput.dtshdpassthrough"))
+		{
+      SetAudioBackups(strSetting);
+    }
+#endif
     CAEFactory::OnSettingsChange(strSetting);
   }
   else if (strSetting.Equals("pvrparental.enabled"))
@@ -1990,8 +2207,36 @@ void CGUIWindowSettingsCategory::OnSettingChanged(BaseSettingControlPtr pSetting
       }
     }
   }
+#if defined(__VIDONME_MEDIACENTER__)
+  else if (strSetting.Equals("vidonme.website") || strSetting.Equals("vidonme.forum"))
+  {
+    CStdString strExecute;
+    strExecute.Format("VDMOpenURL(%s)", ((CSettingString*)pSettingControl->GetSetting())->GetData().c_str());
+    CBuiltins::Execute(strExecute);
+  }
+  else if (strSetting.Equals("debug.sendlog"))
+  {
+    CVDMWindowLogSend::Show();
+  }
+  else if (strSetting.Equals("vidonme.update"))
+  {
+    CVDMSystemUpdateDlg::ShowInfo();
+  }
+	else if (strSetting.Equals("debug.showlog"))
+	{
+		CStdString strExecute = g_settings.m_logFolder + "VDMMediaCenter.log";
+		CURL::Encode(strExecute);
+		strExecute.Format("http://127.0.0.1:%d/file/%s", atoi(g_guiSettings.GetString("services.webserverport")), strExecute);
+		strExecute.Format("VDMOpenURL(%s)", strExecute);
+		CBuiltins::Execute(strExecute);
+	}
+#endif
 
   UpdateSettings();
+
+#if defined(__VIDONME_MEDIACENTER__)
+	g_settings.Save();
+#endif
 }
 
 void CGUIWindowSettingsCategory::FreeControls()
@@ -2849,7 +3094,192 @@ void CGUIWindowSettingsCategory::FillInPvrStartLastChannel(CSetting *pSetting)
 
   pControl->SetValue(pSettingInt->GetData());
 }
+#if defined(__VIDONME_MEDIACENTER__)
+void CGUIWindowSettingsCategory::SetAudioBackups(CStdString strSetting)
+{
+  switch(g_guiSettings.GetInt("audiooutput.mode"))
+  {
+  case AUDIO_ANALOG:
+    {
+      if(strSetting.Equals("audiooutput.channels"))
+      {
+        g_guiSettings.SetInt("vdm_audiooutput.channelanalog",g_guiSettings.GetInt("audiooutput.channels"));
+      }
+      break;
+    }
+  case AUDIO_IEC958:
+    {
+      if(strSetting.Equals("audiooutput.channels"))
+      {
+        g_guiSettings.SetInt("vdm_audiooutput.channeloptical",g_guiSettings.GetInt("audiooutput.channels"));
+      }
+      else if(strSetting.Equals("audiooutput.ac3passthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.ac3optical", g_guiSettings.GetBool("audiooutput.ac3passthrough"));
+      }
+      else if(strSetting.Equals("audiooutput.dtspassthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.dtsoptical", g_guiSettings.GetBool("audiooutput.dtspassthrough"));
+      }
+      else if(strSetting.Equals("audiooutput.passthroughaac"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.aacoptical", g_guiSettings.GetBool("audiooutput.passthroughaac"));
+      }
+      break;
+    }
+  case AUDIO_HDMI:
+    {
+      if(strSetting.Equals("audiooutput.channels"))
+      {
+        g_guiSettings.SetInt("vdm_audiooutput.channelhdmi",g_guiSettings.GetInt("audiooutput.channels"));
+      }
+      else if(strSetting.Equals("audiooutput.ac3passthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.ac3hdmi", g_guiSettings.GetBool("audiooutput.ac3passthrough"));
+      }
+      else if(strSetting.Equals("audiooutput.dtspassthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.dtshdmi", g_guiSettings.GetBool("audiooutput.dtspassthrough"));
+      }
+      else if(strSetting.Equals("audiooutput.passthroughaac"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.aachdmi", g_guiSettings.GetBool("audiooutput.passthroughaac"));
+      }
+      else if(strSetting.Equals("audiooutput.multichannellpcm"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.lpcmhdmi", g_guiSettings.GetBool("audiooutput.multichannellpcm"));
+      }
+      else if(strSetting.Equals("audiooutput.truehdpassthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.truehdhdmi", g_guiSettings.GetBool("audiooutput.truehdpassthrough"));
+      }
+      else if(strSetting.Equals("audiooutput.dtshdpassthrough"))
+      {
+        g_guiSettings.SetBool("vdm_audiooutput.dtshdhdmi", g_guiSettings.GetBool("audiooutput.dtshdpassthrough"));
+			}
+      break;
+    }
+  default:
+    break;
+  }
+}
+void CGUIWindowSettingsCategory::UpdateAudioBackups(CStdString strSetting, BaseSettingControlPtr pSettingControl)
+{
+  switch(g_guiSettings.GetInt("audiooutput.mode"))
+  {
+  case AUDIO_ANALOG:
+      break;
+  case AUDIO_IEC958:
+    {
+      if(strSetting.Equals("audiooutput.ac3passthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.ac3passthrough", g_guiSettings.GetBool("vdm_audiooutput.ac3optical"));
+      }
+      else if(strSetting.Equals("audiooutput.dtspassthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.dtspassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtsoptical"));
+      }
+      else if(strSetting.Equals("audiooutput.passthroughaac"))
+      {
+        g_guiSettings.SetBool("audiooutput.passthroughaac", g_guiSettings.GetBool("vdm_audiooutput.aacoptical"));
+      }
+      break;
+    }
+  case AUDIO_HDMI:
+    {
+      if(strSetting.Equals("audiooutput.ac3passthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.ac3passthrough", g_guiSettings.GetBool("vdm_audiooutput.ac3hdmi"));
+      }
+      else if(strSetting.Equals("audiooutput.dtspassthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.dtspassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtshdmi"));
+      }
+      else if(strSetting.Equals("audiooutput.passthroughaac"))
+      {
+        g_guiSettings.SetBool("audiooutput.passthroughaac", g_guiSettings.GetBool("vdm_audiooutput.aachdmi"));
+      }
+      else if(strSetting.Equals("audiooutput.multichannellpcm"))
+      {
+        g_guiSettings.SetBool("audiooutput.multichannellpcm", g_guiSettings.GetBool("vdm_audiooutput.lpcmhdmi"));
+      }
+      else if(strSetting.Equals("audiooutput.truehdpassthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.truehdpassthrough", g_guiSettings.GetBool("vdm_audiooutput.truehdhdmi"));
+      }
+      else if(strSetting.Equals("audiooutput.dtshdpassthrough"))
+      {
+        g_guiSettings.SetBool("audiooutput.dtshdpassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtshdhdmi"));
+			}
+      break;
+    }
+  default:
+    break;
+  }
 
+#if defined(__ANDROID_ALLWINNER__)
+
+	if (!g_guiSettings.GetInt("audiooutput.passthrough") > 0)
+	{
+		g_guiSettings.SetBool("audiooutput.ac3passthrough", false);
+		g_guiSettings.SetBool("audiooutput.dtspassthrough", false);
+		g_guiSettings.SetBool("audiooutput.passthroughaac", false);
+		g_guiSettings.SetBool("audiooutput.multichannellpcm", false);
+		g_guiSettings.SetBool("audiooutput.truehdpassthrough",false);
+		g_guiSettings.SetBool("audiooutput.dtshdpassthrough", false);
+	}
+#endif
+
+  pSettingControl->Update();
+}
+void CGUIWindowSettingsCategory::UpdateSpeakerConfiguration(CSetting* pSetting)
+{
+  CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(pSetting->GetSetting())->GetID());
+  pControl->Clear();
+  if(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_ANALOG)
+  {
+    pControl->AddLabel(g_localizeStrings.Get(34101), AE_CH_LAYOUT_2_0);
+    pControl->SetValue(g_guiSettings.GetInt("vdm_audiooutput.channelanalog"));
+    g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channelanalog"));
+  }
+  else if(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_IEC958)
+  {
+    if( g_guiSettings.GetInt("audiooutput.passthrough") > 0 )
+    {
+      for(int layout = AE_CH_LAYOUT_2_0; layout < AE_CH_LAYOUT_MAX; ++layout)
+      {
+        pControl->AddLabel(g_localizeStrings.Get(34100+layout), layout);
+      }
+      pControl->SetValue(g_guiSettings.GetInt("vdm_audiooutput.channeloptical"));
+    }
+    else
+    {
+      pControl->AddLabel(g_localizeStrings.Get(34101), AE_CH_LAYOUT_2_0);
+      pControl->SetValue(AE_CH_LAYOUT_2_0);
+      g_guiSettings.SetInt("vdm_audiooutput.channeloptical",AE_CH_LAYOUT_2_0);
+    }
+    g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channeloptical"));
+  }
+  else if(g_guiSettings.GetInt("audiooutput.mode") == AUDIO_HDMI)
+  {
+    if( g_guiSettings.GetInt("audiooutput.passthrough") > 0 )
+    {
+      for(int layout = AE_CH_LAYOUT_2_0; layout < AE_CH_LAYOUT_MAX; ++layout)
+      {
+        pControl->AddLabel(g_localizeStrings.Get(34100+layout), layout);
+      }
+      pControl->SetValue(g_guiSettings.GetInt("vdm_audiooutput.channelhdmi"));
+    }
+    else
+    {
+      pControl->AddLabel(g_localizeStrings.Get(34101), AE_CH_LAYOUT_2_0);
+      pControl->SetValue(AE_CH_LAYOUT_2_0);
+      g_guiSettings.SetInt("vdm_audiooutput.channelhdmi",AE_CH_LAYOUT_2_0);
+    }
+    g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channelhdmi"));
+  }
+}
+#endif
 void CGUIWindowSettingsCategory::FillInAudioDevices(CSetting* pSetting, bool Passthrough)
 {
   CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(GetSetting(pSetting->GetSetting())->GetID());

@@ -240,7 +240,12 @@ void CGUIDialogSettings::UpdateSetting(unsigned int id)
       if (setting.formatFunction.range) pControl->SetTextValue(setting.formatFunction.range(*(value[0]), *(value[1]), setting.interval));
     }
   }
-
+#if defined(__VIDONME_MEDIACENTER__)
+  else if(setting.type == SettingInfo::BUTTON)
+  {
+    SET_CONTROL_LABEL(controlID,setting.name);
+  }
+#endif
   if (setting.enabled)
   {
     CONTROL_ENABLE(controlID);

@@ -28,6 +28,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "utils/StdString.h"
+#endif
+
 enum EDEINTERLACEMODE
 {
   VS_DEINTERLACEMODE_OFF=0,
@@ -67,6 +71,28 @@ enum EINTERLACEMETHOD
 
   VS_INTERLACEMETHOD_MAX // do not use and keep as last enum value.
 };
+#if defined(__VIDONME_MEDIACENTER__)
+enum DIMENSIONMODE
+{
+  VS_2D_DISPLAY_THE_ORIGINAL=0,
+  VS_2D_DISPLAY_THE_LEFT_HALF=1,
+  VS_2D_DISPLAY_THE_UPPER_HALF=2,
+  VS_3D_LEFT_RIGHT=3,
+  VS_3D_TOM_BOTTOM=4,
+  VS_3D_INTERLACING=5,
+  VS_3D_LINE_INTERLACING=6,
+  VS_3D_COLUMN_INTERLACING=7,
+  VS_2D3D_MAX
+};
+
+enum REGIONCODE
+{
+  VS_REGIONCODE_A=1,
+  VS_REGIONCODE_B=2,
+  VS_REGIONCODE_C=3
+};
+#endif
+
 
 enum ESCALINGMETHOD
 {
@@ -130,6 +156,11 @@ public:
   int m_CropBottom;
   int m_CropLeft;
   int m_CropRight;
+#if defined(__VIDONME_MEDIACENTER__)
+  DIMENSIONMODE m_DimensionMode;
+  bool m_VideoSettingChange;
+  CStdString m_SubtitlePath;
+#endif
 
 private:
 };

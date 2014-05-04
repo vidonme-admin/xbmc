@@ -41,7 +41,18 @@ CVideoSettings::CVideoSettings()
   m_AudioStream = -1;
   m_SubtitleStream = -1;
   m_SubtitleDelay = 0.0f;
-  m_SubtitleOn = true;
+
+#if defined(__VIDONME_MEDIACENTER__)
+  m_DimensionMode = VS_2D_DISPLAY_THE_ORIGINAL;
+  m_VideoSettingChange = false;
+	m_SubtitleOn = false;
+  m_SubtitlePath = "";
+#else
+
+	m_SubtitleOn = true;
+
+#endif
+
   m_SubtitleCached = false;
   m_Brightness = 50.0f;
   m_Contrast = 50.0f;
@@ -90,5 +101,10 @@ bool CVideoSettings::operator!=(const CVideoSettings &right) const
   if (m_CropBottom != right.m_CropBottom) return true;
   if (m_CropLeft != right.m_CropLeft) return true;
   if (m_CropRight != right.m_CropRight) return true;
+#if defined(__VIDONME_MEDIACENTER__)
+  if (m_DimensionMode != right.m_DimensionMode) return true;
+  if (m_VideoSettingChange != right.m_VideoSettingChange) return true;
+  if (m_SubtitlePath != right.m_SubtitlePath) return true;
+#endif
   return false;
 }

@@ -86,6 +86,11 @@ class TiXmlElement;
 #define AUDIO_HDMI        2
 #define AUDIO_IS_BITSTREAM(x) ((x) == AUDIO_IEC958 || (x) == AUDIO_HDMI)
 
+#if defined(__ANDROID_ALLWINNER__)
+#define PASSTHROUGH_OUTPUT_MODE_ONE      1
+#define PASSTHROUGH_OUTPUT_MODE_TWO      2
+#endif
+
 #define VIDEO_NORMAL 0
 #define VIDEO_LETTERBOX 1
 #define VIDEO_WIDESCREEN 2

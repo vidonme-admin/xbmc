@@ -28,4 +28,9 @@ class CGUIWindowSettings :
 public:
   CGUIWindowSettings(void);
   virtual ~CGUIWindowSettings(void);
+#if defined(__VIDONME_MEDIACENTER_ANDROID__)
+  virtual bool OnMessage(CGUIMessage& message);
+protected:
+  virtual void OnInitWindow();
+#endif
 };

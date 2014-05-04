@@ -26,6 +26,13 @@
 #include "utils/log.h"
 #include "settings/GUISettings.h"
 
+#define __ENABLE_REQUEST_CHANNEL__
+
+#if defined(__ANDROID_ALLWINNER__) && defined(__ENABLE_REQUEST_CHANNEL__)
+static int request_channel = 2;
+#endif
+
+
 CDVDAudioCodecFFmpeg::CDVDAudioCodecFFmpeg() : CDVDAudioCodec()
 {
   m_iBufferSize1 = 0;
@@ -101,6 +108,11 @@ bool CDVDAudioCodecFFmpeg::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options
     m_pCodecContext->extradata = (uint8_t*)m_dllAvUtil.av_mallocz(hints.extrasize + FF_INPUT_BUFFER_PADDING_SIZE);
     memcpy(m_pCodecContext->extradata, hints.extradata, hints.extrasize);
   }
+
+  #if defined(__ANDROID_ALLWINNER__) && defined(__ENABLE_REQUEST_CHANNEL__)
+  if (hints.codec == CODEC_ID_TRUEHD && (hints.channels == 8 || hints.channels == 6))
+    m_pCodecContext->request_channels = request_channel;
+#endif
 
   if (m_dllAvCodec.avcodec_open2(m_pCodecContext, pCodec, NULL) < 0)
   {
@@ -246,6 +258,10 @@ void CDVDAudioCodecFFmpeg::Reset()
 
 int CDVDAudioCodecFFmpeg::GetChannels()
 {
+#if defined(__ANDROID_ALLWINNER__) && defined(__ENABLE_REQUEST_CHANNEL__)
+  return request_channel;
+#endif
+
   return m_pCodecContext->channels;
 }
 

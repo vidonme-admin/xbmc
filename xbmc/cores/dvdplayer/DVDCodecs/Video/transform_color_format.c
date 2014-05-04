@@ -418,6 +418,98 @@ static void SoftwarePictureScaler(ScalerParameter *cdx_scaler_para)
 	return;
 }
 
+void TransformToGPUBuffer (cedarv_picture_t* pict, void* ybuf)
+{
+	ScalerParameter cdx_scaler_para;
+	int             display_height_align;
+	int             display_width_align;
+	int             dst_c_stride;
+	int             dst_y_size;
+	int             dst_c_size;
+	int             alloc_size;
+
+//    ALOGD("omx transformtyv12, pict->display_width[%d], pict->display_height[%d], pict:size_y[%d],size_u[%d]",
+//        pict->display_width, pict->display_height, pict->size_y, pict->size_u);
+    //memcpy(ybuf, pict->y, pict->size_y + pict->size_u); 
+
+    {
+    	int i;
+    	int widthAlign;
+    	int heightAlign;
+    	int cHeight;
+    	int cWidth;
+    	int dstCStride;
+        int GPUFBStride;
+        int extraHeight;    //the interval between heightalign and display_height
+    	unsigned char* dstPtr;
+    	unsigned char* srcPtr;
+    	dstPtr = (unsigned char*)ybuf;
+    	//srcPtr = (unsigned char*)cedarv_address_phy2vir((void*)pOverlayParam->addr[0]);
+        srcPtr = pict->y;
+    	//widthAlign = (mWidth + 15) & ~15;
+    	//heightAlign = (mHeight + 15) & ~15;
+        widthAlign = (pict->display_width+15)&~15;  //hw_decoder is 16pixel align
+    	heightAlign = (pict->display_height+15)&~15;
+        GPUFBStride = (pict->display_width + 31)&~31;   //gpu is 32pixel align
+    	for(i=0; i<pict->display_height; i++)
+    	{
+    		memcpy(dstPtr, srcPtr, widthAlign);
+    		dstPtr += GPUFBStride;
+    		srcPtr += widthAlign;
+    	}
+        //skip hw decoder's extra line of y
+        extraHeight = heightAlign - pict->display_height;
+        if(extraHeight > 0)
+        {
+//            ALOGD("extraHeight[%d],heightAlign[%d],display_height[%d], need skip hwdecoderBuffer extra lines",
+//                extraHeight, heightAlign, pict->display_height);
+            for(i=0; i<extraHeight; i++)
+            {
+                srcPtr += widthAlign;
+            }
+        }
+        
+    	//cWidth = (mWidth/2 + 15) & ~15;
+    	cWidth = (pict->display_width/2 + 15) & ~15;    //equal to GPUFBStride/2. hw_decoder's uv is 16pixel align
+    	cHeight = heightAlign;
+    	//v
+    	for(i=0; i<(pict->display_height+1)/2; i++)
+    	{
+            memcpy(dstPtr, srcPtr, cWidth);
+            dstPtr += GPUFBStride/2;    //a31 gpu, uv is half of y
+            srcPtr += cWidth;
+    	}
+        extraHeight = heightAlign/2 - (pict->display_height+1)/2;
+        if(extraHeight > 0)
+        {
+//            ALOGD("uv extraHeight[%d],heightAlign[%d],display_height[%d], need skip hwdecoderBuffer uv extra lines",
+//                extraHeight, heightAlign, pict->display_height);
+            for(i=0;i<extraHeight;i++)
+            {
+                srcPtr += cWidth;
+            }
+        }
+        //u
+        for(i=0; i<(pict->display_height+1)/2; i++)
+    	{
+            memcpy(dstPtr, srcPtr, cWidth);
+            dstPtr += GPUFBStride/2;    //a31 gpu, uv is half of y
+            srcPtr += cWidth;
+    	}
+        //extraHeight = heightAlign/2 - (pict->display_height+1)/2;
+        //if(extraHeight > 0)
+        //{
+        //    ALOGD("uv extraHeight[%d],heightAlign[%d],display_height[%d], need skip hwdecoderBuffer uv extra lines",
+        //        extraHeight, heightAlign, pict->display_height);
+        //    for(i=0;i<extraHeight;i++)
+        //    {
+        //        srcPtr += cWidth;
+        //    }
+        //}
+    }
+    return;
+}
+
 void TransformToYUVPlaner(cedarv_picture_t* pict, void* ybuf, int display_height_align, int display_width_align,
 int dst_c_stride,
 int dst_y_size, int dst_c_size)

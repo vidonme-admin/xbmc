@@ -23,6 +23,9 @@ SRCS += OpenMaxVideo.cpp
 SRCS += DVDVideoCodecOpenMax.cpp
 endif
 
+SRCS += transform_color_format.cpp
+SRCS += DVDVideoCodecAllWinner.cpp
+
 LIB=Video.a
 
 include @abs_top_srcdir@/Makefile.include

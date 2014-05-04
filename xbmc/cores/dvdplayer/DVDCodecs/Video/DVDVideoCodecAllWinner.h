@@ -20,22 +20,23 @@
  *  http://www.gnu.org/copyleft/gpl.html
  *
  */
+#if defined(__ANDROID_ALLWINNER__)
 
 #include "guilib/Geometry.h"
 #include "DVDVideoCodec.h"
 #include "DVDStreamInfo.h"
 
 extern "C" {
-#include "cores/a10/libcedarv.h"
-#include "cores/a10/DllLibcedarv.h"
+#include "cores/allwinner/libcedarv.h"
+#include "cores/allwinner/DllLibcedarv.h"
 };
 
-class CDVDVideoCodecA10 : public CDVDVideoCodec
+class CDVDVideoCodecAllWinner : public CDVDVideoCodec
 {
 public:
 
-  CDVDVideoCodecA10();
-  virtual ~CDVDVideoCodecA10();
+  CDVDVideoCodecAllWinner();
+  virtual ~CDVDVideoCodecAllWinner();
 
   /*
    * Open the decoder, returns true on success
@@ -128,14 +129,10 @@ public:
 
   void FreePicture(void *pictpriv, cedarv_picture_t &pict);
 
+  int GetAllWinnerProductType ();
+
 private:
 
-  bool DoOpen();
-
-  //rendering
-  bool m_hwrender;
-
-  //decoding
   cedarv_stream_info_t  m_info;
   float                 m_aspect;
   CDVDStreamInfo        m_hints;
@@ -144,26 +141,16 @@ private:
   u8                   *m_yuvdata;
   DVDVideoPicture       m_picture;
 
-protected:
-
-  // bitstream to bytestream (Annex B) conversion support.
-  bool bitstream_convert_init(void *in_extradata, int in_extrasize);
-  bool bitstream_convert(BYTE* pData, int iSize, uint8_t **poutbuf, int *poutbuf_size);
-  void bitstream_alloc_and_copy( uint8_t **poutbuf, int *poutbuf_size,
-		const uint8_t *sps_pps, uint32_t sps_pps_size, const uint8_t *in, uint32_t in_size);
-
-  typedef struct a10_bitstream_ctx {
-	  uint8_t  length_size;
-	  uint8_t  first_idr;
-	  uint8_t *sps_pps_data;
-	  uint32_t size;
-  } a10_bitstream_ctx;
-
-  uint32_t          m_sps_pps_size;
-  a10_bitstream_ctx m_sps_pps_context;
-  bool              m_convert_bitstream;
+  int                   m_productType; 
+  int                   m_last_alloc_size;
 };
 
 //////////////////////////////////////////////////////////////////////////
 
-static DllLibA10decoder g_libbdv;
+static DllLibAllWinnerA10XBMCDecoder g_libbdv_a10_xbmc_minipc;
+static DllLibAllWinnerAllWinnerDecoder g_libbdv_allwinner;        
+static DllLibAllWinnerAllWinnerOsal g_libbdv_allwinner_osal;                   
+static DllLibAllWinnerAllWinnerBase g_libbdv_allwinner_base;                   
+static DllLibAllWinnerAllWinnerSunxi g_libbdv_allwinner_sunxi;                 
+
+#endif

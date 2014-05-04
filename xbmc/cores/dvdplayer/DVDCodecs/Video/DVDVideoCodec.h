@@ -38,7 +38,7 @@ class CVDPAU;
 class COpenMax;
 class COpenMaxVideo;
 struct OpenMaxVideoBuffer;
-struct A10VLQueueItem;
+struct AllWinnerVLQueueItem;
 
 // should be entirely filled by all codecs
 struct DVDVideoPicture
@@ -72,7 +72,7 @@ struct DVDVideoPicture
     };
 
     struct {
-      A10VLQueueItem *a10buffer;
+      AllWinnerVLQueueItem *allWinnerBuffer;
     };
   };
 

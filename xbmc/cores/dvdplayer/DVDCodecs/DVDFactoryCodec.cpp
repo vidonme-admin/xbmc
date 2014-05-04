@@ -31,8 +31,8 @@
 #include "Video/DVDVideoCodecVideoToolBox.h"
 #endif
 
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-#include "Video/DVDVideoCodecA10.h"
+#if defined(__ANDROID_ALLWINNER__)
+#include "Video/DVDVideoCodecAllWinner.h"
 #include "Application.h"
 #endif 
 
@@ -176,8 +176,8 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
   hwSupport += "VAAPI:no ";
 #endif
 
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-  hwSupport += "A10:yes";
+#if defined(__ANDROID_ALLWINNER__)
+  hwSupport += "AllWinner:yes";
 #endif 
   CLog::Log(LOGDEBUG, "CDVDFactoryCodec: compiled in hardware support: %s", hwSupport.c_str());
 
@@ -186,30 +186,22 @@ CDVDVideoCodec* CDVDFactoryCodec::CreateVideoCodec(CDVDStreamInfo &hint, unsigne
   {
     if( (pCodec = OpenCodec(new CDVDVideoCodecLibMpeg2(), hint, options)) ) return pCodec;
   }
-#if defined(__DVDFAB_FUNC_A10CODEC__)
+
+#if defined(__ANDROID_ALLWINNER__)
 
   if(!hint.software)
   {
-	  //all will using a10 codec 
-	  /*
-	  if (hint.codec == CODEC_ID_H264 || 
-		  hint.codec == CODEC_ID_MPEG2VIDEO || 
-		  hint.codec == CODEC_ID_VC1 || 
-		  hint.codec == CODEC_ID_MPEG4)
-	   */
-	  {
-		  if(pCodec = OpenCodec(new CDVDVideoCodecA10(), hint, options))
-		  {
-			  CLog::Log(LOGDEBUG, "CDVDFactoryCodec, create a10 codec. info application");
+    if(pCodec = OpenCodec(new CDVDVideoCodecAllWinner (), hint, options))
+    {
+      CLog::Log(LOGDEBUG, "CDVDFactoryCodec, create a10 codec. info application");
 
-			  //TODO, this function need check it
-			  g_application.OnA10Created();
-			  return pCodec;
-		  }
-	  }
+      g_application.OnAllWinnerCodecCreated ();
+      return pCodec;
+    }
   }
 
 #endif 
+
 #if defined(HAVE_LIBVDADECODER)
   if (!hint.software && g_guiSettings.GetBool("videoplayer.usevda"))
   {

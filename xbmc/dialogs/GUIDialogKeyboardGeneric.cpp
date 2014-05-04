@@ -110,6 +110,12 @@ bool CGUIDialogKeyboardGeneric::OnAction(const CAction &action)
   {
     Backspace();
   }
+#if defined(__VIDONME_MEDIACENTER__)
+  else if (action.GetID() == ACTION_NAV_BACK)
+  {
+    Close();
+  }
+#endif
   else if (action.GetID() == ACTION_ENTER)
   {
     OnOK();

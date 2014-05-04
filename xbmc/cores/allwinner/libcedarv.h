@@ -155,10 +155,16 @@ extern "C" {
         CEDARV_PIXEL_FORMAT_YUV420     = 0xd,
         CEDARV_PIXEL_FORMAT_YUV411     = 0xe,
         CEDARV_PIXEL_FORMAT_CSIRGB     = 0xf,
-        CEDARV_PIXEL_FORMAT_AW_YUV420  = 0x10,
-        CEDARV_PIXEL_FORMAT_AW_YUV422  = 0x11,
-        CEDARV_PIXEL_FORMAT_AW_YUV411  = 0x12
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV420  = 0x10,
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV422  = 0x11,
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV411  = 0x12,
+        CEDARV_PIXEL_FORMAT_PLANNER_YUV420        = 0x13,
+        CEDARV_PIXEL_FORMAT_PLANNER_YVU420        = 0x14
     }cedarv_pixel_format_e;
+	
+	#define CEDARV_PIXEL_FORMAT_AW_YUV420 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV420
+	#define CEDARV_PIXEL_FORMAT_AW_YUV422 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV422
+	#define CEDARV_PIXEL_FORMAT_AW_YUV411 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV411
     
 	#define CEDARV_PICT_PROP_NO_SYNC   0x1
         
@@ -285,7 +291,12 @@ extern "C" {
 
         CEDARV_COMMAND_FLUSH,
         CEDARV_COMMAND_CLOSE_MAF,
-        CEDARV_COMMAND_SET_DEMUX_TYPE
+        CEDARV_COMMAND_SET_DEMUX_TYPE,
+        CEDARV_COMMAND_DECODE_NO_DELAY,
+		CEDARV_COMMAND_SET_DYNAMIC_ROTATE_ANGLE,
+        CEDARV_COMMAND_DYNAMIC_ROTATE,
+        CEDARV_COMMAND_SET_VBV_SIZE,
+        CEDARV_COMMAND_SET_PIXEL_FORMAT			//1633
     }cedarv_io_cmd_e;
     
     
@@ -328,21 +339,14 @@ extern "C" {
         void *cedarx_cookie;
     };
 
-    cedarv_decoder_t* libcedarv_init(s32 *ret);
-    s32 libcedarv_exit(cedarv_decoder_t* p);
 
-    void libcedarv_free_vbs_buffer_sem(void* vdecoder);
-
-    #define LIBVE_DEBUG
-    #ifdef LIBVE_DEBUG
-    #define __msg(msg...) {printf("%s:%d   ", __FILE__, __LINE__); printf(msg); printf("\n");}
-    #else
-    #define __msg(msg...) ((void)0)
-    #endif
-
+cedarv_decoder_t* libcedarv_init(s32 *ret);
+s32 libcedarv_exit(cedarv_decoder_t* p);
 #ifdef __cplusplus
 }
 #endif
 
 
+
 #endif
+

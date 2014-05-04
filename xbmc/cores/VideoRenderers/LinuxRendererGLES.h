@@ -33,6 +33,11 @@
 #include "BaseRenderer.h"
 #include "xbmc/cores/dvdplayer/DVDCodecs/Video/DVDVideoCodec.h"
 
+#ifdef __ANDROID_ALLWINNER__
+#include "xbmc/cores/dvdplayer/DVDCodecs/Video/DVDVideoCodecAllWinner.h"
+#include "cores/allwinner/drv_display.h"
+#endif
+
 class CRenderCapture;
 
 class CBaseTexture;
@@ -86,7 +91,13 @@ enum RenderMethod
   RENDER_POT    = 0x010,
   RENDER_OMXEGL = 0x040,
   RENDER_CVREF  = 0x080,
+
+#if defined(__ANDROID_ALLWINNER__)
+  RENDER_BYPASS = 0x100,
+  RENDER_ALLWINNER = 0x400
+#else
   RENDER_BYPASS = 0x100
+#endif
 };
 
 enum RenderQuality
@@ -157,6 +168,10 @@ public:
 #endif
 #ifdef HAVE_VIDEOTOOLBOXDECODER
   virtual void         AddProcessor(struct __CVBuffer *cvBufferRef);
+#endif
+
+#ifdef __ANDROID_ALLWINNER__
+ virtual void AddProcessor(struct AllWinnerVLQueueItem *pVidBuff);
 #endif
 
 protected:
@@ -250,6 +265,10 @@ protected:
   struct __CVBuffer *cvBufferRef;
 #endif
 
+#ifdef __ANDROID_ALLWINNER__
+  AllWinnerVLQueueItem *allWinnerBuffer;
+#endif
+
   };
 
   typedef YUVBUFFER          YUVBUFFERS[NUM_BUFFERS];
@@ -297,5 +316,56 @@ inline int NP2( unsigned x )
     return ++x;
 }
 #endif
+
+extern "C" {
+#include "cores/allwinner/libcedarv.h"
+#include "cores/allwinner/drv_display_sun4i.h"
+}
+
+#define DISPQS 100
+
+typedef void (*AllWinnerVLCALLBACK)(void *callbackpriv, void *pictpriv, cedarv_picture_t &pict); //cleanup function
+
+struct AllWinnerVLQueueItem
+{
+  int               decnr;
+  AllWinnerVLCALLBACK     callback;
+  void             *callbackpriv;
+  void             *pictpriv;
+  cedarv_picture_t  pict;
+};
+
+typedef struct
+{
+  int width_in;
+  int height_in;
+  int width_out;
+  int height_out;
+  u32 addr_y_in;
+  u32 addr_c_in;
+  u32 addr_y_out;
+  u32 addr_u_out;
+  u32 addr_v_out;
+} AllWinnerVLScalerParameter;
+
+bool AllWinnerVLInit(float aspect, int dispw, int disph, int &width, int &height);
+
+void AllWinnerVLExit ();
+
+void AllWinnerVLHide ();
+
+AllWinnerVLQueueItem *AllWinnerVLPutQueue (AllWinnerVLCALLBACK     callback,
+                              void             *callbackpriv,
+                              void             *pictpriv,
+                              cedarv_picture_t &pict);
+
+void AllWinnerVLFreeQueue ();
+void AllWinnerVLFreeAQueue ();
+
+BOOL AllWinnerVLFreeQueueItem(void *pItem);
+void AllWinnerVLDisplayQueueItem (AllWinnerVLQueueItem *pItem, CRect &srcRect, CRect &dstRect);
+
+int  AllWinnerVLDisplayPictureForA10 (cedarv_picture_t &pict, int refnr, CRect &srcRect, CRect &dstRect);
+int  AllWinnerVLDisplayPicture (cedarv_picture_t &pict, int refnr, CRect &srcRect, CRect &dstRect);
 
 #endif

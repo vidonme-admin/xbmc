@@ -60,6 +60,16 @@
 #include "osx/DarwinUtils.h"
 #endif
 
+#ifdef __ANDROID_ALLWINNER__
+
+#include "Application.h"
+
+static bool clearFlag = true;
+extern DllLibAllWinnerA10XBMCDecoder g_libbdv_a10_xbmc_minipc;
+extern int m_allwinner_productType;
+
+#endif
+
 using namespace Shaders;
 
 CLinuxRendererGLES::YUVBUFFER::YUVBUFFER()
@@ -112,6 +122,20 @@ CLinuxRendererGLES::CLinuxRendererGLES()
 
   m_dllSwScale = new DllSwScale;
   m_sw_context = NULL;
+
+#ifdef __ANDROID_ALLWINNER__
+  //2013/03/16,非A31 PAD的都认为是之前版本的MiniPC 
+  if (m_allwinner_productType != CApplication::ALLWINNER_A31_PAD)
+  {
+    if (!g_libbdv_a10_xbmc_minipc.IsLoaded ())
+    {
+      g_libbdv_a10_xbmc_minipc.EnableDelayedUnload (false);
+      if (!g_libbdv_a10_xbmc_minipc.Load ())
+        CLog::Log (LOGERROR, "Load codec failed !");
+    }
+  }
+
+#endif
 }
 
 CLinuxRendererGLES::~CLinuxRendererGLES()
@@ -215,6 +239,13 @@ int CLinuxRendererGLES::GetImage(YV12Image *image, int source, bool readonly)
   /* take next available buffer */
   if( source == AUTOSOURCE )
    source = NextYV12Texture();
+
+#ifdef __ANDROID_ALLWINNER__
+  if (m_renderMethod & RENDER_ALLWINNER)
+  {
+    return source;
+  }
+#endif
 
   if ( m_renderMethod & RENDER_OMXEGL )
   {
@@ -434,12 +465,45 @@ void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
     g_graphicsContext.EndPaint();
     return;
   }
+#ifdef __ANDROID_ALLWINNER__
+  else if (m_renderMethod & RENDER_ALLWINNER)
+  {
+    ManageDisplay();
+    ManageTextures();
+
+    if (m_RenderUpdateCallBackFn)
+      (*m_RenderUpdateCallBackFn)(m_RenderUpdateCallBackCtx, m_sourceRect, m_destRect);
+    if (clearFlag)
+    {
+      clearFlag = false;
+      g_graphicsContext.BeginPaint();
+
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      glClearColor(0.0/255, 0.0/255, 0.0/255, 0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      glClearColor(0, 0, 0, 0);
+
+      g_graphicsContext.EndPaint();
+    }
+  }
+#endif
 
   // this needs to be checked after texture validation
   if (!m_bImageReady) return;
 
   int index = m_iYV12RenderBuffer;
   YUVBUFFER& buf =  m_buffers[index];
+
+#ifdef __ANDROID_ALLWINNER__
+  if (m_renderMethod & RENDER_ALLWINNER)
+  {
+    AllWinnerVLDisplayQueueItem(buf.allWinnerBuffer, m_sourceRect, m_destRect);
+    m_iLastRenderBuffer = index;
+    VerifyGLState();
+    return;
+  }
+#endif
 
   if (m_format != RENDER_FMT_OMXEGL)
   {
@@ -625,6 +689,15 @@ void CLinuxRendererGLES::LoadShaders(int field)
   {
     case RENDER_METHOD_AUTO:
     case RENDER_METHOD_GLSL:
+#ifdef __ANDROID_ALLWINNER__
+      if (m_format == RENDER_FMT_ALLWINNER)
+      {
+        CLog::Log(LOGNOTICE, "using AllWinner render method");
+        m_renderMethod = RENDER_ALLWINNER;
+        break;
+      }
+      else
+#endif
       if (m_format == RENDER_FMT_OMXEGL)
       {
         CLog::Log(LOGNOTICE, "GL: Using OMXEGL RGBA render method");
@@ -1999,6 +2072,680 @@ void CLinuxRendererGLES::AddProcessor(struct __CVBuffer *cvBufferRef)
   CVBufferRetain(buf.cvBufferRef);
 }
 #endif
+
+#ifdef __ANDROID_ALLWINNER__
+
+void CLinuxRendererGLES::AddProcessor(struct AllWinnerVLQueueItem *buffer)
+{
+  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+
+  buf.allWinnerBuffer = buffer;
+}
+/*
+ * Video layer functions
+ */
+
+static int             g_hdisp = -1;
+static int             g_screenid = 0;
+static int             g_syslayer = 0x64;
+static int             g_hlayer = 0;
+static int             g_width;
+static int             g_height;
+static CRect           g_srcRect;
+static CRect           g_dstRect;
+static int             g_lastnr;
+static int             g_decnr;
+static int             g_wridx;
+static int             g_rdidx;
+static AllWinnerVLQueueItem  g_dispq[DISPQS];
+static pthread_mutex_t g_dispq_mutex;
+
+static __disp_layer_info_t             UIOLdLayerAttr;
+
+bool AllWinnerVLInit (float aspect, int dispw, int disph, int &width, int &height)
+{
+  unsigned long       args[4];
+  __disp_layer_info_t layera;
+  unsigned int        i;
+
+  clearFlag = true;
+
+  if (g_hdisp != -1) return true;
+
+  pthread_mutex_init (&g_dispq_mutex, NULL);
+
+  g_hdisp = open ("/dev/disp", O_RDWR);
+  if (g_hdisp == -1)
+  {
+    CLog::Log (LOGERROR, "AllWinner: open /dev/disp failed. (%d)", errno);
+    return false;
+  }
+
+  args[0] = g_screenid;
+  args[1] = 0;
+  args[2] = 0;
+  args[3] = 0;
+  width  = g_width  = ioctl (g_hdisp, DISP_CMD_SCN_GET_WIDTH , args);
+  height = g_height = ioctl (g_hdisp, DISP_CMD_SCN_GET_HEIGHT, args);
+
+  args[0] = g_screenid;
+  args[1] = g_syslayer;
+  args[2] = (unsigned long) (&UIOLdLayerAttr);
+
+  ioctl(g_hdisp, DISP_CMD_LAYER_GET_PARA, args);
+
+  if (m_allwinner_productType == CApplication::ALLWINNER_A31_PAD)
+  {
+    args[0] = g_screenid;    
+    args[1] = 2;    
+    ioctl (g_hdisp, DISP_CMD_SET_OVL_MODE, args);
+  }
+  else 
+  {
+    if (g_height > 720)
+    {
+      //set workmode scaler (system layer)
+      args[0] = g_screenid;
+      args[1] = g_syslayer;
+      args[2] = (unsigned long) (&layera);
+      args[3] = 0;
+      ioctl(g_hdisp, DISP_CMD_LAYER_GET_PARA, args);
+      layera.mode = DISP_LAYER_WORK_MODE_SCALER;
+      args[0] = g_screenid;
+      args[1] = g_syslayer;
+      args[2] = (unsigned long) (&layera);
+      args[3] = 0;
+      ioctl(g_hdisp, DISP_CMD_LAYER_SET_PARA, args);
+    }
+    else
+    {
+      //#### (1280-720), src(0/0/1280/720), scn(32/18/1216/684)
+      //set workmode normal (system layer)
+      args[0] = g_screenid;
+      args[1] = g_syslayer;
+      args[2] = (unsigned long) (&layera);
+      args[3] = 0;
+      ioctl(g_hdisp, DISP_CMD_LAYER_GET_PARA, args);
+      //source window information
+      layera.src_win.x      = 0;
+      layera.src_win.y      = 0;
+      layera.src_win.width  = g_width;
+      layera.src_win.height = g_height;
+      //screen window information
+      layera.scn_win.x      = 32;
+      layera.scn_win.y      = 18;
+      layera.scn_win.width  = 1216;
+      layera.scn_win.height = 684;
+      //layera.mode = DISP_LAYER_WORK_MODE_NORMAL;
+      layera.mode = DISP_LAYER_WORK_MODE_SCALER;
+      args[0] = g_screenid;
+      args[1] = g_syslayer;
+      args[2] = (unsigned long) (&layera);
+      args[3] = 0;
+      ioctl(g_hdisp, DISP_CMD_LAYER_SET_PARA, args);
+    }
+  }
+
+  args[0] = g_screenid;
+  args[1] = DISP_LAYER_WORK_MODE_SCALER;
+  args[2] = 0;
+  args[3] = 0;
+  g_hlayer = ioctl(g_hdisp, DISP_CMD_LAYER_REQUEST, args);
+  if (g_hlayer <= 0)
+  {
+    g_hlayer = 0;
+    CLog::Log(LOGERROR, "AllWinner: DISP_CMD_LAYER_REQUEST failed.\n");
+    return false;
+  }
+
+  memset (&g_srcRect, 0, sizeof (g_srcRect));
+  memset (&g_dstRect, 0, sizeof (g_dstRect));
+
+  g_lastnr = -1;
+  g_decnr  = 0;
+  g_rdidx  = 0;
+  g_wridx  = 0;
+
+  for (i = 0; i < DISPQS; i++)
+    g_dispq[i].pict.id = -1;
+
+  return true;
+}
+
+static int _inited = 0;
+
+void AllWinnerVLExit ()
+{
+  unsigned long args[4];
+  _inited = 0;
+
+  if (g_hlayer)
+  {
+    //stop video
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    ioctl (g_hdisp, DISP_CMD_VIDEO_STOP, args);
+
+    //close layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    ioctl (g_hdisp, DISP_CMD_LAYER_CLOSE, args);
+
+    //release layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    ioctl (g_hdisp, DISP_CMD_LAYER_RELEASE, args);
+    g_hlayer = 0;
+
+    args[0] = g_screenid;
+    args[1] = g_syslayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_ALPHA_ON, args))
+      CLog::Log (LOGERROR, "AllWinner: DISP_CMD_LAYER_CK_ON failed.\n");
+
+    if (m_allwinner_productType == CApplication::ALLWINNER_A31_PAD)
+    {
+      args[0] = 0;
+      args[1] = 1;
+      ioctl (g_hdisp, DISP_CMD_SET_OVL_MODE, args);
+    }
+  }
+  
+  if (g_hdisp != -1)
+  {
+    close(g_hdisp);
+    g_hdisp = -1;
+  }
+}
+
+void AllWinnerVLHide ()
+{
+  unsigned long args[4];
+
+  if (g_hlayer)
+  {
+    //stop video
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    ioctl (g_hdisp, DISP_CMD_VIDEO_STOP, args);
+
+    //close layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    ioctl (g_hdisp, DISP_CMD_LAYER_CLOSE, args);
+  }
+
+  memset (&g_srcRect, 0, sizeof (g_srcRect));
+  memset (&g_dstRect, 0, sizeof (g_dstRect));
+}
+
+AllWinnerVLQueueItem *AllWinnerVLPutQueue (AllWinnerVLCALLBACK     callback,
+                              void             *callbackpriv,
+                              void             *pictpriv,
+                              cedarv_picture_t &pict)
+{
+  AllWinnerVLQueueItem *pRet;
+
+  pthread_mutex_lock (&g_dispq_mutex);
+
+  pRet = &g_dispq[g_wridx];
+
+  pRet->decnr        = g_decnr++;
+  pRet->callback     = callback;
+  pRet->callbackpriv = callbackpriv;
+  pRet->pictpriv     = pictpriv;
+  pRet->pict         = pict;
+
+  g_wridx++;
+  if (g_wridx >= DISPQS)
+    g_wridx = 0;
+
+  pthread_mutex_unlock (&g_dispq_mutex);
+
+  return pRet;
+}
+
+BOOL AllWinnerVLFreeQueueItem (void *pItem0)
+{
+  if (!pItem0) return false;
+
+  AllWinnerVLQueueItem * pItem = (AllWinnerVLQueueItem *)pItem0;
+
+  if ((int)pItem->pict.id != -1)
+  {
+    if (pItem->callback)
+      pItem->callback (pItem->callbackpriv, pItem->pictpriv, pItem->pict);
+    pItem->pict.id = -1;
+    return true;
+  }
+
+  return false;
+}
+
+void AllWinnerVLFreeAQueue ()
+{
+  int i;
+
+  pthread_mutex_lock (&g_dispq_mutex);
+
+  for (i = 0; i < DISPQS; i++)
+    if (AllWinnerVLFreeQueueItem (&g_dispq[i])) break;
+
+  pthread_mutex_unlock (&g_dispq_mutex);
+}
+
+void AllWinnerVLFreeQueue ()
+{
+  int i;
+
+  pthread_mutex_lock (&g_dispq_mutex);
+
+  for (i = 0; i < DISPQS; i++)
+    AllWinnerVLFreeQueueItem (&g_dispq[i]);
+
+  pthread_mutex_unlock (&g_dispq_mutex);
+}
+
+void AllWinnerVLDisplayQueueItem (AllWinnerVLQueueItem *pItem, CRect &srcRect, CRect &dstRect)
+{
+  int i;
+  int curnr;
+
+  pthread_mutex_lock (&g_dispq_mutex);
+
+  if (!pItem || (pItem->pict.id == -1) || (g_lastnr == pItem->decnr))
+  {
+    pthread_mutex_unlock (&g_dispq_mutex);
+    return;
+  }
+
+  if (m_allwinner_productType == CApplication::ALLWINNER_A31_PAD)
+    curnr = AllWinnerVLDisplayPicture (pItem->pict, pItem->decnr, srcRect, dstRect);
+  else
+    curnr = AllWinnerVLDisplayPictureForA10 (pItem->pict, pItem->decnr, srcRect, dstRect);
+
+  if (curnr != g_lastnr)
+  {
+    //free older frames, displayed or not
+    for (i = 0; i < DISPQS; i++)
+    {
+      if (g_dispq[g_rdidx].decnr < curnr)
+      {
+        AllWinnerVLFreeQueueItem (&g_dispq[g_rdidx]);
+
+        g_rdidx++;
+        if (g_rdidx >= DISPQS)
+          g_rdidx = 0;
+
+      } else break;
+    }
+
+  }
+
+  g_lastnr = curnr;
+
+  pthread_mutex_unlock (&g_dispq_mutex);
+}
+
+
+int AllWinnerVLDisplayPictureForA10 (cedarv_picture_t &picture,
+                        int               refnr,
+                        CRect            &srcRect,
+                        CRect            &dstRect)
+{
+  unsigned long       args[4];
+  __disp_layer_info_t layera;
+  __disp_video_fb_t   frmbuf;
+  __disp_colorkey_t   colorkey;
+
+  memset (&frmbuf, 0, sizeof (__disp_video_fb_t));
+  frmbuf.id              = refnr;
+  frmbuf.interlace       = picture.is_progressive? 0 : 1;
+  frmbuf.top_field_first = picture.top_field_first;
+  //frmbuf.frame_rate      = picture.frame_rate;
+  frmbuf.addr[0]         = g_libbdv_a10_xbmc_minipc.mem_get_phy_addr ((u32)picture.y);
+  frmbuf.addr[1]         = g_libbdv_a10_xbmc_minipc.mem_get_phy_addr ((u32)picture.u);
+
+  //if (_inited == 0)
+  if ((g_srcRect != srcRect) || (g_dstRect != dstRect))
+  {
+    int screen_width, screen_height;
+
+    _inited = 1;
+
+    //query screen dimensions
+    args[0] = g_screenid;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    screen_width = ioctl (g_hdisp, DISP_CMD_SCN_GET_WIDTH, args);
+
+    args[0] = g_screenid;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    screen_height = ioctl (g_hdisp, DISP_CMD_SCN_GET_HEIGHT, args);
+
+    memset(&layera, 0, sizeof (layera));
+    //set video layer attribute
+    layera.mode          = DISP_LAYER_WORK_MODE_SCALER;
+    layera.b_from_screen = 0; //what is this? if enabled all is black
+    layera.pipe          = 1;
+    //use alpha blend
+    layera.alpha_en      = 0;
+    layera.alpha_val     = 0xff;
+    layera.ck_enable     = 0;
+    layera.b_trd_out     = 0;
+    layera.out_trd_mode  = (__disp_3d_out_mode_t)0;
+    //frame buffer pst and size information
+    if (picture.display_height < 720)
+    {
+      layera.fb.cs_mode = DISP_BT601;
+    }
+    else
+    {
+      layera.fb.cs_mode = DISP_BT709;
+    }
+
+    float w = (float)picture.width;
+    float h = (float)picture.height;
+    float h1 = g_width * h / w;
+
+    layera.fb.mode        = DISP_MOD_MB_UV_COMBINED;
+    layera.fb.format      = picture.pixel_format == CEDARV_PIXEL_FORMAT_AW_YUV422 ? DISP_FORMAT_YUV422 : DISP_FORMAT_YUV420;
+    layera.fb.br_swap     = 0;
+    layera.fb.seq         = DISP_SEQ_UVUV;
+    layera.fb.addr[0]     = frmbuf.addr[0];
+    layera.fb.addr[1]     = frmbuf.addr[1];
+    layera.fb.b_trd_src   = 0;
+    layera.fb.trd_mode    = (__disp_3d_src_mode_t)0;
+    layera.fb.size.width  = picture.display_width;
+    layera.fb.size.height = picture.display_height;
+    //source window information
+    layera.src_win.x      = 0;
+    layera.src_win.y      = 0;
+    layera.src_win.width  = picture.width;
+    layera.src_win.height = picture.height;
+    //screen window information
+    layera.scn_win.x      = 0;
+    layera.scn_win.y      = 0;
+    layera.scn_win.width  = g_width;
+    layera.scn_win.height = g_height;
+
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = (unsigned long)&layera;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_SET_PARA, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_LAYER_SET_PARA failed.\n");
+
+    //open layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_OPEN, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_LAYER_OPEN failed.\n");
+
+    //put behind system layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_BOTTOM, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_LAYER_BOTTOM failed.\n");
+
+    //turn off colorkey (system layer)
+    args[0] = g_screenid;
+    args[1] = g_syslayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_CK_OFF, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_LAYER_CK_OFF failed.\n");
+
+      colorkey.ck_min.alpha = 128;
+      colorkey.ck_min.red   = 1;
+      colorkey.ck_min.green = 1;
+      colorkey.ck_min.blue  = 1;
+      colorkey.ck_max = colorkey.ck_min;
+      colorkey.ck_max.alpha = 128;
+      colorkey.red_match_rule   = 2;
+      colorkey.green_match_rule = 2;
+      colorkey.blue_match_rule  = 2;
+
+      colorkey.ck_min.alpha                 = 0xff;
+      colorkey.ck_min.red                   = 0x0; //0x01;
+      colorkey.ck_min.green                 = 0x0; //0x03;
+      colorkey.ck_min.blue                  = 0x0; //0x05;
+      colorkey.ck_max.alpha                 = 0xff;
+      colorkey.ck_max.red                   = 0x0; //0x01;
+      colorkey.ck_max.green                 = 0x0; //0x03;
+      colorkey.ck_max.blue                  = 0x0; //0x05;
+
+      colorkey.red_match_rule               = 2;
+      colorkey.green_match_rule             = 2;
+      colorkey.blue_match_rule              = 2;
+
+
+    args[0] = g_screenid;
+    args[1] = (unsigned long)&colorkey;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_SET_COLORKEY, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_SET_COLORKEY failed.\n");
+    
+    //turn on colorkey
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_CK_ON, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_LAYER_CK_ON failed.\n");
+    
+    //start video
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_VIDEO_START, args))
+      CLog::Log (LOGERROR, "A10: DISP_CMD_VIDEO_START failed.\n");
+
+    g_srcRect = srcRect;
+    g_dstRect = dstRect;
+  }
+
+  args[0] = g_screenid;
+  args[1] = g_hlayer;
+  args[2] = (unsigned long)&frmbuf;
+  args[3] = 0;
+  if (ioctl (g_hdisp, DISP_CMD_VIDEO_SET_FB, args))
+    CLog::Log (LOGERROR, "A10: DISP_CMD_VIDEO_SET_FB failed.\n");
+
+  args[0] = g_screenid;
+  args[1] = g_hlayer;
+  args[2] = 0;
+  args[3] = 0;
+  return ioctl (g_hdisp, DISP_CMD_VIDEO_GET_FRAME_ID, args);
+}
+
+int AllWinnerVLDisplayPicture (cedarv_picture_t &picture,
+                        int               refnr,
+                        CRect            &srcRect,
+                        CRect            &dstRect)
+{
+  unsigned long       args[4];
+  __disp_layer_info_t layera;
+  __disp_video_fb_t   frmbuf;
+
+  memset (&frmbuf, 0, sizeof(__disp_video_fb_t));
+  frmbuf.id              = refnr;
+  frmbuf.interlace       = picture.is_progressive? 0 : 1;
+  frmbuf.top_field_first = picture.top_field_first;
+  //frmbuf.frame_rate      = picture.frame_rate;
+  //frmbuf.addr[0]         = cedarv_address_vir2phy((void *)picture.y);
+  //frmbuf.addr[1]         = cedarv_address_vir2phy((void *)picture.u);
+  //frmbuf.addr[2]         = cedarv_address_vir2phy((void *)picture.v);
+  frmbuf.addr[0]         = (u32)picture.y;
+  frmbuf.addr[1]         = (u32)picture.u;
+  //frmbuf.addr[2]         = (u32)picture.v;
+  frmbuf.addr[2]         = 0;
+  frmbuf.addr_right[0] = 0;
+  frmbuf.addr_right[1] = 0;
+  frmbuf.addr_right[2] = 0;
+  frmbuf.maf_valid = picture.maf_valid;
+  frmbuf.pre_frame_valid = picture.pre_frame_valid;
+  frmbuf.flag_addr = picture.flag_addr;
+  frmbuf.flag_stride = picture.flag_stride;
+
+  if (_inited == 0)
+  {
+    int screen_width, screen_height;
+
+    _inited = 1;
+
+    //query screen dimensions
+    args[0] = g_screenid;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    screen_width = ioctl (g_hdisp, DISP_CMD_SCN_GET_WIDTH, args);
+
+    args[0] = g_screenid;
+    args[1] = 0;
+    args[2] = 0;
+    args[3] = 0;
+    screen_height = ioctl (g_hdisp, DISP_CMD_SCN_GET_HEIGHT, args);
+
+    memset(&layera, 0, sizeof(layera));
+    //set video layer attribute
+    layera.mode          = DISP_LAYER_WORK_MODE_SCALER;
+    layera.b_from_screen = 0; //what is this? if enabled all is black
+    layera.pipe          = 1;
+    //use alpha blend
+    layera.alpha_en      = 1;
+    layera.alpha_val     = 0xff;
+    layera.ck_enable     = 0;
+    layera.b_trd_out     = 0;
+    layera.out_trd_mode  = (__disp_3d_out_mode_t)0;
+    //frame buffer pst and size information
+    if (picture.display_height < 720)
+    {
+      layera.fb.cs_mode = DISP_BT601;
+    }
+    else
+    {
+      layera.fb.cs_mode = DISP_BT709;
+    }
+
+    float w = (float)picture.width;
+    float h = (float)picture.height;
+    float h1 = g_width * h / w;
+    int _height = lrint (h1);
+    int _y = (_height > g_height) ? 0 : ((g_height - _height) / 2);
+
+    layera.fb.mode        = DISP_MOD_MB_UV_COMBINED;
+    layera.fb.format      = picture.pixel_format == CEDARV_PIXEL_FORMAT_AW_YUV422 ? DISP_FORMAT_YUV422 : DISP_FORMAT_YUV420;
+    layera.fb.br_swap     = 0;
+    layera.fb.seq         = DISP_SEQ_UVUV;
+    layera.fb.addr[0]     = (u32)picture.y;
+    layera.fb.addr[1]     = (u32)picture.u;
+    layera.fb.addr[2]     = (u32)picture.v;
+    layera.fb.trd_right_addr[0] = 0;
+    layera.fb.trd_right_addr[1] = 0;
+    layera.fb.trd_right_addr[2] = 0;
+    layera.fb.b_trd_src   = 0;
+    layera.fb.trd_mode    = (__disp_3d_src_mode_t)0;
+    layera.fb.size.width  = picture.display_width;
+    layera.fb.size.height = picture.display_height;
+    //source window information
+    layera.src_win.x      = 0;
+    layera.src_win.y      = 0;
+    layera.src_win.width  = picture.width;
+    layera.src_win.height = picture.height;
+    //screen window information
+    layera.scn_win.x      = 0;
+    layera.scn_win.y      = 0;
+    layera.scn_win.y      = _y;
+    layera.scn_win.width  = g_width;
+    layera.scn_win.height = _height > g_height ? g_height : _height;
+
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = (unsigned long)&layera;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_SET_PARA, args))
+      CLog::Log (LOGERROR, "AllWinner: DISP_CMD_LAYER_SET_PARA failed.\n");
+
+    //put behind system layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_BOTTOM, args))
+      CLog::Log(LOGERROR, "AllWinner: DISP_CMD_LAYER_BOTTOM failed.\n");
+
+    args[0]                         = g_screenid;
+    args[1]                         = g_hlayer;
+    args[2]                         = (unsigned long) (&layera);
+    args[3]                         = 0;
+    ioctl (g_hdisp, DISP_CMD_LAYER_GET_PARA, args);
+
+    args[0] = g_screenid;
+    args[1] = g_syslayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_ALPHA_OFF, args))
+     CLog::Log (LOGERROR, "AllWinner: DISP_CMD_LAYER_CK_ON failed.\n");
+
+    //start video
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_VIDEO_START, args))
+      CLog::Log (LOGERROR, "AllWinner: DISP_CMD_VIDEO_START failed.\n");
+
+    g_srcRect = srcRect;
+    g_dstRect = dstRect;
+    //open layer
+    args[0] = g_screenid;
+    args[1] = g_hlayer;
+    args[2] = 0;
+    args[3] = 0;
+    if (ioctl (g_hdisp, DISP_CMD_LAYER_OPEN, args))
+      CLog::Log (LOGERROR, "AllWinner: DISP_CMD_LAYER_OPEN failed.\n");
+  }
+
+
+  args[0] = g_screenid;
+  args[1] = g_hlayer;
+  args[2] = (unsigned long)&frmbuf;
+  args[3] = 0;
+  if (ioctl (g_hdisp, DISP_CMD_VIDEO_SET_FB, args))
+    CLog::Log (LOGERROR, "AllWinner: DISP_CMD_VIDEO_SET_FB failed.\n");
+
+  //CLog::Log(LOGDEBUG, "AllWinner: render %d\n", buffer->picture.id);
+
+  args[0] = g_screenid;
+  args[1] = g_hlayer;
+  args[2] = 0;
+  args[3] = 0;
+
+  return ioctl (g_hdisp, DISP_CMD_VIDEO_GET_FRAME_ID, args);
+}
+
+#endif //__ANDROID_ALLWINNER__
 
 #endif
 

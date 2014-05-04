@@ -51,6 +51,61 @@
 
 using namespace OVERLAY;
 
+#if defined(__ANDROID_ALLWINNER__)
+
+static void LoadTexture(GLenum target
+                      , GLsizei width, GLsizei height, GLsizei stride
+                      , GLfloat* u, GLfloat* v
+                      , GLenum internalFormat, GLenum externalFormat, const GLvoid* pixels)
+{
+  int width2  = NP2(width);
+  int height2 = NP2(height);
+  char *pixelVector = NULL;
+  const GLvoid *pixelData = pixels;
+
+  int bytesPerPixel = glFormatElementByteCount(externalFormat);
+
+#ifdef HAS_GLES
+  /** OpenGL ES does not support strided texture input. Make a copy without stride **/
+  if (stride != width)
+  {
+    int bytesPerLine = bytesPerPixel * width;
+    int bytesPerLine2 = bytesPerPixel * width2;
+
+    pixelVector = (char *)calloc(bytesPerLine2 * height2, sizeof (char));
+
+    const char *src = (const char*)pixels;
+    char *dst = pixelVector;
+    for (int y = 0;y < height;++y)
+    {
+      memcpy(dst, src, bytesPerLine);
+      src += stride;
+      dst += bytesPerLine2;
+    }
+
+    pixelData = pixelVector;
+    stride = width;
+  }
+#else
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, stride / bytesPerPixel);
+#endif
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glTexImage2D   (target, 0, internalFormat
+                , width2, height2, 0
+                , externalFormat, GL_UNSIGNED_BYTE, pixelData);
+#ifndef HAS_GLES
+  glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#endif
+
+  free(pixelVector);
+
+  *u = (GLfloat)width  / width2;
+  *v = (GLfloat)height / height2;
+}
+
+#else
+
 static void LoadTexture(GLenum target
                       , GLsizei width, GLsizei height, GLsizei stride
                       , GLfloat* u, GLfloat* v
@@ -119,6 +174,8 @@ static void LoadTexture(GLenum target
   *u = (GLfloat)width  / width2;
   *v = (GLfloat)height / height2;
 }
+
+#endif
 
 COverlayTextureGL::COverlayTextureGL(CDVDOverlayImage* o)
 {

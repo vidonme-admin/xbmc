@@ -38,15 +38,15 @@
 #if defined(HAS_GL)
   #include "LinuxRendererGL.h"
 #elif HAS_GLES == 2
-  #if defined(__DVDFAB_FUNC_A10CODEC__)
-  #include "LinuxRendererA10.h"
-  #else 
-  #include "LinuxRendererGLES.h"
-  #endif 
+#include "LinuxRendererGLES.h"
 #elif defined(HAS_DX)
   #include "WinRenderer.h"
 #elif defined(HAS_SDL)
   #include "LinuxRenderer.h"
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
 #endif
 
 #include "RenderCapture.h"
@@ -332,11 +332,7 @@ unsigned int CXBMCRenderManager::PreInit()
 #if defined(HAS_GL)
     m_pRenderer = new CLinuxRendererGL();
 #elif HAS_GLES == 2
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-	m_pRenderer = new CLinuxRendererA10();
-#else 
     m_pRenderer = new CLinuxRendererGLES();
-#endif //__DVDFAB_FUNC_A10CODEC__
 #elif defined(HAS_DX)
     m_pRenderer = new CWinRenderer();
 #elif defined(HAS_SDL)
@@ -538,6 +534,17 @@ void CXBMCRenderManager::RemoveCapture(CRenderCapture* capture)
 void CXBMCRenderManager::SetViewMode(int iViewMode)
 {
   CSharedLock lock(m_sharedSection);
+#if defined(__VIDONME_MEDIACENTER__) && defined(__HAS_VIDONME_PLAYER__)
+  if( VidOnMe::RM_VIDONME == VidOnMe::VDMUtils::Instance().GetRunningMode() )
+  {
+		g_application.ChangeRenderRatio(iViewMode);
+
+		g_settings.m_currentVideoSettings.m_ViewMode = iViewMode;
+
+	  return;
+  }
+#endif
+
   if (m_pRenderer)
     m_pRenderer->SetViewMode(iViewMode);
 }
@@ -852,9 +859,9 @@ int CXBMCRenderManager::AddVideoPicture(DVDVideoPicture& pic)
   else if(pic.format == RENDER_FMT_VAAPI)
     m_pRenderer->AddProcessor(*pic.vaapi);
 #endif
-#if defined(__DVDFAB_FUNC_A10CODEC__)
- else if (pic.format == RENDER_FMT_A10BUF)
-    m_pRenderer->AddProcessor(pic.a10buffer);
+#if defined(__ANDROID_ALLWINNER__)
+ else if (pic.format == RENDER_FMT_ALLWINNER)
+    m_pRenderer->AddProcessor(pic.allWinnerBuffer);
 #endif 
 
   m_pRenderer->ReleaseImage(index, false);

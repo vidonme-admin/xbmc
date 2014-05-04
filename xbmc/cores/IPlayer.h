@@ -143,6 +143,8 @@ public:
   virtual bool GetSubtitleExtension(CStdString &strSubtitleExtension){ return false;};
   virtual int  AddSubtitle(const CStdString& strSubPath) {return -1;};
 
+  virtual const char* GetSubtitlePath(int iStream) { return NULL; };
+
   virtual int  GetAudioStreamCount()  { return 0; }
   virtual int  GetAudioStream()       { return -1; }
   virtual void GetAudioStreamName(int iStream, CStdString &strStreamName){};
@@ -229,9 +231,16 @@ public:
    */
   virtual void GetSubtitleCapabilities(std::vector<int> &subCaps) { subCaps.assign(1,IPC_SUBS_ALL); };
 
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-  virtual void OnA10Created(){return;}
+#if defined(__ANDROID_ALLWINNER__)
+  virtual void OnAllWinnerCodecCreated(){return;}
 #endif 
+
+#if defined(__HAS_VIDONME_PLAYER__)
+	
+  virtual void Present(){};
+  virtual bool IsSelfPresent(){return false;};
+#endif
+
 protected:
   IPlayerCallback& m_callback;
 };

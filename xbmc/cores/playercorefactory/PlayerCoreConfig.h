@@ -34,6 +34,16 @@
 #ifdef HAS_UPNP
 #include "network/upnp/UPnPPlayer.h"
 #endif
+
+#if defined(__HAS_VIDONME_PLAYER__)
+//__VIDONME_PLAYER__
+#include "cores/vidonme/VDMPlayer.h"
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
+
 #include "utils/log.h"
 
 class CPlayerCoreConfig
@@ -101,8 +111,20 @@ public:
         CLog::Log(LOGINFO, "Created player %s for core %d / OMXPlayer forced as PAPLayer", "OMXPlayer", m_eCore);
         break;
 #else
+#if defined(__HAS_VIDONME_PLAYER__)
+				//__VIDONME_PLAYER__
+#if defined(__VIDONME_MEDIACENTER__)
+      case EPC_DVDPLAYER: 
+        pPlayer = new CVDMPlayer(callback, m_eCore);
+        break;	
+      case EPC_PAPLAYER:
+        pPlayer = new CVDMPlayer(callback, m_eCore); 
+        break;
+#else
       case EPC_DVDPLAYER: pPlayer = new CDVDPlayer(callback); break;
       case EPC_PAPLAYER: pPlayer = new PAPlayer(callback); break;
+#endif 
+#endif 
 #endif
       case EPC_EXTPLAYER: pPlayer = new CExternalPlayer(callback); break;
 #if defined(HAS_AMLPLAYER)

@@ -1514,6 +1514,25 @@ inline void CSoftAE::ProcessSuspend()
       }
       sinkLock.Leave();
     }
+#if defined(__VIDONME_MEDIACENTER__)
+    else if(m_isSuspended)
+    {
+      /* put the sink in Suspend mode */
+      CExclusiveLock sinkLock(m_sinkLock);
+      if (m_sink && !m_sink->SoftSuspend())
+      {
+        m_sinkIsSuspended = false; //sink cannot be suspended
+        m_softSuspend   = false; //break suspend loop
+        break;
+      }
+      else
+      {
+        CLog::Log(LOGDEBUG, "Suspended the Sink");
+        m_sinkIsSuspended = true; //sink has suspended processing
+      }
+      sinkLock.Leave();
+    }
+#endif
     // Signal that the Suspend can go on now.
     // Idea: Outer thread calls Suspend() - but
     // because of AddPackets does not care about locks, we must make

@@ -26,6 +26,9 @@
 #include "threads/SingleLock.h"
 #include "utils/log.h"
 #include "filesystem/File.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "cores/vidonme/VDMPlayer.h"
+#endif
 
 using namespace std;
 
@@ -57,6 +60,16 @@ bool CPasswordManager::AuthenticateURL(CURL &url)
     CURL auth(it->second);
     url.SetPassword(auth.GetPassWord());
     url.SetUserName(auth.GetUserName());
+
+#if defined(__VIDONME_MEDIACENTER__)
+    CStdString passcode = auth.GetPassWord();
+    CStdString username = auth.GetUserName();
+    if(!(passcode.IsEmpty()) || !(username.IsEmpty()))
+    {
+      CVDMPlayer::SetSMBPassword(passcode);
+      CVDMPlayer::SetSMBUserName(username);
+    }
+#endif
     return true;
   }
   return false;
@@ -76,6 +89,11 @@ bool CPasswordManager::PromptToAuthenticateURL(CURL &url)
 
   url.SetPassword(passcode);
   url.SetUserName(username);
+
+#if defined(__VIDONME_MEDIACENTER__)
+  CVDMPlayer::SetSMBPassword(passcode);
+  CVDMPlayer::SetSMBUserName(username);
+#endif
 
   // save the information for later
   SaveAuthenticatedURL(url, saveDetails);

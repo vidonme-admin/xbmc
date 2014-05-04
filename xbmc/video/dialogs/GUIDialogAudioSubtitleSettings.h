@@ -30,6 +30,9 @@ public:
   CGUIDialogAudioSubtitleSettings(void);
   virtual ~CGUIDialogAudioSubtitleSettings(void);
   virtual void FrameMove();
+#if defined(__VIDONME_MEDIACENTER__)
+  virtual bool OnAction(const CAction &action);
+#endif
 
   static CStdString PercentAsDecibel(float value, float minimum);
   static CStdString FormatDelay(float value, float minimum);

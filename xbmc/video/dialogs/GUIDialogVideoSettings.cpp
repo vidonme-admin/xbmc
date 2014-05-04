@@ -33,6 +33,12 @@
 #include "addons/Skin.h"
 #include "pvr/PVRManager.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "Application.h"
+#include "cores/vidonme/VDMPlayer.h"
+#include "video/windows/GUIWindowFullScreen.h"
+#endif
+
 using namespace std;
 using namespace PVR;
 
@@ -67,6 +73,40 @@ CGUIDialogVideoSettings::~CGUIDialogVideoSettings(void)
 #define VIDEO_SETTINGS_POSTPROCESS        22
 #define VIDEO_SETTINGS_VERTICAL_SHIFT     23
 #define VIDEO_SETTINGS_DEINTERLACEMODE    24
+#if defined(__VIDONME_MEDIACENTER__)
+#define VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL      25
+#define VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF     26
+#define VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF    27
+#define VIDEO_SETTING_3D_LEFT_RIGHT                28
+#define VIDEO_SETTING_3D_TOM_BOTTOM                29
+#define VIDEO_SETTING_3D_INTERLACING               30
+
+#define VIDEO_SETTINGS_2D3DMODE         31
+#endif
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+bool CGUIDialogVideoSettings::OnAction(const CAction &action)
+{
+  switch (action.GetID())
+  {
+  case ACTION_NEXT_ITEM:
+  case ACTION_PREV_ITEM:
+    {
+      CGUIWindowFullScreen* pfullscreen = (CGUIWindowFullScreen*)g_windowManager.GetWindow(WINDOW_FULLSCREEN_VIDEO);
+      if (pfullscreen)
+      {
+        pfullscreen->OnAction(action);
+      }
+      return true;
+    }
+  default:
+    break;
+  }
+  return CGUIDialog::OnAction(action);
+}
+#endif
+
 
 void CGUIDialogVideoSettings::CreateSettings()
 {
@@ -74,6 +114,22 @@ void CGUIDialogVideoSettings::CreateSettings()
   // clear out any old settings
   m_settings.clear();
   // create our settings
+#if defined(__VIDONME_MEDIACENTER__) && defined(__VIDONME_MEDIACENTER_3D__)
+   m_2DOriginal = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_2D_DISPLAY_THE_ORIGINAL);
+   m_2DLeftHalf = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_2D_DISPLAY_THE_LEFT_HALF);
+   m_2DUpperHalf = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_2D_DISPLAY_THE_UPPER_HALF);
+   m_3DLeftRight = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_3D_LEFT_RIGHT);
+   m_3DTomBottom = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_3D_TOM_BOTTOM);
+   m_3DInterlacing = (g_settings.m_currentVideoSettings.m_DimensionMode == VS_3D_INTERLACING);
+   AddButton(VIDEO_SETTINGS_2D3DMODE, 70011, NULL, false);
+   AddBool(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL, 70012, &m_2DOriginal, true);
+   AddBool(VIDEO_SETTING_3D_INTERLACING, 70017, &m_3DInterlacing, true);
+   AddBool(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF, 70013, &m_2DLeftHalf, true);
+   AddBool(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF, 70014, &m_2DUpperHalf, true);
+   AddBool(VIDEO_SETTING_3D_LEFT_RIGHT, 70015, &m_3DLeftRight, true);
+   AddBool(VIDEO_SETTING_3D_TOM_BOTTOM, 70016, &m_3DTomBottom, true);
+#endif
+
   {
     vector<pair<int, int> > entries;
 
@@ -191,7 +247,6 @@ void CGUIDialogVideoSettings::CreateSettings()
   AddButton(VIDEO_SETTINGS_MAKE_DEFAULT, 12376);
   AddButton(VIDEO_SETTINGS_CALIBRATION, 214);
 }
-
 void CGUIDialogVideoSettings::OnSettingChanged(SettingInfo &setting)
 {
   // check and update anything that needs it
@@ -242,6 +297,9 @@ void CGUIDialogVideoSettings::OnSettingChanged(SettingInfo &setting)
       g_settings.m_defaultVideoSettings = g_settings.m_currentVideoSettings;
       g_settings.m_defaultVideoSettings.m_SubtitleStream = -1;
       g_settings.m_defaultVideoSettings.m_AudioStream = -1;
+#if defined(__VIDONME_MEDIACENTER__)
+      g_settings.m_defaultVideoSettings.m_SubtitlePath.clear();
+#endif
       g_settings.Save();
     }
   }
@@ -252,6 +310,182 @@ void CGUIDialogVideoSettings::OnSettingChanged(SettingInfo &setting)
 
   if (g_PVRManager.IsPlayingRadio() || g_PVRManager.IsPlayingTV())
     g_PVRManager.TriggerSaveChannelSettings();
+#if defined(__VIDONME_MEDIACENTER__)
+  if(setting.id == VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL)
+  {
+    if(m_2DOriginal == true)
+    {
+      m_2DLeftHalf = false;
+      m_2DUpperHalf = false;
+      m_3DInterlacing = false;
+      m_3DLeftRight = false;
+      m_3DTomBottom = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_2D_DISPLAY_THE_ORIGINAL;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_2D_DISPLAY_THE_ORIGINAL);
+      }
+    }
+    else
+    {
+      m_2DOriginal = true;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+    }
+  }
+  else if(setting.id == VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF)
+  {
+    if(m_2DLeftHalf == true)
+    {
+      m_2DOriginal = false;
+      m_2DUpperHalf = false;
+      m_3DInterlacing = false;
+      m_3DLeftRight = false;
+      m_3DTomBottom = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_2D_DISPLAY_THE_LEFT_HALF;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_2D_DISPLAY_THE_LEFT_HALF);
+      }
+    }
+    else
+    {
+      m_2DLeftHalf = true;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+    }
+  }
+  else if(setting.id == VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF)
+  {
+    if(m_2DUpperHalf == true)
+    {
+      m_2DOriginal = false;
+      m_2DLeftHalf = false;
+      m_3DInterlacing = false;
+      m_3DLeftRight = false;
+      m_3DTomBottom = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_2D_DISPLAY_THE_UPPER_HALF;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_2D_DISPLAY_THE_UPPER_HALF);
+      }
+    }
+    else
+    {
+      m_2DUpperHalf = true;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+    }
+  }
+  else if(setting.id == VIDEO_SETTING_3D_LEFT_RIGHT)
+  {
+    if(m_3DLeftRight == true)
+    {
+      m_2DOriginal = false;
+      m_2DLeftHalf = false;
+      m_2DUpperHalf = false;
+      m_3DTomBottom = false;
+      m_3DInterlacing = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_3D_LEFT_RIGHT;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_3D_LEFT_RIGHT);
+      }
+    }
+    else
+    {
+      m_3DLeftRight = true;
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+    }
+  }
+  else if(setting.id == VIDEO_SETTING_3D_TOM_BOTTOM)
+  {
+    if(m_3DTomBottom == true)
+    {
+      m_2DOriginal = false;
+      m_2DLeftHalf = false;
+      m_2DUpperHalf = false;
+      m_3DLeftRight = false;
+      m_3DInterlacing = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_3D_TOM_BOTTOM;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_3D_TOM_BOTTOM);
+      }
+    }
+    else
+    {
+      m_3DTomBottom = true;
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+    }
+  }
+  else if(setting.id == VIDEO_SETTING_3D_INTERLACING)
+  {
+    if(m_3DInterlacing == true)
+    {
+      m_2DOriginal = false;
+      m_2DLeftHalf = false;
+      m_2DUpperHalf = false;
+      m_3DLeftRight = false;
+      m_3DTomBottom = false;
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_ORIGINAL);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_LEFT_HALF);
+      UpdateSetting(VIDEO_SETTING_2D_DISPLAY_THE_UPPER_HALF);
+      UpdateSetting(VIDEO_SETTING_3D_LEFT_RIGHT);
+      UpdateSetting(VIDEO_SETTING_3D_TOM_BOTTOM);
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+      g_settings.m_currentVideoSettings.m_DimensionMode = VS_3D_INTERLACING;
+      g_settings.m_currentVideoSettings.m_VideoSettingChange = true;
+      CVDMPlayer* pVDMPlayer = dynamic_cast<CVDMPlayer*>(g_application.m_pPlayer);
+      if (pVDMPlayer)
+      {
+        pVDMPlayer->SetPlayMode(VS_3D_INTERLACING);
+      }
+    }
+    else
+    {
+      m_3DInterlacing = true;
+      UpdateSetting(VIDEO_SETTING_3D_INTERLACING);
+    }
+  }
+#endif
 }
 
 CStdString CGUIDialogVideoSettings::FormatInteger(float value, float minimum)
@@ -267,4 +501,3 @@ CStdString CGUIDialogVideoSettings::FormatFloat(float value, float minimum)
   text.Format("%2.2f", value);
   return text;
 }
-

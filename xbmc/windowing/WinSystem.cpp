@@ -35,6 +35,10 @@ CWinSystemBase::CWinSystemBase()
   m_nScreen = 0;
   m_bBlankOtherDisplay = false;
   m_fRefreshRate = 0.0f;
+
+#if defined(__HAS_VIDONME_PLAYER__)
+  m_eventcallback = NULL;
+#endif
 }
 
 CWinSystemBase::~CWinSystemBase()

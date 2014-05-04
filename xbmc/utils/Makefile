@@ -67,7 +67,7 @@ SRCS=AlarmClock.cpp \
      Vector.cpp \
      Weather.cpp \
      XBMCTinyXML.cpp \
-     XMLUtils.cpp \
+     XMLUtils.cpp
 
 LIB=utils.a
 

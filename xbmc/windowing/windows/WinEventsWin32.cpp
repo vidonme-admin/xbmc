@@ -42,6 +42,14 @@
 #include "utils/JobManager.h"
 #include "network/Zeroconf.h"
 #include "network/ZeroconfBrowser.h"
+#include "GUIUserMessages.h"
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "utils/TimeUtils.h"
+#if defined(_USE_WEBDIALOG)
+#include "../../vdm-lib/LibWebDialog/libWebDialog.h"
+#endif
+#endif
 
 #ifdef _WIN32
 
@@ -357,9 +365,34 @@ static XBMC_keysym *TranslateKey(WPARAM vkey, UINT scancode, XBMC_keysym *keysym
 
 bool CWinEventsWin32::MessagePump()
 {
+  static HWND lastWnd = NULL;
+  HWND mainWnd = g_Windowing.GetHwnd();
   MSG  msg;
   while( PeekMessage( &msg, NULL, 0U, 0U, PM_REMOVE ) )
   {
+#if defined(__VIDONME_MEDIACENTER__)
+    if(msg.message == WM_MOUSEMOVE)
+    {
+      if(NULL == mainWnd)
+      {
+        mainWnd = msg.hwnd;
+      }
+      else
+      {
+        if(mainWnd == msg.hwnd && mainWnd != lastWnd)
+        {
+          g_Mouse.SetEnabled(true);
+          g_Windowing.ShowOSMouse(false);
+        }
+        if(mainWnd != msg.hwnd && lastWnd == mainWnd)
+        {
+          g_Mouse.SetEnabled(false);
+          g_Windowing.ShowOSMouse(true);
+        }
+      }
+    lastWnd = msg.hwnd;
+    }
+#endif
     TranslateMessage( &msg );
     DispatchMessage( &msg );
   }
@@ -372,6 +405,56 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
   ZeroMemory(&newEvent, sizeof(newEvent));
   static HDEVNOTIFY hDeviceNotify;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  if (uMsg == WM_INPUT)
+  {
+    UINT dwSize = 0; 
+    GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER)); 
+    LPBYTE lpb = new BYTE[dwSize]; 
+    if(lpb == NULL)  
+    { 
+      return DefWindowProc(hWnd, uMsg, wParam, lParam);  
+    }
+
+    if(GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+      return 0;
+
+    RAWINPUT* raw = (RAWINPUT*)lpb;
+
+    if (raw->header.dwType == RIM_TYPEHID)
+    {
+      if (raw->data.hid.bRawData[0] == 2)
+      {
+        static DWORD s_dwStartClick = GetTickCount();
+        static bool s_bTriggered = true;
+
+        DWORD dwElapse = 0;
+        if (!s_bTriggered)
+        {
+          DWORD dwCurClick = GetTickCount();
+          CLog::Log(LOGDEBUG, "+++++++++++simulate key down........., %d, %d", s_dwStartClick, dwCurClick);
+          dwElapse = dwCurClick - s_dwStartClick;
+          if (dwElapse >= 500)
+          {
+            s_bTriggered = true;
+            s_dwStartClick = dwCurClick;
+          }
+        }
+
+        if (s_bTriggered)
+        {
+          s_bTriggered = false;
+          //simulate "m" keydown message
+          return WndProc(hWnd, WM_KEYDOWN, 0x0000004D, 0x00320001);          
+        }
+      }
+    }
+    
+    delete[] lpb;
+    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+  }
+  else
+#endif
   if (uMsg == WM_CREATE)
   {
     g_hWnd = hWnd;
@@ -477,14 +560,35 @@ LRESULT CALLBACK CWinEventsWin32::WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, L
           return(DefWindowProc(hWnd, uMsg, wParam, lParam));
         case VK_RETURN: //alt-return
           if ((lParam & REPEATED_KEYMASK) == 0)
-            g_graphicsContext.ToggleFullScreenRoot();
+          {
+            //g_graphicsContext.ToggleFullScreenRoot();
+            CGUIMessage msg(GUI_MSG_NOTIFY_ALL,0,0,GUI_MSG_SET_FULLSCREEN);
+            g_windowManager.SendThreadMessage(msg);
+          }
           return 0;
       }
       //deliberate fallthrough
     case WM_KEYDOWN:
     {
+//      static WEBHANDLE g_webDialog = NULL;
       switch (wParam)
       {
+/////////////////////////////
+//test LibWebDialog
+/*
+#if defined(_USE_WEBDIALOG)
+        case VK_O:
+			if(!g_webDialog)
+				g_webDialog = LibWebDialog_CreateWebDlg(0,0,800,600);
+          break;
+        case VK_C:
+          if(g_webDialog)
+            LibWebDialog_CloseWebDlg(g_webDialog);
+          g_webDialog = NULL;
+          break;
+#endif
+*/
+/////////////////////////////
         case VK_CONTROL:
           if ( lParam & EXTENDED_KEYMASK )
             wParam = VK_RCONTROL;

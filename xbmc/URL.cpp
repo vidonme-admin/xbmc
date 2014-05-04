@@ -682,8 +682,12 @@ void CURL::Decode(CStdString& strURLData)
   for (unsigned int i = 0; i < strURLData.size(); ++i)
   {
     int kar = (unsigned char)strURLData[i];
+#if defined(__VIDONME_MEDIACENTER__)
+    if (kar == '%')
+#else
     if (kar == '+') strResult += ' ';
     else if (kar == '%')
+#endif
     {
       if (i < strURLData.size() - 2)
       {

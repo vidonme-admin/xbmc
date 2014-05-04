@@ -34,6 +34,8 @@
 #include "dialogs/GUIDialogKaiToast.h"
 #include "guilib/LocalizeStrings.h"
 #include "interfaces/AnnouncementManager.h"
+#include "utils/URIUtils.h"
+#include "video/windows/GUIWindowVideoBase.h"
 
 using namespace PLAYLIST;
 
@@ -258,7 +260,25 @@ bool CPlayListPlayer::Play(int iSong, bool bAutoPlay /* = false */, bool bPlayPr
   m_bPlaybackStarted = false;
 
   unsigned int playAttempt = XbmcThreads::SystemClockMillis();
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+
+	CFileItemPtr item_new(new CFileItem(*item));
+
+//	if (!CGUIWindowVideoBase::ShowPlaySelection(item_new))
+//	{
+//		return false;
+//	}
+
+	if (!g_application.PlayFile(*item_new.get(), bAutoPlay))
+
+#else
+
   if (!g_application.PlayFile(*item, bAutoPlay))
+
+#endif
+
   {
     CLog::Log(LOGERROR,"Playlist Player: skipping unplayable item: %i, path [%s]", m_iCurrentSong, item->GetPath().c_str());
     playlist.SetUnPlayable(m_iCurrentSong);

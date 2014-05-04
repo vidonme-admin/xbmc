@@ -78,6 +78,10 @@
 #include "video/VideoDatabase.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#endif
+
 #define SYSHEATUPDATEINTERVAL 60000
 
 using namespace std;
@@ -1704,7 +1708,11 @@ CStdString CGUIInfoManager::GetLabel(int info, int contextWindow, CStdString *fa
     {
       CStdString friendlyName = g_guiSettings.GetString("services.devicename");
       if (friendlyName.Equals("XBMC"))
+#if defined(__VIDONME_MEDIACENTER__)
+        strLabel.Format("%s (%s)", "VidOn XBMC Media Center", g_application.getNetwork().GetHostName().c_str());
+#else
         strLabel.Format("%s (%s)", friendlyName.c_str(), g_application.getNetwork().GetHostName().c_str());
+#endif
       else
         strLabel = friendlyName;
     }
@@ -3954,6 +3962,9 @@ CStdString CGUIInfoManager::GetVersion()
   tmp.Format("%d.%d%s Git:%s", VERSION_MAJOR, VERSION_MINOR, VERSION_TAG, GIT_REV);
 #else
   tmp.Format("%d.%d%s", VERSION_MAJOR, VERSION_MINOR, VERSION_TAG);
+#endif
+#if defined(__VIDONME_MEDIACENTER__) && !defined(__ANDROID_ALLWINNER__)
+  return VidOnMe::VDMUtils::Instance().GetCurrentVersionString();
 #endif
   return tmp;
 }

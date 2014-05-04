@@ -29,6 +29,11 @@
 #include "guilib/GUIWindowManager.h"
 #include "Application.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#define		CONTROL_BUTTON_EXIT				20
+#define		CONTROL_LIST_CONTENT			9000
+#endif
+
 using namespace ANNOUNCEMENT;
 
 CGUIWindowHome::CGUIWindowHome(void) : CGUIWindow(WINDOW_HOME, "Home.xml"), 
@@ -68,6 +73,11 @@ void CGUIWindowHome::OnInitWindow()
        g_advancedSettings.m_databaseMusic.type.Equals("mysql") )
     m_updateRA = (Audio | Video | Totals);
   AddRecentlyAddedJobs( m_updateRA );
+
+#if defined(__VIDONME_MEDIACENTER__) && defined(TARGET_ANDROID)
+	SET_CONTROL_HIDDEN(22);
+	SET_CONTROL_HIDDEN(23);
+#endif
 
   CGUIWindow::OnInitWindow();
 }

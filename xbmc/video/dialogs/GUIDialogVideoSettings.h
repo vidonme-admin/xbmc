@@ -28,12 +28,24 @@ class CGUIDialogVideoSettings :
 public:
   CGUIDialogVideoSettings(void);
   virtual ~CGUIDialogVideoSettings(void);
+#if defined(__VIDONME_MEDIACENTER__)
+  virtual bool OnAction(const CAction &action);
+#endif
 
   static CStdString FormatInteger(float value, float minimum);
   static CStdString FormatFloat(float value, float minimum);
-
 protected:
   virtual void CreateSettings();
   virtual void OnSettingChanged(SettingInfo &setting);
+
+#if defined(__VIDONME_MEDIACENTER__)
+private:
+  bool m_2DOriginal;
+  bool m_2DLeftHalf;
+  bool m_2DUpperHalf;
+  bool m_3DLeftRight;
+  bool m_3DTomBottom;
+  bool m_3DInterlacing;
+#endif
 };
 

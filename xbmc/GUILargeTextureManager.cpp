@@ -134,6 +134,7 @@ CGUILargeTextureManager::~CGUILargeTextureManager()
 void CGUILargeTextureManager::CleanupUnusedImages(bool immediately)
 {
   CSingleLock lock(m_listSection);
+
   // check for items to remove from allocated list, and remove
   listIterator it = m_allocated.begin();
   while (it != m_allocated.end())
@@ -151,6 +152,12 @@ void CGUILargeTextureManager::CleanupUnusedImages(bool immediately)
 bool CGUILargeTextureManager::GetImage(const CStdString &path, CTextureArray &texture, bool firstRequest)
 {
   CSingleLock lock(m_listSection);
+  
+  if (path == "image://http%3a%2f%2fcf2.imgobject.com%2ft%2fp%2foriginal%2frXhuBgQyRKB7cW5BRImyVkO89K7.jpg/")
+  {
+    int a = 0;
+  }
+
   for (listIterator it = m_allocated.begin(); it != m_allocated.end(); ++it)
   {
     CLargeTexture *image = *it;
@@ -172,6 +179,11 @@ bool CGUILargeTextureManager::GetImage(const CStdString &path, CTextureArray &te
 void CGUILargeTextureManager::ReleaseImage(const CStdString &path, bool immediately)
 {
   CSingleLock lock(m_listSection);
+  if (path == "image://http%3a%2f%2fcf2.imgobject.com%2ft%2fp%2foriginal%2frXhuBgQyRKB7cW5BRImyVkO89K7.jpg/")
+  {
+    int a = 0;
+  }
+
   for (listIterator it = m_allocated.begin(); it != m_allocated.end(); ++it)
   {
     CLargeTexture *image = *it;
@@ -182,6 +194,7 @@ void CGUILargeTextureManager::ReleaseImage(const CStdString &path, bool immediat
       return;
     }
   }
+
   for (queueIterator it = m_queued.begin(); it != m_queued.end(); ++it)
   {
     unsigned int id = it->first;
@@ -194,6 +207,24 @@ void CGUILargeTextureManager::ReleaseImage(const CStdString &path, bool immediat
       return;
     }
   }
+
+#if defined(__VIDONME_MEDIACENTER__)
+  std::deque<std::pair<CImageLoader*, int> >::iterator iter = m_queImageLoaders.begin();
+  for (; iter != m_queImageLoaders.end(); ++iter)
+  {
+    if ((*iter).first->m_path == path)
+    {
+      (*iter).second--;
+      if ((*iter).second == 0)
+      {
+        delete (*iter).first;
+        m_queImageLoaders.erase(iter);
+      }
+
+      return;
+    }
+  }
+#endif
 }
 
 // queue the image, and start the background loader if necessary
@@ -211,15 +242,42 @@ void CGUILargeTextureManager::QueueImage(const CStdString &path)
   }
 
   // queue the item
+#if defined(__VIDONME_MEDIACENTER__)
+  if (!m_queImageLoaders.empty())
+  {
+    std::deque<std::pair<CImageLoader*, int> >::iterator iter = m_queImageLoaders.begin();
+    for (; iter != m_queImageLoaders.end(); ++iter)
+    {
+      if ((*iter).first->m_path == path)
+      {
+        (*iter).second++;
+        return;
+      }
+    }
+  }
+
+  if (!m_queued.empty())
+  {
+    m_queImageLoaders.push_back(std::make_pair(new CImageLoader(path), 1));
+  }
+  else
+  {
+    CLargeTexture *image = new CLargeTexture(path);
+    unsigned int jobID = CJobManager::GetInstance().AddJob(new CImageLoader(path), this, CJob::PRIORITY_NORMAL);
+    m_queued.push_back(make_pair(jobID, image));
+  }
+#else
   CLargeTexture *image = new CLargeTexture(path);
   unsigned int jobID = CJobManager::GetInstance().AddJob(new CImageLoader(path), this, CJob::PRIORITY_NORMAL);
   m_queued.push_back(make_pair(jobID, image));
+#endif
 }
 
 void CGUILargeTextureManager::OnJobComplete(unsigned int jobID, bool success, CJob *job)
 {
   // see if we still have this job id
   CSingleLock lock(m_listSection);
+
   for (queueIterator it = m_queued.begin(); it != m_queued.end(); ++it)
   {
     if (it->first == jobID)
@@ -230,9 +288,31 @@ void CGUILargeTextureManager::OnJobComplete(unsigned int jobID, bool success, CJ
       loader->m_texture = NULL; // we want to keep the texture, and jobs are auto-deleted.
       m_queued.erase(it);
       m_allocated.push_back(image);
+#if defined(__VIDONME_MEDIACENTER__)
+      break;
+#else
       return;
+#endif
     }
   }
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (!m_queImageLoaders.empty())
+  {
+    typedef std::pair<CImageLoader*, int> LoaderPair;
+    LoaderPair loaderPair = *m_queImageLoaders.begin();
+    
+    unsigned int jobID = CJobManager::GetInstance().AddJob(loaderPair.first, this, CJob::PRIORITY_NORMAL);
+    CLargeTexture *image = new CLargeTexture(loaderPair.first->m_path);
+    while (loaderPair.second-- > 1)
+    {
+      image->AddRef();
+    }
+
+    m_queued.push_back(make_pair(jobID, image));
+    m_queImageLoaders.pop_front();
+  }
+#endif
 }
 
 

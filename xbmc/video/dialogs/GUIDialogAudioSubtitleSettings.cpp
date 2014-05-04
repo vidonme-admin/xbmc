@@ -38,6 +38,19 @@
 #include "pvr/PVRManager.h"
 #include "cores/AudioEngine/Utils/AEUtil.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "vidonme/VDMUtils.h"
+#include "vidonme/VDMFeatureLimitNoteDlg.h"
+#include "guilib/GUIWindowManager.h"
+#include "guilib/GUISpinControlEx.h"
+#include "video/windows/GUIWindowFullScreen.h"
+#include "utils/log.h"
+#endif
+
+#if defined(__ANDROID_ALLWINNER__)
+#include "android/activity/XBMCApp.h"
+#endif
+
 using namespace std;
 using namespace XFILE;
 using namespace PVR;
@@ -207,7 +220,11 @@ void CGUIDialogAudioSubtitleSettings::AddSubtitleStreams(unsigned int id)
     CStdString strLanguage;
     g_application.m_pPlayer->GetSubtitleLanguage(i, strLanguage);
 
-    if (strName != strLanguage)
+#if defined(__VIDONME_MEDIACENTER__)
+		if (!strLanguage.IsEmpty() && strName != strLanguage)
+#else
+		if (strName != strLanguage)
+#endif
       strName.Format("%s [%s]", strName.c_str(), strLanguage.c_str());
 
     strItem.Format("%s (%i/%i)", strName.c_str(), i + 1, (int)setting.max + 1);
@@ -235,7 +252,11 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
   else if (setting.id == AUDIO_SETTINGS_VOLUME_AMPLIFICATION)
   {
     if (g_application.m_pPlayer)
+    #if defined(__VIDONME_MEDIACENTER__)
+      g_application.m_pPlayer->SetDynamicRangeCompression((long)(g_settings.m_currentVideoSettings.m_VolumeAmplification));
+    #else
       g_application.m_pPlayer->SetDynamicRangeCompression((long)(g_settings.m_currentVideoSettings.m_VolumeAmplification * 100));
+    #endif
   }
   else if (setting.id == AUDIO_SETTINGS_DELAY)
   {
@@ -271,13 +292,109 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
   else if (setting.id == AUDIO_SETTINGS_DIGITAL_ANALOG)
   {
     bool bitstream = false;
+#if defined(__VIDONME_MEDIACENTER__)
+    switch(m_outputmode)
+    {
+    case 0: 
+      {
+				g_guiSettings.SetInt("audiooutput.mode", AUDIO_ANALOG ); 
+        g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channelanalog"));
+        g_guiSettings.SetBool("audiooutput.ac3passthrough", false);
+        g_guiSettings.SetBool("audiooutput.dtspassthrough", false);
+        g_guiSettings.SetBool("audiooutput.passthroughaac", false);
+        g_guiSettings.SetBool("audiooutput.multichannellpcm", false);
+        g_guiSettings.SetBool("audiooutput.truehdpassthrough",false);
+        g_guiSettings.SetBool("audiooutput.dtshdpassthrough", false);
 
+#if defined(__ANDROID_ALLWINNER__)
+				g_guiSettings.SetInt("audiooutput.passthrough", 0);
+				CXBMCApp::EnableAudioPassthrough(false);
+				CXBMCApp::SetActiveAudioDevices("AUDIO_CODEC");
+#endif
+
+        break;
+      }
+    case 1: 
+      {
+				g_guiSettings.SetInt("audiooutput.mode", AUDIO_IEC958 );
+        g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channeloptical"));
+        g_guiSettings.SetBool("audiooutput.ac3passthrough", g_guiSettings.GetBool("vdm_audiooutput.ac3optical"));
+        g_guiSettings.SetBool("audiooutput.dtspassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtsoptical"));
+        g_guiSettings.SetBool("audiooutput.passthroughaac", g_guiSettings.GetBool("vdm_audiooutput.aacoptical"));
+        g_guiSettings.SetBool("audiooutput.multichannellpcm", false);
+        g_guiSettings.SetBool("audiooutput.truehdpassthrough",false);
+        g_guiSettings.SetBool("audiooutput.dtshdpassthrough", false);
+        bitstream = true; 
+
+#if defined(__ANDROID_ALLWINNER__)
+				CXBMCApp::SetActiveAudioDevices("AUDIO_SPDIF");
+        g_guiSettings.SetInt("audiooutput.passthrough", g_guiSettings.GetInt("vdm_audiooutput.passthroughenableoptical"));
+        CXBMCApp::EnableAudioPassthrough(g_guiSettings.GetInt("vdm_audiooutput.passthroughenableoptical") > 0);
+#endif
+
+        break;
+      }
+    case 2: 
+      {
+				g_guiSettings.SetInt("audiooutput.mode", AUDIO_HDMI   ); 
+        g_guiSettings.SetInt("audiooutput.channels",g_guiSettings.GetInt("vdm_audiooutput.channelhdmi"));
+        g_guiSettings.SetBool("audiooutput.ac3passthrough", g_guiSettings.GetBool("vdm_audiooutput.ac3hdmi"));
+        g_guiSettings.SetBool("audiooutput.dtspassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtshdmi"));
+        g_guiSettings.SetBool("audiooutput.passthroughaac", g_guiSettings.GetBool("vdm_audiooutput.aachdmi"));
+        g_guiSettings.SetBool("audiooutput.multichannellpcm", g_guiSettings.GetBool("vdm_audiooutput.lpcmhdmi"));
+        g_guiSettings.SetBool("audiooutput.truehdpassthrough", g_guiSettings.GetBool("vdm_audiooutput.truehdhdmi"));
+        g_guiSettings.SetBool("audiooutput.dtshdpassthrough", g_guiSettings.GetBool("vdm_audiooutput.dtshdhdmi"));
+        bitstream = true; 
+
+#if defined(__ANDROID_ALLWINNER__)
+				CXBMCApp::SetActiveAudioDevices("AUDIO_HDMI");
+				g_guiSettings.SetInt("audiooutput.passthrough", g_guiSettings.GetInt("vdm_audiooutput.passthroughenablehdmi"));
+				CXBMCApp::EnableAudioPassthrough(g_guiSettings.GetInt("vdm_audiooutput.passthroughenablehdmi") > 0);
+#endif
+        break;
+      }
+    }
+
+#if defined(__ANDROID_ALLWINNER__)
+		if (g_guiSettings.GetInt("audiooutput.passthrough") <= 0)
+		{
+			g_guiSettings.SetBool("audiooutput.ac3passthrough", false);
+			g_guiSettings.SetBool("audiooutput.dtspassthrough", false);
+			g_guiSettings.SetBool("audiooutput.passthroughaac", false);
+			g_guiSettings.SetBool("audiooutput.multichannellpcm", false);
+			g_guiSettings.SetBool("audiooutput.truehdpassthrough",false);
+			g_guiSettings.SetBool("audiooutput.dtshdpassthrough", false);
+		}
+#endif
+
+#else
     switch(m_outputmode)
     {
       case 0: g_guiSettings.SetInt("audiooutput.mode", AUDIO_ANALOG ); break;
       case 1: g_guiSettings.SetInt("audiooutput.mode", AUDIO_IEC958 ); bitstream = true; break;
       case 2: g_guiSettings.SetInt("audiooutput.mode", AUDIO_HDMI   ); bitstream = true; break;
     }
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__) && 0
+    if (VidOnMe::PRODUCT_TYPE_FREE == VidOnMe::VDMUtils::Instance().GetProductType())
+    {
+      CGUISpinControlEx *pControl = (CGUISpinControlEx *)GetControl(35);
+      if (pControl && pControl->GetValue() != AUDIO_ANALOG)
+      {
+        if (CVDMFeatureLimitNoteDlg::ShowInfo())
+        {
+          //g_windowManager.ActivateWindow(VDM_WINDOW_BUY_NOTE);
+        }
+        pControl->SetText(g_localizeStrings.Get(338));
+        pControl->SetValue(AUDIO_ANALOG);
+        g_guiSettings.SetInt("audiooutput.mode", AUDIO_ANALOG);
+        bitstream = false;
+      }
+
+			return;
+    }
+#endif
 
     EnableSettings(AUDIO_SETTINGS_OUTPUT_TO_ALL_SPEAKERS, bitstream);
     g_application.Restart();
@@ -296,6 +413,18 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
   {
     g_settings.m_currentVideoSettings.m_SubtitleStream = m_subtitleStream;
     g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
+#if defined(__VIDONME_MEDIACENTER__)
+    const char *pchar = NULL;
+    pchar = g_application.m_pPlayer->GetSubtitlePath(m_subtitleStream);
+    if(pchar)
+    {
+      g_settings.m_currentVideoSettings.m_SubtitlePath = pchar;
+    }
+    else
+    {
+      g_settings.m_currentVideoSettings.m_SubtitlePath = "";
+    }
+#endif
   }
   else if (setting.id == SUBTITLE_SETTINGS_BROWSER)
   {
@@ -333,12 +462,18 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
           strPath = URIUtils::ReplaceExtension(strPath, ".idx");
       
       int id = g_application.m_pPlayer->AddSubtitle(strPath);
+#if defined(__VIDONME_MEDIACENTER__)
+      g_settings.m_currentVideoSettings.m_SubtitlePath = strPath;
+#endif
       if(id >= 0)
       {
         m_subtitleStream = id;
         g_application.m_pPlayer->SetSubtitle(m_subtitleStream);
         g_application.m_pPlayer->SetSubtitleVisible(true);
       }
+#if defined(__VIDONME_MEDIACENTER__)
+      g_settings.m_currentVideoSettings.m_SubtitleStream = m_subtitleStream;
+#endif
       g_settings.m_currentVideoSettings.m_SubtitleCached = true;
       Close();
     }
@@ -360,6 +495,9 @@ void CGUIDialogAudioSubtitleSettings::OnSettingChanged(SettingInfo &setting)
       g_settings.m_defaultVideoSettings = g_settings.m_currentVideoSettings;
       g_settings.m_defaultVideoSettings.m_SubtitleStream = -1;
       g_settings.m_defaultVideoSettings.m_AudioStream = -1;
+#if defined(__VIDONME_MEDIACENTER__)
+      g_settings.m_defaultVideoSettings.m_SubtitlePath = "";
+#endif
       g_settings.Save();
     }
   }
@@ -381,6 +519,28 @@ void CGUIDialogAudioSubtitleSettings::FrameMove()
   }
   CGUIDialogSettings::FrameMove();
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+bool CGUIDialogAudioSubtitleSettings::OnAction(const CAction &action)
+{
+  switch (action.GetID())
+  {
+  case ACTION_NEXT_ITEM:
+  case ACTION_PREV_ITEM:
+    {
+      CGUIWindowFullScreen* pfullscreen = (CGUIWindowFullScreen*)g_windowManager.GetWindow(WINDOW_FULLSCREEN_VIDEO);
+      if (pfullscreen)
+      {
+        pfullscreen->OnAction(action);
+      }
+      return true;
+    }
+  default:
+    break;
+  }
+  return CGUIDialog::OnAction(action);
+}
+#endif
 
 CStdString CGUIDialogAudioSubtitleSettings::PercentAsDecibel(float value, float interval)
 {

@@ -50,7 +50,11 @@ using namespace XFILE;
 #define MAX_ZOOM_FACTOR                     10
 #define MAX_PICTURE_SIZE             2048*2048
 
+#if defined(__ANDROID_ALLWINNER__)
+#define IMMEDIATE_TRANSISTION_TIME          200
+#else
 #define IMMEDIATE_TRANSISTION_TIME          20
+#endif
 
 #define PICTURE_MOVE_AMOUNT              0.02f
 #define PICTURE_MOVE_AMOUNT_ANALOG       0.01f
@@ -390,7 +394,10 @@ void CGUIWindowSlideShow::Process(unsigned int currentTime, CDirtyRegionList &re
   if (!iSlides) return ;
 
   // if we haven't rendered yet, we should mark the whole screen
+#if defined(__VIDONME_MEDIACENTER__)
+#else
   if (!m_hasRendered)
+#endif
     regions.push_back(CRect(0.0f, 0.0f, (float)g_graphicsContext.GetWidth(), (float)g_graphicsContext.GetHeight()));
 
   if (m_iNextSlide < 0 || m_iNextSlide >= m_slides->Size())
@@ -561,11 +568,18 @@ void CGUIWindowSlideShow::Process(unsigned int currentTime, CDirtyRegionList &re
   }
 
   // check if we should swap images now
+#if defined(__VIDONME_MEDIACENTER__)
+  if (m_Image[m_iCurrentPic].IsFinished() && m_Image[1 - m_iCurrentPic].IsLoaded())
+#else
   if (m_Image[m_iCurrentPic].IsFinished())
+#endif
   {
     CLog::Log(LOGDEBUG, "Image %s is finished rendering, switching to %s", m_slides->Get(m_iCurrentSlide)->GetPath().c_str(), m_slides->Get(m_iNextSlide)->GetPath().c_str());
     m_Image[m_iCurrentPic].Close();
+#if defined(__VIDONME_MEDIACENTER__)
+#else
     if (m_Image[1 - m_iCurrentPic].IsLoaded())
+#endif
       m_iCurrentPic = 1 - m_iCurrentPic;
 
     m_iCurrentSlide = m_iNextSlide;

@@ -104,6 +104,10 @@ public:
   */
   void Unregister(ID3DResource *resource);
 
+#if defined(__HAS_VIDONME_PLAYER__)
+  LPDIRECT3D9 GetD3D() { return m_pD3D; }
+#endif
+
   static CStdString GetErrorDescription(HRESULT hr);
 
 protected:

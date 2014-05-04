@@ -1164,6 +1164,25 @@ void CApplicationMessenger::Show(CGUIDialog *pDialog)
   SendMessage(tMsg, true);
 }
 
+#if defined(__VIDONME_MEDIACENTER__)
+void CApplicationMessenger::DoModal(CVDMDialog *pDialog, int iWindowID, const CStdString &param)
+{
+	ThreadMessage tMsg = {TMSG_GUI_DO_MODAL};
+	tMsg.lpVoid = pDialog;
+	tMsg.dwParam1 = (DWORD)iWindowID;
+	tMsg.strParam = param;
+	SendMessage(tMsg, true);
+}
+
+void CApplicationMessenger::Show(CVDMDialog *pDialog)
+{
+	ThreadMessage tMsg = {TMSG_GUI_SHOW};
+	tMsg.lpVoid = pDialog;
+	SendMessage(tMsg, true);
+}
+
+#endif
+
 void CApplicationMessenger::Close(CGUIWindow *window, bool forceClose, bool waitResult /*= true*/, int nextWindowID /*= 0*/, bool enableSound /*= true*/)
 {
   ThreadMessage tMsg = {TMSG_GUI_WINDOW_CLOSE, (DWORD)nextWindowID};

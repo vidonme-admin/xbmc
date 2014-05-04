@@ -24,6 +24,10 @@
 #include "threads/CriticalSection.h"
 #include "dialogs/GUIDialogSlider.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "utils/Stopwatch.h"
+#endif
+
 class CGUITextLayout; // forward
 
 class CGUIWindowFullScreen :
@@ -91,4 +95,8 @@ private:
 
   CCriticalSection m_fontLock;
   CGUITextLayout* m_subsLayout;
+
+#if defined(__VIDONME_MEDIACENTER__)
+	CStopWatch			m_timerAudioSwitch;
+#endif
 };

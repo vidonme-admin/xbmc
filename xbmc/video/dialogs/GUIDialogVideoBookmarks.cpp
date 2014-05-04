@@ -41,6 +41,10 @@
 #include "utils/log.h"
 #include "utils/Variant.h"
 #include "Util.h"
+#if defined(__VIDONME_MEDIACENTER__)
+#include "video/windows/GUIWindowFullScreen.h"
+#include "guilib/GUIWindowManager.h"
+#endif
 
 using namespace std;
 
@@ -64,6 +68,28 @@ CGUIDialogVideoBookmarks::~CGUIDialogVideoBookmarks()
 {
   delete m_vecItems;
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+bool CGUIDialogVideoBookmarks::OnAction(const CAction &action)
+{
+  switch (action.GetID())
+  {
+    case ACTION_NEXT_ITEM:
+    case ACTION_PREV_ITEM:
+    {
+      CGUIWindowFullScreen* pfullscreen = (CGUIWindowFullScreen*)g_windowManager.GetWindow(WINDOW_FULLSCREEN_VIDEO);
+      if (pfullscreen)
+      {
+        pfullscreen->OnAction(action);
+      }
+      return true;
+    }
+    default:
+      break;
+  }
+  return CGUIDialog::OnAction(action);
+}
+#endif
 
 bool CGUIDialogVideoBookmarks::OnMessage(CGUIMessage& message)
 {

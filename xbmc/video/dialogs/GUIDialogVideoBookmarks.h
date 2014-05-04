@@ -34,7 +34,9 @@ public:
   virtual bool OnMessage(CGUIMessage& message);
   virtual void OnWindowLoaded();
   virtual void OnWindowUnload();
-
+#if defined(__VIDONME_MEDIACENTER__)
+  virtual bool OnAction(const CAction &action);
+#endif
 protected:
   void GotoBookmark(int iItem);
   void ClearBookmarks();

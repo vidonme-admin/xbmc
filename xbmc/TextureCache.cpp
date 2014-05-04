@@ -93,7 +93,6 @@ CStdString CTextureCache::GetCachedImage(const CStdString &image, CTextureDetail
     CStdString strPath = GetCachedPath(details.file);
     if (!XFILE::CFile::Exists(strPath))
     {
-      CLog::Log(LOGINFO, "------------------CTextureCache::GetCachedImage() strPath = %s -------------------------", strPath.c_str());
       return "";
     }
     else

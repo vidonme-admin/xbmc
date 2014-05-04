@@ -33,7 +33,11 @@ using namespace PVR;
 CGUIDialogVideoOSD::CGUIDialogVideoOSD(void)
     : CGUIDialog(WINDOW_DIALOG_VIDEO_OSD, "VideoOSD.xml")
 {
+#if defined(__VIDONME_MEDIACENTER__)
+  m_loadType = LOAD_ON_GUI_INIT;
+#else
   m_loadType = KEEP_IN_MEMORY;
+#endif
 }
 
 CGUIDialogVideoOSD::~CGUIDialogVideoOSD(void)

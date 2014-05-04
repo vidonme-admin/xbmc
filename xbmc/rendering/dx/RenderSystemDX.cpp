@@ -187,7 +187,9 @@ bool CRenderSystemDX::ResetRenderSystem(int width, int height, bool fullScreen, 
   BuildPresentParameters();
 
   if (m_useD3D9Ex && !m_needNewDevice)
-    m_nDeviceStatus = ((IDirect3DDevice9Ex*)m_pD3DDevice)->ResetEx(&m_D3DPP, m_D3DPP.Windowed ? NULL : &m_D3DDMEX);
+  {
+	  m_nDeviceStatus = ((IDirect3DDevice9Ex*)m_pD3DDevice)->ResetEx(&m_D3DPP, m_D3DPP.Windowed ? NULL : &m_D3DDMEX);
+  }
   else
   {
     OnDeviceLost();

@@ -23,7 +23,9 @@
 #include "threads/CriticalSection.h"
 #include "utils/Job.h"
 #include "guilib/TextureManager.h"
-
+#if defined(__VIDONME_MEDIACENTER__)
+#include <deque>
+#endif
 /*!
  \ingroup textures,jobs
  \brief Image loader job class
@@ -143,6 +145,10 @@ private:
   typedef std::vector< std::pair<unsigned int, CLargeTexture *> >::iterator queueIterator;
 
   CCriticalSection m_listSection;
+
+#if defined(__VIDONME_MEDIACENTER__)
+  std::deque<std::pair<CImageLoader*, int> > m_queImageLoaders;
+#endif
 };
 
 extern CGUILargeTextureManager g_largeTextureManager;

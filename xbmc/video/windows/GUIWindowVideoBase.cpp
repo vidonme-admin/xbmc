@@ -74,6 +74,12 @@
 #include "utils/GroupUtils.h"
 #include "filesystem/File.h"
 
+#if defined(__VIDONME_MEDIACENTER__)
+#include "settings/GUISettings.h"
+#include "cores/vidonme/VDMPlayer.h"
+#include "PasswordManager.h"
+#endif
+
 using namespace std;
 using namespace XFILE;
 using namespace PLAYLIST;
@@ -901,8 +907,13 @@ bool CGUIWindowVideoBase::OnSelect(int iItem)
   CFileItemPtr item = m_vecItems->Get(iItem);
 
   CStdString path = item->GetPath();
+#if defined(__VIDONME_MEDIACENTER__)
+  if ((item->GetLabel() != "..") && path != "add" && path != "addons://more/video" &&
+    path.Left(19) != "newsmartplaylist://" && path.Left(14) != "newplaylist://" && path.Left(9) != "newtag://")
+#else
   if (!item->m_bIsFolder && path != "add" && path != "addons://more/video" &&
       path.Left(19) != "newsmartplaylist://" && path.Left(14) != "newplaylist://" && path.Left(9) != "newtag://")
+#endif
     return OnFileAction(iItem, g_guiSettings.GetInt("myvideos.selectaction"));
 
   return CGUIMediaWindow::OnSelect(iItem);
@@ -1065,8 +1076,13 @@ bool CGUIWindowVideoBase::ShowResumeMenu(CFileItem &item)
 bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item)
 {
   /* if asked to resume somewhere, we should not show anything */
+
+
+#if defined(__VIDONME_MEDIACENTER__)
+#else
   if (item->m_lStartOffset)
     return true;
+#endif
 
   if (item->IsBDFile())
   {
@@ -1079,6 +1095,14 @@ bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item)
       return ShowPlaySelection(item, url.Get());
     }
   }
+
+#if defined(__VIDONME_MEDIACENTER__)
+  if (item->IsDVDFile())
+  {
+    item->SetProperty("type","DVDFile");
+    return ShowPlaySelection(item,"");
+  }
+#endif
 
   CStdString ext = URIUtils::GetExtension(item->GetPath());
   ext.ToLower();
@@ -1095,20 +1119,97 @@ bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item)
       url.SetHostName(url2.Get());
       return ShowPlaySelection(item, url.Get());
     }
+
+#if defined(__VIDONME_MEDIACENTER__)
+    CURL url3("udf://");
+    url3.SetHostName(item->GetPath());
+    url3.SetFileName("VIDEO_TS/VIDEO_TS.IFO");
+
+    if (CFile::Exists(url3.Get()))
+    {
+      item->SetProperty("type","DVDFile");
+      return ShowPlaySelection(item,"");
+    }
   }
+  if(item->m_bIsFolder )
+  {
+    return ShowPlaySelection(item, "");
+  }
+#else
+  }
+#endif
   return true;
 }
 
 bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item, const CStdString& directory)
 {
-
   CFileItemList items;
 
+#if defined(__VIDONME_MEDIACENTER__)
+
+  CFileItemPtr pItem;
+  CStdString originPath = item->GetPath();
+  CStdString folderType = item->GetProperty("type").asString();
+
+  pItem.reset(new CFileItem());
+  pItem->SetPath("");
+  pItem->m_bIsFolder = false;
+  pItem->SetLabel(g_localizeStrings.Get(70042) /* MainTitle */);
+  pItem->SetIconImage("DefaultVideo.png");
+  pItem->SetProperty("chooseitem","maintitle");
+  items.Add(pItem);
+
+  pItem.reset(new CFileItem());
+  pItem->SetPath(originPath);
+  pItem->m_bIsFolder = true;
+  pItem->SetLabel(g_localizeStrings.Get(25002) /* All titles */);
+  pItem->SetIconImage("DefaultVideoPlaylists.png");
+  pItem->SetProperty("chooseitem","alltitle");
+  items.Add(pItem);
+
+  pItem.reset(new CFileItem());
+  pItem->SetPath(originPath);
+  pItem->m_bIsFolder = false;
+  if(folderType == "DVDFile" || folderType == "DVDFolder")
+  {
+    pItem->SetLabel(g_localizeStrings.Get(70041) /* DVDMenus */);
+    pItem->SetProperty("BDMenu","false");
+    pItem->SetProperty("Menu","true");
+  }
+  else
+  {
+    pItem->SetLabel(g_localizeStrings.Get(25003) /* BDMenus */);
+    pItem->SetProperty("BDMenu","true");
+    pItem->SetProperty("Menu","true");
+  }
+  pItem->SetProperty("chooseitem","menu");
+  pItem->SetIconImage("DefaultProgram.png");
+  items.Add(pItem);
+
+  if(folderType == "BDFolder" || folderType == "DVDFolder")
+  {
+    pItem.reset(new CFileItem());
+    pItem->SetPath(originPath);
+    pItem->m_bIsFolder = true;
+    pItem->SetLabel(g_localizeStrings.Get(70039) /* Open File */);
+    pItem->SetIconImage("DefaultFolder.png");
+    pItem->SetProperty("chooseitem","update");
+    items.Add(pItem);
+  }
+
+#else
   if (!XFILE::CDirectory::GetDirectory(directory, items, XFILE::CDirectory::CHints(), true))
   {
     CLog::Log(LOGERROR, "CGUIWindowVideoBase::ShowPlaySelection - Failed to get play directory for %s", directory.c_str());
-    return true;
+
+#if defined(__VIDONME_MEDIACENTER__)
+		return false;
+#else
+		return true;
+#endif
   }
+
+#endif
 
   if (items.Size() == 0)
   {
@@ -1119,6 +1220,47 @@ bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item, const CStdString
   CGUIDialogSelect* dialog = (CGUIDialogSelect*)g_windowManager.GetWindow(WINDOW_DIALOG_SELECT);
   while(true)
   {
+
+#if defined(__VIDONME_MEDIACENTER__)
+		
+		CFileItemPtr item_new;
+
+		if (item->m_lStartOffset)
+		{
+			item_new = items.Get(0);
+
+			if(!item_new)
+			{
+				break;
+			}
+		}
+		else
+		{
+			dialog->Reset();
+			dialog->SetHeading(25006 /* Select playback item */);
+			dialog->SetItems(&items);
+			dialog->SetUseDetails(true);
+			dialog->DoModal();
+
+			item_new = dialog->GetSelectedItem();
+
+			if(!item_new || dialog->GetSelectedLabel() < 0)
+			{
+				CLog::Log(LOGDEBUG, "CGUIWindowVideoBase::ShowPlaySelection - User aborted %s", directory.c_str());
+				break;
+			}
+		}
+
+    if(item_new->GetProperty("chooseitem").asString() == "update")
+    {
+      item.reset(new CFileItem(*item));
+      item->SetProperty("chooseitem", item_new->GetProperty("chooseitem").asString());
+      item->SetPath(item_new->GetPath());
+      return true;
+    }
+
+#else
+
     dialog->Reset();
     dialog->SetHeading(25006 /* Select playback item */);
     dialog->SetItems(&items);
@@ -1126,26 +1268,77 @@ bool CGUIWindowVideoBase::ShowPlaySelection(CFileItemPtr& item, const CStdString
     dialog->DoModal();
 
     CFileItemPtr item_new = dialog->GetSelectedItem();
+
     if(!item_new || dialog->GetSelectedLabel() < 0)
     {
       CLog::Log(LOGDEBUG, "CGUIWindowVideoBase::ShowPlaySelection - User aborted %s", directory.c_str());
       break;
     }
 
+#endif
+
     if(item_new->m_bIsFolder == false)
     {
       item.reset(new CFileItem(*item));
-      item->SetProperty("original_listitem_url", item->GetPath());
+      item->SetProperty("original_listitem_url", item_new->GetPath());
       item->SetPath(item_new->GetPath());
+
+#if defined(__VIDONME_MEDIACENTER__)
+      item->SetProperty("BDMenu", item_new->GetProperty("BDMenu").asString());
+      item->SetProperty("Menu", item_new->GetProperty("Menu").asString());
+
+      if(item_new->GetProperty("chooseitem").asString() == "maintitle")
+      {
+        if (CVDMPlayer::AddPlaySource(originPath))
+        {
+          CVDMPlayer::PlaylistPtr playptr;
+          playptr = CVDMPlayer::GetPlaySourceMainMoviePlaylist(originPath);
+          if(playptr)
+          {
+            item->SetPath(playptr->strPlayPath);
+          }
+          else
+          {
+            return false;
+          }
+        }
+        else
+        {
+          return false;
+        }
+      }
+#endif
       return true;
     }
 
     items.Clear();
+#if defined(__VIDONME_MEDIACENTER__)
+    CVDMPlayer::Playlists playlists;
+    CStdString strTitle;
+    if (CVDMPlayer::AddPlaySource(item_new->GetPath()))
+    {
+      playlists = CVDMPlayer::GetPlaySourcePlaylists(item_new->GetPath());
+      for (int i = 0; i < playlists.size(); i++)
+      {
+        strTitle.clear();
+        strTitle.Format(g_localizeStrings.Get(25005).c_str(), playlists[i]->nIndex);
+        pItem.reset(new CFileItem());
+        pItem->SetPath(playlists[i]->strPlayPath);
+        pItem->m_bIsFolder = false;
+        pItem->SetLabel(strTitle /* MainTitle */);
+        pItem->SetIconImage("DefaultVideo.png");
+        items.Add(pItem);
+      }
+    }
+
+#else
+
     if(!XFILE::CDirectory::GetDirectory(item_new->GetPath(), items, XFILE::CDirectory::CHints(), true) || items.Size() == 0)
     {
       CLog::Log(LOGERROR, "CGUIWindowVideoBase::ShowPlaySelection - Failed to get any items %s", item_new->GetPath().c_str());
       break;
     }
+#endif
   }
 
   return false;
@@ -1156,12 +1349,15 @@ bool CGUIWindowVideoBase::OnResumeItem(int iItem)
   if (iItem < 0 || iItem >= m_vecItems->Size()) return true;
   CFileItemPtr item = m_vecItems->Get(iItem);
 
+#if defined(__VIDONME_MEDIACENTER__)
+#else
   if (item->m_bIsFolder)
   {
     // resuming directories isn't supported yet. play.
     PlayItem(iItem);
     return true;
   }
+#endif
 
   CStdString resumeString = GetResumeString(*item);
 
@@ -1595,6 +1791,15 @@ void CGUIWindowVideoBase::PlayMovie(const CFileItem *item)
   if(!ShowPlaySelection(movieItem))
     return;
 
+#if defined(__VIDONME_MEDIACENTER__)
+  if(movieItem->GetProperty("chooseitem").asString() == "update")
+  {
+    CGUIMediaWindow::SetUpdate(true);
+    Update(movieItem->GetPath());
+    return;
+  }
+#endif
+
   g_playlistPlayer.Reset();
   g_playlistPlayer.SetCurrentPlaylist(PLAYLIST_VIDEO);
   CPlayList& playlist = g_playlistPlayer.GetPlaylist(PLAYLIST_VIDEO);
@@ -1827,6 +2032,67 @@ bool CGUIWindowVideoBase::Update(const CStdString &strDirectory, bool updateFilt
 bool CGUIWindowVideoBase::GetDirectory(const CStdString &strDirectory, CFileItemList &items)
 {
   bool bResult = CGUIMediaWindow::GetDirectory(strDirectory, items);
+
+#if defined(__ANDROID_ALLWINNER__)
+
+  VECSOURCES *shares = g_settings.GetSourcesFromType("video");
+  vector<CStdString> paths;
+  CVideoDatabase db;
+  if(strDirectory == "sources://video/")
+  {
+    if(!items.Get("/mnt/usbhost0/"))
+    {
+
+      CFileItemPtr pItemA(new CFileItem("usbhost0"));
+      pItemA->SetPath("/mnt/usbhost0/");
+      pItemA->m_bIsFolder = true;
+      pItemA->m_bIsShareOrDrive = false;
+      items.Add(pItemA);
+
+      paths.clear();
+      paths.push_back("/mnt/usbhost0/");
+
+      CMediaSource share;
+      share.FromNameAndPaths("video", "usbhost0", paths);
+
+      g_settings.AddShare("video", share);
+    }
+    if(!items.Get("/mnt/usbhost1/"))
+    {
+
+      CFileItemPtr pItemB(new CFileItem("usbhost1"));
+      pItemB->SetPath("/mnt/usbhost1/");
+      pItemB->m_bIsFolder = true;
+      pItemB->m_bIsShareOrDrive = false;
+      items.Add(pItemB);
+
+      paths.clear();
+      paths.push_back("/mnt/usbhost1/");
+
+      CMediaSource share;
+      share.FromNameAndPaths("video", "usbhost1", paths);
+
+      g_settings.AddShare("video", share);
+    }
+    if(!items.Get("/mnt/usbhost2/"))
+    {
+
+      CFileItemPtr pItemC(new CFileItem("usbhost2"));
+      pItemC->SetPath("/mnt/usbhost2/");
+      pItemC->m_bIsFolder = true;
+      pItemC->m_bIsShareOrDrive = false;
+      items.Add(pItemC);
+
+      paths.clear();
+      paths.push_back("/mnt/usbhost2/");
+
+      CMediaSource share;
+      share.FromNameAndPaths("video", "usbhost2", paths);
+
+      g_settings.AddShare("video", share);
+    }
+  }
+#endif
 
   // add in the "New Playlist" item if we're in the playlists folder
   if ((items.GetPath() == "special://videoplaylists/") && !items.Contains("newplaylist://"))

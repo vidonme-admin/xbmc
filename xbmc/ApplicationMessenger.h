@@ -39,6 +39,10 @@ class CGUIWindow;
 class CGUIMessage;
 class CVideoInfoTag;
 
+#if defined(__VIDONME_MEDIACENTER__)
+class CVDMDialog;
+#endif
+
 namespace MUSIC_INFO
 {
   class CMusicInfoTag;
@@ -109,6 +113,15 @@ namespace MUSIC_INFO
 
 #define TMSG_DISPLAY_SETUP      1000
 #define TMSG_DISPLAY_DESTROY    1001
+
+#if defined(__VIDONME_MEDIACENTER__)
+#define TMSG_UPGRADE_INSTALL              1100
+#define TMSG_BOX_RECOVERY                 1101
+#define TMSG_UPGRADE_DOWNLOAD_FILES       1102
+
+#define TMSG_SESSION_CLIENT								1200
+
+#endif
 
 typedef struct
 {
@@ -217,8 +230,14 @@ public:
 
   void NetworkMessage(DWORD dwMessage, DWORD dwParam = 0);
 
-  void DoModal(CGUIDialog *pDialog, int iWindowID, const CStdString &param = "");
-  void Show(CGUIDialog *pDialog);
+	void DoModal(CGUIDialog *pDialog, int iWindowID, const CStdString &param = "");
+	void Show(CGUIDialog *pDialog);
+
+#if defined(__VIDONME_MEDIACENTER__)
+	void DoModal(CVDMDialog *pDialog, int iWindowID, const CStdString &param = "");
+	void Show(CVDMDialog *pDialog);
+#endif
+
   void Close(CGUIWindow *window, bool forceClose, bool waitResult = true, int nextWindowID = 0, bool enableSound = true);
   void ActivateWindow(int windowID, const std::vector<CStdString> &params, bool swappingWindows);
   void SendAction(const CAction &action, int windowID = WINDOW_INVALID, bool waitResult=true);

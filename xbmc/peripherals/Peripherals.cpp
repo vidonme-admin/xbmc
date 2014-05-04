@@ -81,7 +81,7 @@ void CPeripherals::Initialise(void)
     /* load mappings from peripherals.xml */
     LoadMappings();
 
-#if defined(HAVE_PERIPHERAL_BUS_USB)
+#if defined(HAVE_PERIPHERAL_BUS_USB) && !defined(__TARGET_ANDROID_ALLWINNER__)
     m_busses.push_back(new CPeripheralBusUSB(this));
 #endif
 #ifdef HAVE_CEC_RPI_API

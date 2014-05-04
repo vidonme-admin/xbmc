@@ -118,12 +118,18 @@ bool CGUIWindowVideoNav::OnMessage(CGUIMessage& message)
       m_rootDir.AllowNonLocalSources(false);
 
       SetProperty("flattened", g_settings.m_bMyVideoNavFlatten);
+
+
+#if !defined(__VIDONME_MEDIACENTER__)
+
       if (message.GetNumStringParams() && message.GetStringParam(0).Equals("Files") &&
           g_settings.GetSourcesFromType("video")->empty())
       {
         message.SetStringParam("");
       }
-      
+     
+#endif
+
       if (!CGUIWindowVideoBase::OnMessage(message))
         return false;
 
@@ -464,7 +470,12 @@ void CGUIWindowVideoNav::LoadVideoInfo(CFileItemList &items, CVideoDatabase &dat
       /* NOTE: Currently we GetPlayCounts on our items regardless of whether content is set
                 as if content is set, GetItemsForPaths doesn't return anything not in the content tables.
                 This code can be removed once the content tables are always filled */
-      if (!pItem->m_bIsFolder && !fetchedPlayCounts)
+
+#if defined(__VIDONME_MEDIACENTER__)
+			if (!fetchedPlayCounts)
+#else
+			if (!pItem->m_bIsFolder && !fetchedPlayCounts)
+#endif
       {
         database.GetPlayCounts(items.GetPath(), items);
         fetchedPlayCounts = true;

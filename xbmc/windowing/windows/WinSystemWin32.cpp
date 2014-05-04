@@ -133,6 +133,39 @@ bool CWinSystemWin32::CreateNewWindow(const CStdString& name, bool fullScreen, R
   ShowWindow( m_hWnd, SW_SHOWDEFAULT );
   UpdateWindow( m_hWnd );
 
+#if defined(__VIDONME_MEDIACENTER__)
+
+  UINT nDevices = 0;
+  PRAWINPUTDEVICELIST pRawInputDeviceList = NULL;
+  if (GetRawInputDeviceList(NULL, &nDevices, sizeof(RAWINPUTDEVICELIST)) != 0) { return true;}
+  if ((pRawInputDeviceList = (PRAWINPUTDEVICELIST)malloc(sizeof(RAWINPUTDEVICELIST) * nDevices)) == NULL) { return true;}
+  if (GetRawInputDeviceList(pRawInputDeviceList, &nDevices, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1) { return true;}
+  
+  for (int i = 0; i < nDevices; i++)
+  {
+    if (pRawInputDeviceList[i].dwType == RIM_TYPEHID)
+    {
+      RID_DEVICE_INFO deviceInfo;
+      memset(&deviceInfo, 0, sizeof(RID_DEVICE_INFO));
+      deviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
+      UINT nSize = deviceInfo.cbSize;
+      UINT nRet = GetRawInputDeviceInfo(pRawInputDeviceList[i].hDevice, RIDI_DEVICEINFO, &deviceInfo, &nSize);
+      if (nRet != (UINT)-1)
+      {
+        RAWINPUTDEVICE rawInputDevice;
+        memset(&rawInputDevice, 0, sizeof(RAWINPUTDEVICE));
+        rawInputDevice.usUsagePage = deviceInfo.hid.usUsagePage;
+        rawInputDevice.usUsage = deviceInfo.hid.usUsage;
+        rawInputDevice.dwFlags = 0;
+        rawInputDevice.hwndTarget = 0;
+        RegisterRawInputDevices(&rawInputDevice, 1, sizeof(RAWINPUTDEVICE));
+      }
+    }    
+  }
+
+  // after the job, free the RAWINPUTDEVICELIST
+  free(pRawInputDeviceList);
+#endif
   return true;
 }
 

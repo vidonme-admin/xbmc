@@ -119,6 +119,9 @@
 #define HAS_FILESYSTEM_SMB
 #define HAS_FILESYSTEM_NFS
 #define HAS_ZEROCONF
+#if defined(__VIDONME_MEDIACENTER__)
+#define HAS_ZEROCONFBROWSER
+#endif
 #define HAS_AIRPLAY
 #define HAS_AIRTUNES
 #define HAVE_LIBCEC
@@ -154,8 +157,15 @@
 #define HAS_ZEROCONF
 #define HAS_AVAHI
 #endif
+#if defined(__VIDONME_MEDIACENTER__)
+#define HAS_ZEROCONF
+#define HAS_ZEROCONFBROWSER
+#endif
 #ifdef HAVE_DBUS
+#if defined(__ANDROID_ALLWINNER__)
+#else
 #define HAS_DBUS
+#endif
 #endif
 #define HAS_GL
 #ifdef HAVE_X11

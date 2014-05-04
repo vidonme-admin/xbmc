@@ -28,7 +28,7 @@
 CWinSystemWin32DX::CWinSystemWin32DX()
 : CRenderSystemDX()
 {
-
+	m_eventcallback = NULL;
 }
 
 CWinSystemWin32DX::~CWinSystemWin32DX()
@@ -67,6 +67,14 @@ bool CWinSystemWin32DX::ResizeWindow(int newWidth, int newHeight, int newLeft, i
 {
   CWinSystemWin32::ResizeWindow(newWidth, newHeight, newLeft, newTop);
   CRenderSystemDX::ResetRenderSystem(newWidth, newHeight, false, 0);
+  
+#if defined(__HAS_VIDONME_PLAYER__)
+  {
+	  CSingleLock lock(m_eventlock);
+	  if (m_eventcallback)
+		m_eventcallback->OnReSize(newWidth, newHeight, newLeft, newTop);
+  }
+#endif
 
   return true;
 }
@@ -95,7 +103,22 @@ bool CWinSystemWin32DX::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, boo
   CWinSystemWin32::SetFullScreen(fullScreen, res, blankOtherDisplays);
   CRenderSystemDX::ResetRenderSystem(res.iWidth, res.iHeight, fullScreen, res.fRefreshRate);
 
+#if defined(__HAS_VIDONME_PLAYER__)
+  {
+	  CSingleLock lock(m_eventlock);
+	  if (m_eventcallback)
+		  m_eventcallback->OnReSize(res.iWidth, res.iHeight, 0, 0);
+  }
+#endif
   return true;
 }
+
+#if defined(__HAS_VIDONME_PLAYER__)
+void CWinSystemWin32DX::SetEventCallback(IWinEventCallback * callback)
+{
+	CSingleLock lock(m_eventlock);
+	m_eventcallback = callback;
+}
+#endif
 
 #endif

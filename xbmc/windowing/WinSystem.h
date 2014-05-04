@@ -23,6 +23,7 @@
 
 #include "WinEvents.h"
 #include "guilib/Resolution.h"
+#include "threads/Thread.h"
 #include <vector>
 
 typedef enum _WindowSystemType
@@ -49,6 +50,18 @@ struct REFRESHRATE
   float RefreshRate;
   int   ResInfo_Index;
 };
+
+#if defined(__HAS_VIDONME_PLAYER__)
+
+
+class IWinEventCallback
+{
+public:
+	virtual ~IWinEventCallback(){};
+	virtual void OnReSize(int newWidth, int newHeight, int newLeft, int newTop) = 0;
+};
+
+#endif
 
 class CWinSystemBase
 {
@@ -101,6 +114,10 @@ public:
   std::vector<REFRESHRATE> RefreshRates(int screen, int width, int height, uint32_t dwFlags);
   REFRESHRATE DefaultRefreshRate(int screen, std::vector<REFRESHRATE> rates);
 
+#if defined(__HAS_VIDONME_PLAYER__)
+  virtual void SetEventCallback(IWinEventCallback * callback){};
+#endif
+
 protected:
   void UpdateDesktopResolution(RESOLUTION_INFO& newRes, int screen, int width, int height, float refreshRate, uint32_t dwFlags = 0);
 
@@ -114,6 +131,12 @@ protected:
   int               m_nScreen;
   bool              m_bBlankOtherDisplay;
   float             m_fRefreshRate;
+
+#if defined(__HAS_VIDONME_PLAYER__)
+  CCriticalSection	  m_eventlock;
+  IWinEventCallback	* m_eventcallback;
+#endif
+
 };
 
 

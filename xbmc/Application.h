@@ -71,6 +71,7 @@ class CWebServer;
 #ifdef HAS_WEB_SERVER
 class CWebServer;
 class CHTTPImageHandler;
+class CHTTPFileHandler;
 class CHTTPVfsHandler;
 #ifdef HAS_JSONRPC
 class CHTTPJsonRpcHandler;
@@ -283,7 +284,8 @@ public:
 
 #ifdef HAS_WEB_SERVER
   CWebServer& m_WebServer;
-  CHTTPImageHandler& m_httpImageHandler;
+	CHTTPImageHandler& m_httpImageHandler;
+  CHTTPFileHandler& m_httpFileHandler;
   CHTTPVfsHandler& m_httpVfsHandler;
 #ifdef HAS_JSONRPC
   CHTTPJsonRpcHandler& m_httpJsonRpcHandler;
@@ -360,9 +362,16 @@ public:
 
   bool SwitchToFullScreen();
 
-#if defined(__DVDFAB_FUNC_A10CODEC__)
-  void OnA10Created();
+#if defined(__ANDROID_ALLWINNER__)
+  enum {ALLWINNER_UNKNOWN, ALLWINNER_A10_DVDFAB_MINIPC, ALLWINNER_A10_MINIPC, ALLWINNER_A31_PAD, ALLWINNER_A31_BOX};
+	void OnAllWinnerCodecCreated ();
+
+	void LoadAutoRun(void);
+	void SaveAutoRun(void);
+	bool m_bAutoRun;
+
 #endif 
+
   CSplash* GetSplash() { return m_splash; }
   void SetRenderGUI(bool renderGUI);
 protected:
@@ -471,6 +480,34 @@ protected:
   std::map<std::string, std::map<int, float> > m_lastAxisMap;
 #endif
 
+#if defined(__VIDONME_MEDIACENTER__)
+  int m_currentWindowLastMode;
+  std::vector<int> m_currentModelessWindowsLastMode;
+  CStdString m_strLastSkin;
+  CStdString m_strCurrentSkin;
+  int m_lastFocusedControlID;
+	bool	m_bAudioStreamChanged;
+	bool	m_bMuteForDolby;
+
+public:
+	CStdString m_strWeatherIconPath;
+	bool m_download_exit;
+
+#if defined(__ANDROID_ALLWINNER__)
+	CStdString m_strAndroidLanguage;
+#endif
+
+public:
+  void SwitchToXBMC();
+  void ChangeRenderRatio(int nmode);
+
+	void DeleteDefaultData(void);
+	void ImportXBMCData(void);
+
+	void SetAudioStreamChange(void);
+	bool IsDolbyAndDTSValible(void); 
+	void CheckDolbyAndDTS(void);
+#endif
 };
 
 XBMC_GLOBAL_REF(CApplication,g_application);

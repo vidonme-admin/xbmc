@@ -67,8 +67,14 @@
 #include "dialogs/GUIDialogKaiToast.h"
 #include "dialogs/GUIDialogMediaFilter.h"
 #include "filesystem/SmartPlaylistDirectory.h"
+#include "PasswordManager.h"
 #if defined(TARGET_ANDROID)
 #include "xbmc/android/activity/XBMCApp.h"
+#endif
+
+#if defined(__VIDONME_MEDIACENTER__)
+#include "cores/vidonme/VDMPlayer.h"
+#include "dialogs/GUIDialogBusy.h"
 #endif
 
 #define CONTROL_BTNVIEWASICONS       2
@@ -95,6 +101,9 @@ CGUIMediaWindow::CGUIMediaWindow(int id, const char *xmlFile)
   m_iLastControl = -1;
   m_iSelectedItem = -1;
   m_canFilterAdvanced = false;
+#if defined(__VIDONME_MEDIACENTER__)
+  m_bUpdate = false;
+#endif
 
   m_guiState.reset(CGUIViewState::GetViewState(GetID(), *m_vecItems));
 }
@@ -790,6 +799,29 @@ bool CGUIMediaWindow::Update(const CStdString &strDirectory, bool updateFilterPa
     return false;
   }
 
+#if defined(__VIDONME_MEDIACENTER__)
+  if((items.Size() != 0) && !m_bUpdate)
+  {
+    for(int i = 0; i < items.Size();i++)
+    {
+      if(items[i]->GetLabel() == "BDMV")
+      {
+        m_itemType = "BDFolder";
+        return true;
+      }
+      else if(items[i]->GetLabel() == "VIDEO_TS")
+      {
+        m_itemType = "DVDFolder";
+        return true;
+      }
+      else
+      {
+        m_itemType = "NONE";
+      }
+    }
+  }
+  m_bUpdate = false;
+#endif
   if (items.GetLabel().IsEmpty())
     items.SetLabel(CUtil::GetTitleFromPath(items.GetPath(), true));
   
@@ -979,6 +1011,13 @@ bool CGUIMediaWindow::OnClick(int iItem)
   if ( iItem < 0 || iItem >= (int)m_vecItems->Size() ) return true;
   CFileItemPtr pItem = m_vecItems->Get(iItem);
 
+#if defined(__VIDONME_MEDIACENTER__)
+  if(pItem->GetLabel() == ".." )
+  {
+    m_bUpdate = true;
+  }
+#endif
+
   if (pItem->IsParentFolder())
   {
     GoParentFolder();
@@ -1058,10 +1097,22 @@ bool CGUIMediaWindow::OnClick(int iItem)
       m_history.AddPath(strCurrentDirectory, m_strFilterPath);
     }
 
+    m_itemType.clear();
+
     CFileItem directory(*pItem);
     if (!Update(directory.GetPath()))
       ShowShareErrorMessage(&directory);
 
+#if defined(__VIDONME_MEDIACENTER__)
+    if( m_itemType == "DVDFolder" || m_itemType == "BDFolder")
+    {
+       if(pItem->GetLabel() != ".." )
+       {
+         pItem->SetProperty("type",m_itemType);
+         return OnPlayMedia(iItem);
+       }
+    }
+#endif
     return true;
   }
   else if (pItem->IsPlugin() && !pItem->GetProperty("isplayable").asBoolean())
@@ -1127,6 +1178,19 @@ bool CGUIMediaWindow::OnClick(int iItem)
     }
     else
     {
+#if defined(TARGET_ANDROID) && 0
+      if(pItem->IsVideo()){
+	CStdString path=pItem->GetPath();
+	if(!path.Right(4).Equals(".iso")){
+	  if(path.Left(4).Equals("smb:")){
+	    CURL url(path);
+	    CPasswordManager::GetInstance().AuthenticateURL(url);
+	    path = url.Get();
+	  }
+	  return CXBMCApp::StartActivity("org.vidonme.vidonme","android.intent.action.VIEW","video/*",path);
+	}
+      }
+#endif
       return OnPlayMedia(iItem);
     }
   }
@@ -1384,13 +1448,21 @@ bool CGUIMediaWindow::OnPlayMedia(int iItem)
 // This function is called by OnClick()
 bool CGUIMediaWindow::OnPlayAndQueueMedia(const CFileItemPtr &item)
 {
-  //play and add current directory to temporary playlist
   int iPlaylist = m_guiState->GetPlaylist();
   if (iPlaylist != PLAYLIST_NONE)
   {
     g_playlistPlayer.ClearPlaylist(iPlaylist);
     g_playlistPlayer.Reset();
     int mediaToPlay = 0;
+
+#if defined(__VIDONME_MEDIACENTER__)
+		CGUIDialogBusy* dialog = (CGUIDialogBusy*)g_windowManager.GetWindow(WINDOW_DIALOG_BUSY);
+		if (dialog && item->GetPath().Right(6).Equals(".title"))
+		{
+			dialog->Show();
+		}
+#endif
+
     for ( int i = 0; i < m_vecItems->Size(); i++ )
     {
       CFileItemPtr nItem = m_vecItems->Get(i);
@@ -1398,10 +1470,46 @@ bool CGUIMediaWindow::OnPlayAndQueueMedia(const CFileItemPtr &item)
       if (nItem->m_bIsFolder)
         continue;
 
+#if defined(__VIDONME_MEDIACENTER__)
+      if (!nItem->IsPlayList() && !nItem->IsZIP() && !nItem->IsRAR())
+			{
+				g_windowManager.ProcessRenderLoop(false);
+				if (item->GetPath().Right(6).Equals(".title") && CVDMPlayer::AddPlaySource(nItem->GetPath()))
+				{
+					g_windowManager.ProcessRenderLoop(false);
+					CVDMPlayer::Playlists playlists = CVDMPlayer::GetPlaySourcePlaylists(nItem->GetPath());
+
+					for (int i = 0 ; i < playlists.size() ; ++i)
+					{
+						if (playlists[i]->bMainMovie)
+						{
+							CFileItemPtr item_new(new CFileItem(*nItem));
+							item_new->SetPath(playlists[i]->strPlayPath);
+							g_playlistPlayer.Add(iPlaylist, item_new);
+							g_windowManager.ProcessRenderLoop(false);
+							break;
+						}
+					}
+				}
+				else if (item->IsSamePath(nItem.get()))
+        {
+          g_playlistPlayer.Add(iPlaylist, item);
+        }
+        else
+        {
+          g_playlistPlayer.Add(iPlaylist, nItem);
+        }
+      }
+#else
       if (!nItem->IsPlayList() && !nItem->IsZIP() && !nItem->IsRAR())
         g_playlistPlayer.Add(iPlaylist, nItem);
+#endif
 
-      if (item->IsSamePath(nItem.get()))
+#if defined(__VIDONME_MEDIACENTER__)
+			if (item->IsSamePath(nItem.get()) || (item->GetPath().Find(nItem->GetPath()) >= 0 && item->GetPath().Right(6).Equals(".title")))
+#else
+			if (item->IsSamePath(nItem.get()))
+#endif
       { // item that was clicked
         mediaToPlay = g_playlistPlayer.GetPlaylist(iPlaylist).size() - 1;
       }
@@ -1418,6 +1526,11 @@ bool CGUIMediaWindow::OnPlayAndQueueMedia(const CFileItemPtr &item)
       g_playlistPlayer.GetPlaylist(iPlaylist).Swap(0, iIndex);
       mediaToPlay = 0;
     }
+
+		if (dialog && dialog->IsActive())
+		{
+			dialog->Close();
+		}
 
     // play
     g_playlistPlayer.SetCurrentPlaylist(iPlaylist);
@@ -1674,6 +1787,13 @@ bool CGUIMediaWindow::WaitForNetwork() const
   progress->Close();
   return true;
 }
+
+#if defined(__VIDONME_MEDIACENTER__)
+void CGUIMediaWindow::SetUpdate(bool bUpdate)
+{
+  m_bUpdate = bUpdate;
+}
+#endif
 
 void CGUIMediaWindow::OnFilterItems(const CStdString &filter)
 {

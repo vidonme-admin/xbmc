@@ -50,7 +50,9 @@ public:
 
   virtual bool CanFilterAdvanced() { return m_canFilterAdvanced; }
   virtual bool IsFiltered();
-
+#if defined(__VIDONME_MEDIACENTER__)
+  void SetUpdate(bool bUpdate);
+#endif
 protected:
   virtual void LoadAdditionalTags(TiXmlElement *root);
   CGUIControl *GetFirstFocusableControl(int id);
@@ -184,4 +186,8 @@ protected:
    \sa Update
    */
   CStdString m_strFilterPath;
+#if defined(__VIDONME_MEDIACENTER__)
+  CStdString m_itemType;
+  bool m_bUpdate;
+#endif
 };

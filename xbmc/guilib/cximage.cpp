@@ -49,8 +49,19 @@ bool CXImage::LoadImageFromMemory(unsigned char* buffer, unsigned int bufSize, u
 
   if(!m_dll.LoadImageFromMemory(buffer, bufSize, strExt.c_str(), width, height, &m_image))
   {
-    CLog::Log(LOGERROR, "Texture manager unable to load image from memory");
-    return false;
+    if(buffer[0] == 'G' && buffer[1] == 'I' && buffer[2] == 'F')
+    {
+      if (!m_dll.LoadImageFromMemory(buffer, bufSize, "gif", width, height, &m_image))
+      {
+        CLog::Log(LOGERROR, "Texture manager unable to load image from memory");
+        return false;
+      }   
+    }
+    else
+    {
+      CLog::Log(LOGERROR, "Texture manager unable to load image from memory");
+      return false; 
+    }
   }
 
   m_hasAlpha = NULL != m_image.alpha;

@@ -1,3 +1,7 @@
+
+#if defined(__ANDROID_ALLWINNER__)
+
+
 /*
 *      Copyright (C) 2005-2013 Team XBMC
 *      http://www.xbmc.org
@@ -393,5 +397,7 @@ void CMatrixGLES::PrintMatrix(void)
     CLog::Log(LOGDEBUG, "%f %f %f %f", m[3], m[7], m[11], m[15]);
   }
 }
+
+#endif
 
 #endif

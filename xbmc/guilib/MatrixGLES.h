@@ -1,3 +1,6 @@
+
+#if defined(__ANDROID_ALLWINNER__)
+
 #pragma once
 /*
 *      Copyright (C) 2005-2013 Team XBMC
@@ -76,3 +79,6 @@ protected:
 };
 
 extern CMatrixGLES g_matrices;
+
+
+#endif

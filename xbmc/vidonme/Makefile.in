@@ -1,0 +1,25 @@
+SRCS=UDFSupport.cpp \
+     VDMUtils.cpp \
+     VDMMessageBox.cpp \
+     VDMUpgradeNoteDlg.cpp \
+	 VDMFreeVersionNoteDlg.cpp \
+     VDMBuyNoteDlg.cpp \
+	 VDMWindow.cpp\
+	 VDMDialog.cpp\
+	 VDMFeatureLimitNoteDlg.cpp\
+	 VDMFeatureLimitNoteDlgEx.cpp\
+	 VDMDolbyAndDTSDlg.cpp\
+	 VDMWindowLogSend.cpp\
+	 VDMDumpUpload.cpp\
+	 VDMSystemUpdate.cpp\
+	 VDMUpdateSchedule.cpp\
+	 VDMUpdateError.cpp\
+     android/network/ZeroconfBrowserDNS.cpp \
+	 android/network/ZeroconfDNS.cpp \
+	 AutoClearCache.cpp \
+	 TextureDatabaseEx.cpp
+
+LIB=vidonme.a
+
+include @abs_top_srcdir@/Makefile.include
+-include $(patsubst %.cpp,%.P,$(patsubst %.c,%.P,$(SRCS)))

@@ -1,0 +1,6 @@
+SRCS=GUITabControl.cpp  VDMImage.cpp  VDMSliderControl.cpp VDMListContainer.cpp
+
+LIB=vidonmectrl.a
+
+include @abs_top_srcdir@/Makefile.include
+-include $(patsubst %.cpp,%.P,$(patsubst %.c,%.P,$(SRCS)))

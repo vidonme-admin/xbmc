@@ -1,0 +1,9 @@
+.PHONY: compile
+
+SRCS = VDMPlayer.cpp
+
+LIB  = VDMPlayer.a
+
+include @abs_top_srcdir@/Makefile.include
+-include $(patsubst %.cpp,%.P,$(patsubst %.c,%.P,$(SRCS)))
+

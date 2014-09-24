@@ -24,6 +24,8 @@
 #include "WinSystemX11GLES.h"
 #include "utils/log.h"
 #include <SDL/SDL_syswm.h>
+#include <SDL/SDL_keyboard.h>
+#include <SDL/SDL_mouse.h>
 #include "filesystem/SpecialProtocol.h"
 #include "settings/Settings.h"
 #include "guilib/Texture.h"
@@ -33,15 +35,15 @@
 using namespace std;
 
 // Comment out one of the following defines to select the colourspace to use
-//#define RGBA8888
-#define RGB565
+#define RGBA8888
+//#define RGB565
 
 #if defined(RGBA8888)
 #define RSIZE	8
 #define GSIZE	8
 #define BSIZE	8
 #define ASIZE	8
-#define DEPTH	8
+#define DEPTH	16
 #define BPP		32
 #elif defined(RGB565)
 #define RSIZE	5
@@ -112,6 +114,7 @@ bool CWinSystemX11GLES::InitWindowSystem()
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, ASIZE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
+	
 	return CWinSystemBase::InitWindowSystem();
   }
   else
@@ -151,14 +154,17 @@ bool CWinSystemX11GLES::DestroyWindowSystem()
 
 bool CWinSystemX11GLES::CreateNewWindow(const CStdString& name, bool fullScreen, RESOLUTION_INFO& res, PHANDLE_EVENT_FUNC userFunction)
 {
+  CLog::Log(LOGDEBUG, "Trying CreateNewWindow ");
   if(!SetFullScreen(fullScreen, res, false))
 	return false;
 
-  CTexture iconTexture;
-  iconTexture.LoadFromFile("special://xbmc/media/icon.png");
+  //CTexture iconTexture;
+  //iconTexture.LoadFromFile("special://xbmc/media/icon.png");
 
-  SDL_WM_SetIcon(SDL_CreateRGBSurfaceFrom(iconTexture.GetPixels(), iconTexture.GetWidth(), iconTexture.GetHeight(), BPP, iconTexture.GetPitch(), 0xff0000, 0x00ff00, 0x0000ff, 0xff000000L), NULL);
-  SDL_WM_SetCaption("XBMC Media Center", NULL);
+  //CLog::Log(LOGDEBUG, "Trying to create texture for icon ");
+  //SDL_WM_SetIcon(SDL_CreateRGBSurfaceFrom(iconTexture.GetPixels(), iconTexture.GetWidth(), iconTexture.GetHeight(), BPP, iconTexture.GetPitch(), 0xff0000, 0x00ff00, 0x0000ff, 0xff000000L), NULL);
+  //CLog::Log(LOGDEBUG, "succeed ? texture for icon ");
+  //SDL_WM_SetCaption("XBMC Media Center", NULL);
 
   m_bWindowCreated = true;
 
@@ -166,6 +172,7 @@ bool CWinSystemX11GLES::CreateNewWindow(const CStdString& name, bool fullScreen,
   m_eglext += eglQueryString(m_eglDisplay, EGL_EXTENSIONS);
   m_eglext += " ";
 
+  CLog::Log(LOGDEBUG, "succeed CreateNewWindow ");
   CLog::Log(LOGDEBUG, "EGL_EXTENSIONS:%s", m_eglext.c_str());
 
   return true;
@@ -185,8 +192,10 @@ bool CWinSystemX11GLES::ResizeWindow(int newWidth, int newHeight, int newLeft, i
 
 #if (HAS_GLES == 2)
     int options = 0;
+  CLog::Log(LOGDEBUG, "resize window hasgles=2");
 #else
     int options = SDL_OPENGL;
+  CLog::Log(LOGDEBUG, "resize window sdl");
 #endif
     if (m_bFullScreen)
       options |= SDL_FULLSCREEN;
@@ -230,8 +239,10 @@ bool CWinSystemX11GLES::SetFullScreen(bool fullScreen, RESOLUTION_INFO& res, boo
 
 #if (HAS_GLES == 2)
     int options = 0;
+  CLog::Log(LOGDEBUG, "set fullscreen hsgles=2");
 #else
     int options = SDL_OPENGL;
+  CLog::Log(LOGDEBUG, "set fullscreen sdl");
 #endif
   if (m_bFullScreen)
     options |= SDL_FULLSCREEN;
@@ -399,7 +410,7 @@ bool CWinSystemX11GLES::RefreshEGLContext()
     return false;
   }
 
-  CLog::Log(LOGDEBUG, "RefreshEGLContext Succeeded! Format:A%d|R%d|G%d|B%d|BPP%d", ASIZE, RSIZE, GSIZE, BSIZE, DEPTH);
+  CLog::Log(LOGDEBUG, "RefreshEGLContext Succeeded! Format:A%d|R%d|G%d|B%d|DEPTH%d", ASIZE, RSIZE, GSIZE, BSIZE, DEPTH);
   return true;
 }
 

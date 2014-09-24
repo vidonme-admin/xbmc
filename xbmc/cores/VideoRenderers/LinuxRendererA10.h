@@ -297,7 +297,7 @@ typedef struct
   u32 addr_v_out;
 } A10VLScalerParameter;
 
-bool A10VLInit(int &width, int &height);
+bool A10VLInit(int &width, int &height, double &refreshRate);
 
 void A10VLExit();
 

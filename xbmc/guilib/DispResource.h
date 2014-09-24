@@ -20,7 +20,7 @@
 
 #pragma once
 
-#if defined(HAS_GLX) || defined(TARGET_DARWIN_OSX)
+//#if defined(HAS_GLX) || defined(TARGET_DARWIN_OSX)
 class IDispResource
 {
 public:
@@ -29,4 +29,4 @@ public:
   virtual void OnResetDevice() {};
 };
 
-#endif
+//#endif

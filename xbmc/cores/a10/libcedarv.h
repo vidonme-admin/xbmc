@@ -70,6 +70,7 @@ extern "C" {
     	CEDARV_CONTAINER_FORMAT_VOB,
     	CEDARV_CONTAINER_FORMAT_WEBM,
     	CEDARV_CONTAINER_FORMAT_OGM,
+    	CEDARV_CONTAINER_FORMAT_RAW,
     }cedarv_container_format_e;
 
 	typedef enum CEDARV_3D_MODE
@@ -155,10 +156,16 @@ extern "C" {
         CEDARV_PIXEL_FORMAT_YUV420     = 0xd,
         CEDARV_PIXEL_FORMAT_YUV411     = 0xe,
         CEDARV_PIXEL_FORMAT_CSIRGB     = 0xf,
-        CEDARV_PIXEL_FORMAT_AW_YUV420  = 0x10,
-        CEDARV_PIXEL_FORMAT_AW_YUV422  = 0x11,
-        CEDARV_PIXEL_FORMAT_AW_YUV411  = 0x12
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV420  = 0x10,
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV422  = 0x11,
+        CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV411  = 0x12,
+        CEDARV_PIXEL_FORMAT_PLANNER_YUV420        = 0x13,
+        CEDARV_PIXEL_FORMAT_PLANNER_YVU420        = 0x14
     }cedarv_pixel_format_e;
+	
+	#define CEDARV_PIXEL_FORMAT_AW_YUV420 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV420
+	#define CEDARV_PIXEL_FORMAT_AW_YUV422 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV422
+	#define CEDARV_PIXEL_FORMAT_AW_YUV411 CEDARV_PIXEL_FORMAT_MB_UV_COMBINE_YUV411
     
 	#define CEDARV_PICT_PROP_NO_SYNC   0x1
         
@@ -213,7 +220,7 @@ extern "C" {
         u8 *					alpha2;
 
         u32						display_3d_mode;		//* this value has nothing to do with decoder, it is used for video render to
-        												//* pass display mode to overlay module.
+        												//* pass display mode to overlay module. cedarx_display_3d_mode_e
         u32                     flag_addr;//dit maf flag address
         u32                     flag_stride;//dit maf flag line stride
         u8                      maf_valid;
@@ -227,6 +234,7 @@ extern "C" {
         CEDARV_RESULT_KEYFRAME_DECODED        = 0x3,      //* decode operation decodes one key frame;
         CEDARV_RESULT_NO_FRAME_BUFFER         = 0x4,      //* fail when try to get an empty frame buffer;
         CEDARV_RESULT_NO_BITSTREAM            = 0x5,      //* fail when try to get bitstream frame;
+        CEDARV_RESULT_MULTI_PIXEL			  = 0x6,      //* support multi_pixel;
         
         CEDARV_RESULT_ERR_FAIL                = -1,       //* operation fail;
         CEDARV_RESULT_ERR_INVALID_PARAM       = -2,       //* failure caused by invalid function parameter;
@@ -254,7 +262,7 @@ extern "C" {
         CEDARV_COMMAND_BACKWARD,
         CEDARV_COMMAND_STOP,
         CEDARV_COMMAND_JUMP,
-        CEDARV_COMMAND_ROTATE,
+        CEDARV_COMMAND_ROTATE,  //static rotate?
         CEDARV_COMMAND_SET_TOTALMEMSIZE,
 
         CEDARV_COMMAND_DROP_B_FRAME,
@@ -285,7 +293,21 @@ extern "C" {
 
         CEDARV_COMMAND_FLUSH,
         CEDARV_COMMAND_CLOSE_MAF,
-        CEDARV_COMMAND_SET_DEMUX_TYPE
+        CEDARV_COMMAND_SET_DEMUX_TYPE,
+        CEDARV_COMMAND_DECODE_NO_DELAY,
+		CEDARV_COMMAND_SET_DYNAMIC_ROTATE_ANGLE,
+        CEDARV_COMMAND_DYNAMIC_ROTATE,      //dynamic rotate
+        CEDARV_COMMAND_SET_VBV_SIZE,
+        CEDARV_COMMAND_SET_PIXEL_FORMAT,			//1633
+        CEDARV_COMMAND_MULTI_PIXEL,
+        CEDARV_COMMAND_OPEN_YV32_TRANSFROM,
+        CEDARV_COMMAND_CLOSE_YV32_TRANSFROM,
+        CEDARV_COMMAND_SET_DISPLAYFRAME_REQUESTMODE,
+
+		//* for scale
+		CEDARV_COMMAND_ENABLE_SCALE_DOWN,
+		CEDARV_COMMAND_SET_HORIZON_SCALE_RATIO,
+		CEDARV_COMMAND_SET_VERTICAL_SCALE_RATIO,
     }cedarv_io_cmd_e;
     
     
@@ -328,21 +350,14 @@ extern "C" {
         void *cedarx_cookie;
     };
 
-    cedarv_decoder_t* libcedarv_init(s32 *ret);
-    s32 libcedarv_exit(cedarv_decoder_t* p);
 
-    void libcedarv_free_vbs_buffer_sem(void* vdecoder);
-
-    #define LIBVE_DEBUG
-    #ifdef LIBVE_DEBUG
-    #define __msg(msg...) {printf("%s:%d   ", __FILE__, __LINE__); printf(msg); printf("\n");}
-    #else
-    #define __msg(msg...) ((void)0)
-    #endif
-
+cedarv_decoder_t* libcedarv_init(s32 *ret);
+s32 libcedarv_exit(cedarv_decoder_t* p);
 #ifdef __cplusplus
 }
 #endif
 
 
+
 #endif
+

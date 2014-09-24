@@ -33,6 +33,8 @@
 #include "BaseRenderer.h"
 #include "xbmc/cores/dvdplayer/DVDCodecs/Video/DVDVideoCodec.h"
 
+class CVDPAU;
+
 class CRenderCapture;
 
 class CBaseTexture;
@@ -83,6 +85,7 @@ enum RenderMethod
 {
   RENDER_GLSL   = 0x001,
   RENDER_SW     = 0x004,
+  RENDER_VDPAU  = 0x08,
   RENDER_POT    = 0x010,
   RENDER_OMXEGL = 0x040,
   RENDER_CVREF  = 0x080,
@@ -158,6 +161,9 @@ public:
 #ifdef HAVE_VIDEOTOOLBOXDECODER
   virtual void         AddProcessor(struct __CVBuffer *cvBufferRef);
 #endif
+#ifdef HAVE_LIBVDPAU
+  virtual void         AddProcessor(CVDPAU* vdpau);
+#endif
 
 protected:
   virtual void Render(DWORD flags, int index);
@@ -178,6 +184,10 @@ protected:
   void DeleteYV12Texture(int index);
   bool CreateYV12Texture(int index);
 
+  void UploadVDPAUTexture(int index);
+  void DeleteVDPAUTexture(int index);
+  bool CreateVDPAUTexture(int index);
+
   void UploadCVRefTexture(int index);
   void DeleteCVRefTexture(int index);
   bool CreateCVRefTexture(int index);
@@ -194,6 +204,7 @@ protected:
   void RenderSoftware(int index, int field);      // single pass s/w yuv2rgb renderer
   void RenderOpenMax(int index, int field);       // OpenMAX rgb texture
   void RenderCoreVideoRef(int index, int field);  // CoreVideo reference
+  void RenderVDPAU(int renderBuffer, int field);      // render using vdpau hardware
 
   CFrameBufferObject m_fbo;
 
@@ -229,6 +240,11 @@ protected:
     unsigned texheight;
 
     unsigned flipindex;
+ //pixels per texel
+    unsigned pixpertex_x;
+    unsigned pixpertex_y;
+
+
   };
 
   typedef YUVPLANE           YUVPLANES[MAX_PLANES];
@@ -248,6 +264,9 @@ protected:
 #endif
 #ifdef HAVE_VIDEOTOOLBOXDECODER
   struct __CVBuffer *cvBufferRef;
+#endif
+#ifdef HAVE_LIBVDPAU
+    CVDPAU*   vdpau;
 #endif
 
   };

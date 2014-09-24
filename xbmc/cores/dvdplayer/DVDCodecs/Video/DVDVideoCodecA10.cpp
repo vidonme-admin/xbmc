@@ -14,7 +14,7 @@
 #define MEDIAINFO
 
 extern void A10VLExit(); 
-extern bool A10VLInit(int &width, int &height);
+extern bool A10VLInit(int &width, int &height, double &refreshRate);
 
 static bool a10IsEnabled = false;
 
@@ -64,6 +64,7 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 {
 	//check dll is load success
 
+	printf(" A10 Open\n");
 	if( !g_libbdv.IsLoaded() )
 	{
 		CLog::Log(LOGERROR, "Load failed, cannot start the codec!");
@@ -88,6 +89,7 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 	m_info.video_width = hints.width;
 	m_info.video_height = hints.height;
 	m_info.aspect_ratio = 1000;
+	m_info.is_pts_correct = !m_hints.ptsinvalid;
 	m_info.sub_format = CEDARV_SUB_FORMAT_UNKNOW;
 	m_info.container_format = CEDARV_CONTAINER_FORMAT_UNKNOW;
 	m_info.init_data_len = 0;
@@ -253,7 +255,8 @@ bool CDVDVideoCodecA10::Open(CDVDStreamInfo &hints, CDVDCodecOptions &options)
 	CLog::Log(LOGDEBUG, "A10: cedar open.");
 
 	int width = 0, height = 0;
-	A10VLInit (width, height);
+	double refresh =0.0;
+	A10VLInit (width, height, refresh);
 
 	/*
 	pthread_attr_t attr;
@@ -269,6 +272,7 @@ bool CDVDVideoCodecA10::DoOpen()
 {
 	s32 ret;
 
+	printf(" A10 DoOpen\n");
 	m_hcedarv = g_libbdv.libcedarv_init(&ret);
 	if (ret < 0)
 	{
@@ -525,7 +529,7 @@ int CDVDVideoCodecA10::Decode(BYTE* pData, int iSize, double dts, double pts)
 		//m_hcedarv->display_release(m_hcedarv, picture.id);
                 //picture.y = y_p;
                 //picture.u = u_p; 
-		m_picture.format     = RENDER_FMT_A10BUF;
+//ifndef DVDFAB		m_picture.format     = RENDER_FMT_A10BUF;
 		m_picture.a10buffer  = A10VLPutQueue(freecallback, (void*)this, NULL, picture);
 		m_picture.iFlags    |= DVP_FLAG_ALLOCATED;
 #endif

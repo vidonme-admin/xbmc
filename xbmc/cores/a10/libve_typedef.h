@@ -2,6 +2,12 @@
 #ifndef LIBVE_TYPEDEF_H
 #define LIBVE_TYPEDEF_H
 
+#ifdef MELIS
+#include "ePDK.h"
+#else
+#include <stdarg.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -99,6 +105,7 @@ extern "C" {
     	CONTAINER_FORMAT_VOB,
     	CONTAINER_FORMAT_WEBM,
     	CONTAINER_FORMAT_OGM,
+    	CONTAINER_FORMAT_RAW,
     }container_format_e;
 
     //*******************************************************//
@@ -125,7 +132,9 @@ extern "C" {
 
         PIXEL_FORMAT_AW_YUV420  = 0x10,
         PIXEL_FORMAT_AW_YUV422	= 0x11,
-        PIXEL_FORMAT_AW_YUV411  = 0x12
+        PIXEL_FORMAT_AW_YUV411  = 0x12,
+        PIXEL_FORMAT_PLANNER_YUV420        = 0x13,
+        PIXEL_FORMAT_PLANNER_YVU420        = 0x14
     }pixel_format_e;
     
 

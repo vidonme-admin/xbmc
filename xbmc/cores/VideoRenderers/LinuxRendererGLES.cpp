@@ -52,6 +52,10 @@
 #include "yuv2rgb.neon.h"
 #include "utils/CPUInfo.h"
 #endif
+#ifdef HAVE_LIBVDPAU
+#include "cores/dvdplayer/DVDCodecs/Video/VDPAU.h"
+#endif
+
 #ifdef HAVE_VIDEOTOOLBOXDECODER
 #include "DVDCodecs/Video/DVDVideoCodecVideoToolBox.h"
 #include <CoreVideo/CoreVideo.h>
@@ -67,6 +71,10 @@ CLinuxRendererGLES::YUVBUFFER::YUVBUFFER()
   memset(&fields, 0, sizeof(fields));
   memset(&image , 0, sizeof(image));
   flipindex = 0;
+#ifdef HAVE_LIBVDPAU
+  vdpau = NULL;
+#endif
+
 }
 
 CLinuxRendererGLES::YUVBUFFER::~YUVBUFFER()
@@ -440,6 +448,8 @@ void CLinuxRendererGLES::RenderUpdate(bool clear, DWORD flags, DWORD alpha)
 
   int index = m_iYV12RenderBuffer;
   YUVBUFFER& buf =  m_buffers[index];
+    m_buffers[index].vdpau->Present();
+    return;
 
   if (m_format != RENDER_FMT_OMXEGL)
   {
@@ -507,6 +517,11 @@ void CLinuxRendererGLES::FlipPage(int source)
     m_iYV12RenderBuffer = NextYV12Texture();
 
   m_buffers[m_iYV12RenderBuffer].flipindex = ++m_flipindex;
+#ifdef HAVE_LIBVDPAU  
+  if((m_renderMethod & RENDER_VDPAU) && m_buffers[m_iYV12RenderBuffer].vdpau)
+    m_buffers[m_iYV12RenderBuffer].vdpau->Present();
+#endif
+
 
   return;
 }
@@ -537,7 +552,7 @@ unsigned int CLinuxRendererGLES::PreInit()
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
 
   if (!m_dllSwScale->Load())
-    CLog::Log(LOGERROR,"CLinuxRendererGL::PreInit - failed to load rescale libraries!");
+    CLog::Log(LOGERROR,"CLinuxRendererGLES::PreInit - failed to load rescale libraries!");
 
   return true;
 }
@@ -608,6 +623,7 @@ void CLinuxRendererGLES::UpdateVideoFilter()
 
 void CLinuxRendererGLES::LoadShaders(int field)
 {
+printf("load shaders decide render based on format\n");
 #ifdef TARGET_DARWIN_IOS
   float ios_version = GetIOSVersion();
 #endif
@@ -723,7 +739,7 @@ void CLinuxRendererGLES::LoadShaders(int field)
 
 void CLinuxRendererGLES::UnInit()
 {
-  CLog::Log(LOGDEBUG, "LinuxRendererGL: Cleaning up GL resources");
+  CLog::Log(LOGDEBUG, "CLinuxRendererGLES: Cleaning up GL resources");
   CSingleLock lock(g_graphicsContext);
 
   if (m_rgbBuffer != NULL)
@@ -789,21 +805,25 @@ void CLinuxRendererGLES::Render(DWORD flags, int index)
 
   if (m_renderMethod & RENDER_GLSL)
   {
+	  printf("RENDER_GLSL\n");
     UpdateVideoFilter();
     switch(m_renderQuality)
     {
     case RQ_LOW:
     case RQ_SINGLEPASS:
+	  printf("RENDER_GLSL single\n");
       RenderSinglePass(index, m_currentField);
       VerifyGLState();
       break;
 
     case RQ_MULTIPASS:
+	  printf("RENDER_GLSL mutiple\n");
       RenderMultiPass(index, m_currentField);
       VerifyGLState();
       break;
 
     case RQ_SOFTWARE:
+	  printf("RENDER_GLSL soft\n");
       RenderSoftware(index, m_currentField);
       VerifyGLState();
       break;
@@ -819,6 +839,14 @@ void CLinuxRendererGLES::Render(DWORD flags, int index)
     RenderCoreVideoRef(index, m_currentField);
     VerifyGLState();
   }
+#ifdef HAVE_LIBVDPAU
+  else if (m_renderMethod & RENDER_VDPAU)
+  {
+    UpdateVideoFilter();
+    RenderVDPAU(index, m_currentField);
+  }
+#endif
+
   else
   {
     RenderSoftware(index, m_currentField);
@@ -1314,6 +1342,87 @@ void CLinuxRendererGLES::RenderCoreVideoRef(int index, int field)
 #endif
 }
 
+void CLinuxRendererGLES::RenderVDPAU(int index, int field)
+{
+#ifdef HAVE_LIBVDPAU
+printf("LRGLES Render VDPAU\n");
+  YUVPLANE &plane = m_buffers[index].fields[field][0];
+  CVDPAU   *vdpau = m_buffers[m_iYV12RenderBuffer].vdpau;
+
+  if (!vdpau)
+    return;
+
+  glEnable(m_textureTarget);
+  glActiveTextureARB(GL_TEXTURE0);
+  glBindTexture(m_textureTarget, plane.id);
+
+  vdpau->BindPixmap();
+
+  // Try some clamping or wrapping
+  glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(m_textureTarget, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  if (m_pVideoFilterShader)
+  {
+    GLint filter;
+    if (!m_pVideoFilterShader->GetTextureFilter(filter))
+      filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
+
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, filter);
+    m_pVideoFilterShader->SetSourceTexture(0);
+    m_pVideoFilterShader->SetWidth(m_sourceWidth);
+    m_pVideoFilterShader->SetHeight(m_sourceHeight);
+
+    //disable non-linear stretch when a dvd menu is shown, parts of the menu are rendered through the overlay renderer
+    //having non-linear stretch on breaks the alignment
+    if (g_application.m_pPlayer && g_application.m_pPlayer->IsInMenu())
+      m_pVideoFilterShader->SetNonLinStretch(1.0);
+    else
+      m_pVideoFilterShader->SetNonLinStretch(pow(g_settings.m_fPixelRatio, g_advancedSettings.m_videoNonLinStretchRatio));
+
+    m_pVideoFilterShader->Enable();
+  }
+  else
+  {
+    GLint filter = m_scalingMethod == VS_SCALINGMETHOD_NEAREST ? GL_NEAREST : GL_LINEAR;
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MAG_FILTER, filter);
+    glTexParameteri(m_textureTarget, GL_TEXTURE_MIN_FILTER, filter);
+  }
+
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  VerifyGLState();
+
+  glBegin(GL_QUADS);
+  if (m_textureTarget==GL_TEXTURE_2D)
+  {
+    glTexCoord2f(0.0, 0.0);  glVertex2f(m_rotatedDestCoords[0].x, m_rotatedDestCoords[0].y);
+    glTexCoord2f(1.0, 0.0);  glVertex2f(m_rotatedDestCoords[1].x, m_rotatedDestCoords[1].y);
+    glTexCoord2f(1.0, 1.0);  glVertex2f(m_rotatedDestCoords[2].x, m_rotatedDestCoords[2].y);
+    glTexCoord2f(0.0, 1.0);  glVertex2f(m_rotatedDestCoords[3].x, m_rotatedDestCoords[3].y);
+  }
+  else
+  {
+    glTexCoord2f(m_rotatedDestCoords[0].x, m_rotatedDestCoords[0].y); glVertex4f(m_rotatedDestCoords[0].x, m_rotatedDestCoords[0].y, 0.0f, 0.0f);
+    glTexCoord2f(m_rotatedDestCoords[1].x, m_rotatedDestCoords[1].y); glVertex4f(m_rotatedDestCoords[1].x, m_rotatedDestCoords[1].y, 1.0f, 0.0f);
+    glTexCoord2f(m_rotatedDestCoords[2].x, m_rotatedDestCoords[2].y); glVertex4f(m_rotatedDestCoords[2].x, m_rotatedDestCoords[2].y, 1.0f, 1.0f);
+    glTexCoord2f(m_rotatedDestCoords[3].x, m_rotatedDestCoords[3].y); glVertex4f(m_rotatedDestCoords[3].x, m_rotatedDestCoords[3].y, 0.0f, 1.0f);
+  }
+  glEnd();
+  VerifyGLState();
+
+  if (m_pVideoFilterShader)
+    m_pVideoFilterShader->Disable();
+
+  vdpau->ReleasePixmap();
+
+  glBindTexture (m_textureTarget, 0);
+  glDisable(m_textureTarget);
+#endif
+}
+
+
+
 bool CLinuxRendererGLES::RenderCapture(CRenderCapture* capture)
 {
   if (!m_bValidated)
@@ -1795,6 +1904,54 @@ bool CLinuxRendererGLES::CreateCVRefTexture(int index)
 #endif
   return true;
 }
+void CLinuxRendererGLES::DeleteVDPAUTexture(int index)
+{
+#ifdef HAVE_LIBVDPAU
+  YUVPLANE &plane = m_buffers[index].fields[0][0];
+
+  SAFE_RELEASE(m_buffers[index].vdpau);
+
+  if(plane.id && glIsTexture(plane.id))
+    glDeleteTextures(1, &plane.id);
+  plane.id = 0;
+#endif
+}
+
+bool CLinuxRendererGLES::CreateVDPAUTexture(int index)
+{
+#ifdef HAVE_LIBVDPAU
+  YV12Image &im     = m_buffers[index].image;
+  YUVFIELDS &fields = m_buffers[index].fields;
+  YUVPLANE  &plane  = fields[0][0];
+
+  DeleteVDPAUTexture(index);
+
+  memset(&im    , 0, sizeof(im));
+  memset(&fields, 0, sizeof(fields));
+  im.height = m_sourceHeight;
+  im.width  = m_sourceWidth;
+
+  plane.texwidth  = im.width;
+  plane.texheight = im.height;
+
+  plane.pixpertex_x = 1;
+  plane.pixpertex_y = 1;
+
+  glGenTextures(1, &plane.id);
+
+  m_eventTexturesDone[index]->Set();
+#endif
+  return true;
+}
+
+void CLinuxRendererGLES::UploadVDPAUTexture(int index)
+{
+#ifdef HAVE_LIBVDPAU
+  m_eventTexturesDone[index]->Set();
+  glPixelStorei(GL_UNPACK_ALIGNMENT,1); //what's this for?
+#endif
+}
+
 
 //********************************************************************************************************
 // BYPASS creation, deletion, copying + clearing
@@ -1997,6 +2154,14 @@ void CLinuxRendererGLES::AddProcessor(struct __CVBuffer *cvBufferRef)
   buf.cvBufferRef = cvBufferRef;
   // retain another reference, this way dvdplayer and renderer can issue releases.
   CVBufferRetain(buf.cvBufferRef);
+}
+#endif
+#ifdef HAVE_LIBVDPAU
+void CLinuxRendererGLES::AddProcessor(CVDPAU* vdpau)
+{
+  YUVBUFFER &buf = m_buffers[NextYV12Texture()];
+  SAFE_RELEASE(buf.vdpau);
+  buf.vdpau = (CVDPAU*)vdpau->Acquire();
 }
 #endif
 

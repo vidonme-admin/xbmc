@@ -57,6 +57,7 @@ using namespace Shaders;
 
 CLinuxRendererA10::CLinuxRendererA10()
 {
+	printf("LinuxRender A10 constructor");
   m_textureTarget = GL_TEXTURE_2D;
 
   for (int i = 0; i < NUM_BUFFERS; i++)
@@ -500,7 +501,7 @@ unsigned int CLinuxRendererA10::PreInit()
 
   m_formats.push_back(RENDER_FMT_YUV420P);
   m_formats.push_back(RENDER_FMT_BYPASS);
-  m_formats.push_back(RENDER_FMT_A10BUF);
+  //m_formats.push_back(RENDER_FMT_A10BUF);
 
   // setup the background colour
   m_clearColour = (float)(g_advancedSettings.m_videoBlackBarColour & 0xff) / 0xff;
@@ -588,12 +589,12 @@ void CLinuxRendererA10::LoadShaders(int field)
   {
     case RENDER_METHOD_AUTO:
     case RENDER_METHOD_GLSL:
-      if (m_format == RENDER_FMT_A10BUF)
-      {
-        CLog::Log(LOGNOTICE, "using A10 render method");
-        m_renderMethod = RENDER_A10BUF;
-        break;
-      }
+      //if (m_format == RENDER_FMT_A10BUF)
+      //{
+      //  CLog::Log(LOGNOTICE, "using A10 render method");
+      //  m_renderMethod = RENDER_A10BUF;
+      //  break;
+      //}
       // Try GLSL shaders if supported and user requested auto or GLSL.
       // create regular progressive scan shader
       m_pYUVShader = new YUV2RGBProgressiveShader(false, m_iFlags, m_format);
@@ -620,13 +621,13 @@ void CLinuxRendererA10::LoadShaders(int field)
   }
 
   // Now that we now the render method, setup texture function handlers
-  if (m_format == RENDER_FMT_BYPASS || m_format == RENDER_FMT_A10BUF)
-  {
-    m_textureUpload = &CLinuxRendererA10::UploadBYPASSTexture;
-    m_textureCreate = &CLinuxRendererA10::CreateBYPASSTexture;
-    m_textureDelete = &CLinuxRendererA10::DeleteBYPASSTexture;
-  }
-  else
+  //if (m_format == RENDER_FMT_BYPASS || m_format == RENDER_FMT_A10BUF)
+  //{
+  //  m_textureUpload = &CLinuxRendererA10::UploadBYPASSTexture;
+  //  m_textureCreate = &CLinuxRendererA10::CreateBYPASSTexture;
+  //  m_textureDelete = &CLinuxRendererA10::DeleteBYPASSTexture;
+  //}
+  //else
   {
     // default to YV12 texture handlers
     m_textureUpload = &CLinuxRendererA10::UploadYV12Texture;
@@ -1428,7 +1429,7 @@ static pthread_mutex_t g_dispq_mutex;
 
 static __disp_layer_info_t             UIOLdLayerAttr;
 
-bool A10VLInit(int &width, int &height)
+bool A10VLInit(int &width, int &height, double &refreshRate)
 {
   unsigned long       args[4];
   __disp_layer_info_t layera;
@@ -1451,6 +1452,30 @@ bool A10VLInit(int &width, int &height)
   args[3] = 0;
   width  = g_width  = ioctl(g_hdisp, DISP_CMD_SCN_GET_WIDTH , args);
   height = g_height = ioctl(g_hdisp, DISP_CMD_SCN_GET_HEIGHT, args);
+
+  i = ioctl(g_hdisp, DISP_CMD_HDMI_GET_MODE, args);
+
+  switch(i)
+  {
+	  case DISP_TV_MOD_720P_50HZ:
+	  case DISP_TV_MOD_1080I_50HZ:
+	  case DISP_TV_MOD_1080P_50HZ:
+		  refreshRate = 50.0;
+		  break;
+	  case DISP_TV_MOD_720P_60HZ:
+	  case DISP_TV_MOD_1080I_60HZ:
+	  case DISP_TV_MOD_1080P_60HZ:
+		  refreshRate = 60.0;
+		  break;
+	  case DISP_TV_MOD_1080P_24HZ:
+		  refreshRate = 24.0;
+		  break;
+	  default:
+		  CLog::Log(LOGERROR, "A10: display mode %d is unknown. Assume refreh rate 60Hz\n", i);
+		  refreshRate = 60.0;
+		  break;
+  }
+
 
   args[0] = g_screenid;
   args[1] = g_syslayer;
@@ -1832,8 +1857,8 @@ int A10VLDisplayPicture(cedarv_picture_t &picture,
   frmbuf.interlace       = picture.is_progressive? 0 : 1;
   frmbuf.top_field_first = picture.top_field_first;
   //frmbuf.frame_rate      = picture.frame_rate;
-  frmbuf.addr[0]         = g_libbdv.mem_get_phy_addr((u32)picture.y);
-  frmbuf.addr[1]         = g_libbdv.mem_get_phy_addr((u32)picture.u);
+  frmbuf.addr[0]         = (u32)picture.y;//g_libbdv.mem_get_phy_addr((u32)picture.y);
+  frmbuf.addr[1]         = (u32)picture.u;//g_libbdv.mem_get_phy_addr((u32)picture.u);
 
   //if (_inited == 0)
   if ((g_srcRect != srcRect) || (g_dstRect != dstRect))
@@ -1984,7 +2009,7 @@ int A10VLDisplayPicture(cedarv_picture_t &picture,
     g_srcRect = srcRect;
     g_dstRect = dstRect;
 
-    g_android_mouse_count = 0;
+    //g_android_mouse_count = 0;
   }
 
   args[0] = g_screenid;

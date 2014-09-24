@@ -25,6 +25,7 @@
 #include "windowing/WinSystem.h"
 #include <EGL/egl.h>
 #include <X11/Xlib.h>
+#include <SDL/SDL_video.h>
 #include "rendering/gles/RenderSystemGLES.h"
 #include "utils/GlobalsHandling.h"
 
@@ -57,6 +58,7 @@ public:
 
   EGLContext GetEGLContext() const;
   EGLDisplay GetEGLDisplay() const;
+  Display*  GetDisplay() { return m_dpy; }
 protected:
   bool RefreshEGLContext();
 
